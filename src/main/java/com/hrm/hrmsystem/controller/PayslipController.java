@@ -1,0 +1,283 @@
+package com.hrm.hrmsystem.controller;
+
+import com.hrm.hrmsystem.dto.PayslipDTO;
+import com.hrm.hrmsystem.service.PayslipService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.io.File;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/payslips")
+@Tag(name = "Payslip Management", description = "API for managing employee payslips")
+public class PayslipController {
+
+    private static final Logger log = LoggerFactory.getLogger(PayslipController.class);
+
+    @Autowired
+    private PayslipService payslipService;
+
+    /**
+     * Generate payslip for an employee
+     */
+    @PostMapping("/generate")
+    @Operation(summary = "Generate payslip for employee", description = "Generate payslip for a specific employee and month")
+    public ResponseEntity<?> generatePayslip(
+            @Parameter(description = "Employee ID") @RequestParam Long employeeId,
+            @Parameter(description = "Month-Year in format YYYY-MM") @RequestParam String monthYear) {
+        try {
+            log.info("Request to generate payslip for employee: {} for month: {}", employeeId, monthYear);
+            PayslipDTO payslip = payslipService.generatePayslip(employeeId, monthYear);
+            return ResponseEntity.ok(payslip);
+        } catch (Exception e) {
+            log.error("Error generating payslip: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error generating payslip: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Get payslip by ID
+     */
+    @GetMapping("/{payslipId}")
+    @Operation(summary = "Get payslip details", description = "Retrieve payslip details by payslip ID")
+    public ResponseEntity<?> getPayslip(
+            @Parameter(description = "Payslip ID") @PathVariable Long payslipId) {
+        try {
+            log.info("Fetching payslip with ID: {}", payslipId);
+            PayslipDTO payslip = payslipService.getPayslipById(payslipId);
+            return ResponseEntity.ok(payslip);
+        } catch (Exception e) {
+            log.error("Error fetching payslip: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Payslip not found: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Get all payslips for an employee
+     */
+    @GetMapping("/employee/{employeeId}")
+    @Operation(summary = "Get employee payslips", description = "Retrieve all payslips for a specific employee")
+    public ResponseEntity<?> getEmployeePayslips(
+            @Parameter(description = "Employee ID") @PathVariable Long employeeId) {
+        try {
+            log.info("Fetching payslips for employee: {}", employeeId);
+            List<PayslipDTO> payslips = payslipService.getPayslipsByEmployee(employeeId);
+            return ResponseEntity.ok(payslips);
+        } catch (Exception e) {
+            log.error("Error fetching employee payslips: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Employee not found: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Get payslips for a specific month
+     */
+    @GetMapping("/month/{monthYear}")
+    @Operation(summary = "Get payslips by month", description = "Retrieve all payslips for a specific month")
+    public ResponseEntity<?> getPayslipsByMonth(
+            @Parameter(description = "Month-Year in format YYYY-MM") @PathVariable String monthYear) {
+        try {
+            log.info("Fetching payslips for month: {}", monthYear);
+            List<PayslipDTO> payslips = payslipService.getPayslipsByMonth(monthYear);
+            return ResponseEntity.ok(payslips);
+        } catch (Exception e) {
+            log.error("Error fetching payslips for month: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error fetching payslips: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Approve payslip
+     */
+    @PutMapping("/{payslipId}/approve")
+    @Operation(summary = "Approve payslip", description = "Approve a generated payslip")
+    public ResponseEntity<?> approvePayslip(
+            @Parameter(description = "Payslip ID") @PathVariable Long payslipId,
+            @Parameter(description = "Approved by (User ID/Name)") @RequestParam String approvedBy,
+            @Parameter(description = "Approval remarks") @RequestParam(required = false) String remarks) {
+        try {
+            log.info("Approving payslip: {} by: {}", payslipId, approvedBy);
+            PayslipDTO payslip = payslipService.approvePayslip(payslipId, approvedBy, remarks);
+            return ResponseEntity.ok(payslip);
+        } catch (Exception e) {
+            log.error("Error approving payslip: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error approving payslip: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Reject payslip
+     */
+    @PutMapping("/{payslipId}/reject")
+    @Operation(summary = "Reject payslip", description = "Reject a generated payslip")
+    public ResponseEntity<?> rejectPayslip(
+            @Parameter(description = "Payslip ID") @PathVariable Long payslipId,
+            @Parameter(description = "Rejection reason") @RequestParam String rejectionReason) {
+        try {
+            log.info("Rejecting payslip: {}", payslipId);
+            PayslipDTO payslip = payslipService.rejectPayslip(payslipId, rejectionReason);
+            return ResponseEntity.ok(payslip);
+        } catch (Exception e) {
+            log.error("Error rejecting payslip: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error rejecting payslip: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Generate PDF for payslip
+     */
+    @GetMapping("/{payslipId}/generate-pdf")
+    @Operation(summary = "Generate PDF", description = "Generate PDF file for a payslip")
+    public ResponseEntity<?> generatePayslipPdf(
+            @Parameter(description = "Payslip ID") @PathVariable Long payslipId) {
+        try {
+            log.info("Generating PDF for payslip: {}", payslipId);
+            String pdfPath = payslipService.generatePayslipPdf(payslipId);
+            return ResponseEntity.ok(new ResponseDTO(true, "PDF generated successfully", pdfPath));
+        } catch (Exception e) {
+            log.error("Error generating PDF: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error generating PDF: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Download PDF payslip
+     */
+    @GetMapping("/{payslipId}/download-pdf")
+    @Operation(summary = "Download PDF", description = "Download PDF payslip file")
+    public ResponseEntity<?> downloadPayslipPdf(
+            @Parameter(description = "Payslip ID") @PathVariable Long payslipId) {
+        try {
+            log.info("Downloading PDF for payslip: {}", payslipId);
+            PayslipDTO payslip = payslipService.getPayslipById(payslipId);
+
+            if (payslip == null || payslip.getPdfFilePath() == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("PDF file not found");
+            }
+
+            File file = new File(payslip.getPdfFilePath());
+            if (!file.exists()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("PDF file not found on server");
+            }
+
+            Resource resource = new FileSystemResource(file);
+            String filename = "Payslip_" + payslip.getEmployeeId() + "_" + payslip.getMonthYear() + ".pdf";
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .body(resource);
+        } catch (Exception e) {
+            log.error("Error downloading PDF: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error downloading PDF: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Send payslip to employee
+     */
+    @PostMapping("/{payslipId}/send")
+    @Operation(summary = "Send payslip", description = "Send payslip to employee via email")
+    public ResponseEntity<?> sendPayslipToEmployee(
+            @Parameter(description = "Payslip ID") @PathVariable Long payslipId) {
+        try {
+            log.info("Sending payslip: {} to employee", payslipId);
+            payslipService.sendPayslipToEmployee(payslipId);
+            return ResponseEntity.ok(new ResponseDTO(true, "Payslip sent to employee successfully", null));
+        } catch (Exception e) {
+            log.error("Error sending payslip: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error sending payslip: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Bulk generate payslips for all employees
+     */
+    @PostMapping("/bulk-generate")
+    @Operation(summary = "Bulk generate payslips", description = "Generate payslips for all employees in a month")
+    public ResponseEntity<?> bulkGeneratePayslips(
+            @Parameter(description = "Month-Year in format YYYY-MM") @RequestParam String monthYear) {
+        try {
+            log.info("Bulk generating payslips for month: {}", monthYear);
+            List<PayslipDTO> payslips = payslipService.bulkGeneratePayslips(monthYear);
+            return ResponseEntity.ok(payslips);
+        } catch (Exception e) {
+            log.error("Error bulk generating payslips: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error bulk generating payslips: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Get pending approvals
+     */
+    @GetMapping("/pending-approvals")
+    @Operation(summary = "Get pending payslips", description = "Get all payslips pending approval")
+    public ResponseEntity<?> getPendingApprovals() {
+        try {
+            log.info("Fetching pending payslip approvals");
+            List<PayslipDTO> payslips = payslipService.getPendingApprovals();
+            return ResponseEntity.ok(payslips);
+        } catch (Exception e) {
+            log.error("Error fetching pending approvals: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error fetching pending approvals: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Delete payslip
+     */
+    @DeleteMapping("/{payslipId}")
+    @Operation(summary = "Delete payslip", description = "Delete a payslip (only DRAFT can be deleted)")
+    public ResponseEntity<?> deletePayslip(
+            @Parameter(description = "Payslip ID") @PathVariable Long payslipId) {
+        try {
+            log.info("Deleting payslip: {}", payslipId);
+            payslipService.deletePayslip(payslipId);
+            return ResponseEntity.ok(new ResponseDTO(true, "Payslip deleted successfully", null));
+        } catch (Exception e) {
+            log.error("Error deleting payslip: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error deleting payslip: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Inner class for response DTO
+     */
+    public static class ResponseDTO {
+        public boolean success;
+        public String message;
+        public Object data;
+
+        public ResponseDTO(boolean success, String message, Object data) {
+            this.success = success;
+            this.message = message;
+            this.data = data;
+        }
+    }
+}
