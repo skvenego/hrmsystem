@@ -30,6 +30,8 @@ spring:
   
   flyway:
     enabled: false
+    baseline-on-migrate: true
+    locations: classpath:db/migration
   
   # Email Configuration (Gmail SMTP)
   mail:
@@ -51,7 +53,7 @@ spring:
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:your-256-bit-secret-key-here-must-be-at-least-32-characters}
+  secret: ${JWT_SECRET:ThisIsAVerySecureSecretKeyForJWTTokenGenerationThatMustBeAtLeast32CharactersLong!123456}
   expiration: ${JWT_EXPIRATION:86400000}
 
 # Payslip Configuration

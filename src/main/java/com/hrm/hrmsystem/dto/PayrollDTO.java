@@ -30,6 +30,13 @@ public class PayrollDTO {
 
     private LocalDate paymentDate;
     private String status;
+    
+    // Attendance details (for display in frontend)
+    private Integer presentDays;
+    private Integer absentDays;
+    private Integer leaveDays;
+    private Integer halfDays;
+    private Double absentLeaveDeduction;
 
     public PayrollDTO() {}
 
@@ -55,6 +62,11 @@ public class PayrollDTO {
     public Double getNetSalary() { return netSalary; }
     public LocalDate getPaymentDate() { return paymentDate; }
     public String getStatus() { return status; }
+    public Integer getPresentDays() { return presentDays; }
+    public Integer getAbsentDays() { return absentDays; }
+    public Integer getLeaveDays() { return leaveDays; }
+    public Integer getHalfDays() { return halfDays; }
+    public Double getAbsentLeaveDeduction() { return absentLeaveDeduction; }
 
     // Setters
     public void setId(Long id) { this.id = id; }
@@ -78,6 +90,11 @@ public class PayrollDTO {
     public void setNetSalary(Double netSalary) { this.netSalary = netSalary; }
     public void setPaymentDate(LocalDate paymentDate) { this.paymentDate = paymentDate; }
     public void setStatus(String status) { this.status = status; }
+    public void setPresentDays(Integer presentDays) { this.presentDays = presentDays; }
+    public void setAbsentDays(Integer absentDays) { this.absentDays = absentDays; }
+    public void setLeaveDays(Integer leaveDays) { this.leaveDays = leaveDays; }
+    public void setHalfDays(Integer halfDays) { this.halfDays = halfDays; }
+    public void setAbsentLeaveDeduction(Double absentLeaveDeduction) { this.absentLeaveDeduction = absentLeaveDeduction; }
 
     public static Builder builder() {
         return new Builder();
@@ -105,6 +122,11 @@ public class PayrollDTO {
         private Double netSalary;
         private LocalDate paymentDate;
         private String status;
+        private Integer presentDays;
+        private Integer absentDays;
+        private Integer leaveDays;
+        private Integer halfDays;
+        private Double absentLeaveDeduction;
 
         public Builder id(Long id) { this.id = id; return this; }
         public Builder employeeId(Long employeeId) { this.employeeId = employeeId; return this; }
@@ -127,6 +149,11 @@ public class PayrollDTO {
         public Builder netSalary(Double netSalary) { this.netSalary = netSalary; return this; }
         public Builder paymentDate(LocalDate paymentDate) { this.paymentDate = paymentDate; return this; }
         public Builder status(String status) { this.status = status; return this; }
+        public Builder presentDays(Integer presentDays) { this.presentDays = presentDays; return this; }
+        public Builder absentDays(Integer absentDays) { this.absentDays = absentDays; return this; }
+        public Builder leaveDays(Integer leaveDays) { this.leaveDays = leaveDays; return this; }
+        public Builder halfDays(Integer halfDays) { this.halfDays = halfDays; return this; }
+        public Builder absentLeaveDeduction(Double absentLeaveDeduction) { this.absentLeaveDeduction = absentLeaveDeduction; return this; }
 
         public PayrollDTO build() {
             PayrollDTO dto = new PayrollDTO();
@@ -151,6 +178,11 @@ public class PayrollDTO {
             dto.netSalary = this.netSalary;
             dto.paymentDate = this.paymentDate;
             dto.status = this.status;
+            dto.presentDays = this.presentDays;
+            dto.absentDays = this.absentDays;
+            dto.leaveDays = this.leaveDays;
+            dto.halfDays = this.halfDays;
+            dto.absentLeaveDeduction = this.absentLeaveDeduction;
             return dto;
         }
     }

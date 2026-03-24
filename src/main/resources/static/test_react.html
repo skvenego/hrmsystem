@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRM System</title>
+    
+    <!-- React from CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Simple styling -->
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #333; }
+        .info { background: #e7f3ff; padding: 15px; border-left: 4px solid #2196F3; margin: 20px 0; }
+        .error { background: #ffebee; padding: 15px; border-left: 4px solid #f44336; margin: 20px 0; }
+        button { background: #2196F3; color: white; border: none; padding: 10px 20px; cursor: pointer; margin: 5px; }
+        button:hover { background: #1976D2; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        // Simple test component to verify React is working
+        function App() {
+            const [count, setCount] = React.useState(0);
+            
+            return (
+                <div className="container">
+                    <h1>HRM System - Test Page</h1>
+                    <div className="info">
+                        <strong>✅ React is working!</strong><br/>
+                        This is a CDN-based version that works without Node.js build.
+                    </div>
+                    
+                    <h2>Attendance Page Fix Status</h2>
+                    <p>The Attendance.jsx source code has been updated with:</p>
+                    <ul>
+                        <li>✅ Fixed timezone-safe date comparison</li>
+                        <li>✅ Enable attendance marking for today</li>
+                        <li>✅ Allow changes between PRESENT ↔ ABSENT</li>
+                        <li>✅ Future dates blocked with popup</li>
+                        <li>✅ Salary calculation updated</li>
+                    </ul>
+                    
+                    <div className="error">
+                        <strong>⚠️ IMPORTANT:</strong><br/>
+                        To see the actual Attendance page working, you need to:<br/>
+                        <ol>
+                            <li>Install Node.js from https://nodejs.org/</li>
+                            <li>Run: <code>npm install && npm run build</code></li>
+                            <li>Copy built files to static folder</li>
+                            <li>Restart Spring Boot application</li>
+                        </ol>
+                    </div>
+                    
+                    <button onClick={() => setCount(count + 1)}>
+                        Count: {count}
+                    </button>
+                </div>
+            );
+        }
+        
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

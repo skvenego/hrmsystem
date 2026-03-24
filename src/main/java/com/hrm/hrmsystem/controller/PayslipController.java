@@ -49,6 +49,23 @@ public class PayslipController {
     }
 
     /**
+     * Get all payslips
+     */
+    @GetMapping
+    @Operation(summary = "Get all payslips", description = "Retrieve all payslips from the system")
+    public ResponseEntity<?> getAllPayslips() {
+        try {
+            log.info("Fetching all payslips");
+            List<PayslipDTO> payslips = payslipService.getAllPayslips();
+            return ResponseEntity.ok(payslips);
+        } catch (Exception e) {
+            log.error("Error fetching payslips: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error fetching payslips: " + e.getMessage());
+        }
+    }
+
+    /**
      * Get payslip by ID
      */
     @GetMapping("/{payslipId}")
@@ -99,6 +116,24 @@ public class PayslipController {
             log.error("Error fetching payslips for month: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Error fetching payslips: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Clear and regenerate payslips for a selected month.
+     */
+    @PostMapping("/regenerate-month")
+    @Operation(summary = "Regenerate payslips for month", description = "Deletes existing payslips for the month and regenerates them")
+    public ResponseEntity<?> regeneratePayslipsForMonth(
+            @Parameter(description = "Month-Year in format YYYY-MM") @RequestParam String monthYear) {
+        try {
+            log.info("Regenerating payslips for month: {}", monthYear);
+            List<PayslipDTO> regenerated = payslipService.regeneratePayslipsForMonth(monthYear);
+            return ResponseEntity.ok(regenerated);
+        } catch (Exception e) {
+            log.error("Error regenerating payslips: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error regenerating payslips: " + e.getMessage());
         }
     }
 
@@ -170,7 +205,25 @@ public class PayslipController {
             log.info("Downloading PDF for payslip: {}", payslipId);
             PayslipDTO payslip = payslipService.getPayslipById(payslipId);
 
-            if (payslip == null || payslip.getPdfFilePath() == null) {
+            // If PDF isn't generated yet (common after regenerate/attendance edits),
+            // generate it automatically before downloading.
+            if (payslip == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Payslip not found");
+            }
+
+            boolean needsGeneration = (payslip.getPdfFilePath() == null);
+            if (!needsGeneration) {
+                File existingFile = new File(payslip.getPdfFilePath());
+                needsGeneration = !existingFile.exists();
+            }
+
+            if (needsGeneration) {
+                log.info("PDF not found for payslip {}. Generating first...", payslipId);
+                payslipService.generatePayslipPdf(payslipId);
+                payslip = payslipService.getPayslipById(payslipId);
+            }
+
+            if (payslip.getPdfFilePath() == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body("PDF file not found");
             }

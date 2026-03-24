@@ -36,6 +36,9 @@ public interface PayslipRepository extends JpaRepository<Payslip, Long> {
     // Find payslips for a specific month across all employees
     List<Payslip> findByMonthYear(String monthYear);
     
+    // Clear payslips for a month so they can be regenerated with fresh attendance data
+    void deleteByMonthYear(String monthYear);
+    
     // Custom query to find pending approvals
     @Query("SELECT p FROM Payslip p WHERE p.status = 'GENERATED' ORDER BY p.createdAt DESC")
     List<Payslip> findPendingApprovals();

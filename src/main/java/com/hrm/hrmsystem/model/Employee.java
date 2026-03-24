@@ -1,8 +1,12 @@
 package com.hrm.hrmsystem.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.hrm.hrmsystem.entity.Payslip;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "employees")
@@ -44,6 +48,27 @@ public class Employee {
 
     private String address;
 
+    // Cascade delete relationships - when employee is deleted, related records are also deleted
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Leave> leaves = new ArrayList<>();
+
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Attendance> attendances = new ArrayList<>();
+
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Payroll> payrolls = new ArrayList<>();
+
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<LeaveBalance> leaveBalances = new ArrayList<>();
+
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Payslip> payslips = new ArrayList<>();
+
     public enum EmployeeStatus {
         ACTIVE, INACTIVE, ON_LEAVE, TERMINATED
     }
@@ -55,7 +80,8 @@ public class Employee {
     public Employee(Long id, String firstName, String lastName, String email, String phone,
                     Department department, String designation, LocalDate joiningDate, BigDecimal salary,
                     BigDecimal basicSalary, BigDecimal da, BigDecimal hra, BigDecimal otherAllowance,
-                    EmployeeStatus status, String address) {
+                    EmployeeStatus status, String address, List<Leave> leaves, List<Attendance> attendances,
+                    List<Payroll> payrolls, List<LeaveBalance> leaveBalances, List<Payslip> payslips) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -71,6 +97,11 @@ public class Employee {
         this.otherAllowance = otherAllowance;
         this.status = status;
         this.address = address;
+        this.leaves = leaves;
+        this.attendances = attendances;
+        this.payrolls = payrolls;
+        this.leaveBalances = leaveBalances;
+        this.payslips = payslips;
     }
 
     // Getters
@@ -89,6 +120,11 @@ public class Employee {
     public BigDecimal getOtherAllowance() { return otherAllowance; }
     public EmployeeStatus getStatus() { return status; }
     public String getAddress() { return address; }
+    public List<Leave> getLeaves() { return leaves; }
+    public List<Attendance> getAttendances() { return attendances; }
+    public List<Payroll> getPayrolls() { return payrolls; }
+    public List<LeaveBalance> getLeaveBalances() { return leaveBalances; }
+    public List<Payslip> getPayslips() { return payslips; }
 
     // Setters
     public void setId(Long id) { this.id = id; }
@@ -106,6 +142,11 @@ public class Employee {
     public void setOtherAllowance(BigDecimal otherAllowance) { this.otherAllowance = otherAllowance; }
     public void setStatus(EmployeeStatus status) { this.status = status; }
     public void setAddress(String address) { this.address = address; }
+    public void setLeaves(List<Leave> leaves) { this.leaves = leaves; }
+    public void setAttendances(List<Attendance> attendances) { this.attendances = attendances; }
+    public void setPayrolls(List<Payroll> payrolls) { this.payrolls = payrolls; }
+    public void setLeaveBalances(List<LeaveBalance> leaveBalances) { this.leaveBalances = leaveBalances; }
+    public void setPayslips(List<Payslip> payslips) { this.payslips = payslips; }
 
     // Builder pattern
     public static Builder builder() {
@@ -128,6 +169,11 @@ public class Employee {
         private BigDecimal otherAllowance;
         private EmployeeStatus status;
         private String address;
+        private List<Leave> leaves = new ArrayList<>();
+        private List<Attendance> attendances = new ArrayList<>();
+        private List<Payroll> payrolls = new ArrayList<>();
+        private List<LeaveBalance> leaveBalances = new ArrayList<>();
+        private List<Payslip> payslips = new ArrayList<>();
 
         public Builder id(Long id) { this.id = id; return this; }
         public Builder firstName(String firstName) { this.firstName = firstName; return this; }
@@ -144,10 +190,16 @@ public class Employee {
         public Builder otherAllowance(BigDecimal otherAllowance) { this.otherAllowance = otherAllowance; return this; }
         public Builder status(EmployeeStatus status) { this.status = status; return this; }
         public Builder address(String address) { this.address = address; return this; }
+        public Builder leaves(List<Leave> leaves) { this.leaves = leaves; return this; }
+        public Builder attendances(List<Attendance> attendances) { this.attendances = attendances; return this; }
+        public Builder payrolls(List<Payroll> payrolls) { this.payrolls = payrolls; return this; }
+        public Builder leaveBalances(List<LeaveBalance> leaveBalances) { this.leaveBalances = leaveBalances; return this; }
+        public Builder payslips(List<Payslip> payslips) { this.payslips = payslips; return this; }
 
         public Employee build() {
             return new Employee(id, firstName, lastName, email, phone, department, designation,
-                    joiningDate, salary, basicSalary, da, hra, otherAllowance, status, address);
+                    joiningDate, salary, basicSalary, da, hra, otherAllowance, status, address, 
+                    leaves, attendances, payrolls, leaveBalances, payslips);
         }
     }
 }

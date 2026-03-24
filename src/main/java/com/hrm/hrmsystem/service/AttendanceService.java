@@ -33,9 +33,11 @@ public class AttendanceService {
 
         LocalDate today = LocalDate.now();
 
-        if (attendanceRepository.findByEmployeeIdAndDate(employeeId, today).isPresent()) {
-            throw new RuntimeException("Already checked in today");
-        }
+        List<Attendance> records = attendanceRepository.findAllByEmployeeIdAndDate(employeeId, today);
+
+if (!records.isEmpty() && records.get(0).getCheckInTime() != null) {
+    throw new RuntimeException("Already checked in today");
+}
 
         Attendance attendance = Attendance.builder()
                 .employee(employee)
@@ -113,6 +115,11 @@ public class AttendanceService {
     }
 
     public AttendanceDTO markAbsent(Long employeeId, LocalDate date, String remarks) {
+        // Validate: Cannot mark attendance for future dates
+        if (date.isAfter(LocalDate.now())) {
+            throw new RuntimeException("Cannot mark attendance for future dates");
+        }
+        
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
@@ -133,6 +140,7 @@ public class AttendanceService {
                 }
             }
             
+            System.out.println("Marked ABSENT for employee " + employeeId + " on date " + date);
             return convertToDTO(attendance);
         } else {
             // Create new record
@@ -144,11 +152,21 @@ public class AttendanceService {
                     .build();
 
             attendance = attendanceRepository.save(attendance);
+            System.out.println("Created new ABSENT record for employee " + employeeId + " on date " + date);
             return convertToDTO(attendance);
         }
     }
 
     public AttendanceDTO markPresent(Long employeeId, LocalDate date) {
+        return markPresentWithOptions(employeeId, date, "PRESENT", 8.0);
+    }
+    
+    public AttendanceDTO markPresentWithOptions(Long employeeId, LocalDate date, String status, Double workingHours) {
+        // Validate: Cannot mark attendance for future dates
+        if (date.isAfter(LocalDate.now())) {
+            throw new RuntimeException("Cannot mark attendance for future dates");
+        }
+        
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
@@ -158,8 +176,12 @@ public class AttendanceService {
         if (existingAttendances != null && !existingAttendances.isEmpty()) {
             // If duplicates exist, update the first one and delete others
             Attendance attendance = existingAttendances.get(0);
-            attendance.setStatus(Attendance.AttendanceStatus.PRESENT);
-            attendance.setWorkingHours(8.0);
+            try {
+                attendance.setStatus(Attendance.AttendanceStatus.valueOf(status));
+            } catch (IllegalArgumentException e) {
+                attendance.setStatus(Attendance.AttendanceStatus.PRESENT);
+            }
+            attendance.setWorkingHours(workingHours != null ? workingHours : 8.0);
             attendance = attendanceRepository.save(attendance);
             
             // Delete duplicate records
@@ -169,29 +191,46 @@ public class AttendanceService {
                 }
             }
             
+            System.out.println("Marked " + status + " for employee " + employeeId + " on date " + date + " with " + workingHours + " hours");
             return convertToDTO(attendance);
         } else {
-            // Create new record with check-in at 10:00 AM and check-out at 6:30 PM
+            // Create new record with default times
+            Attendance.AttendanceStatus attendanceStatus;
+            try {
+                attendanceStatus = Attendance.AttendanceStatus.valueOf(status);
+            } catch (Exception e) {
+                attendanceStatus = Attendance.AttendanceStatus.PRESENT;
+            }
+
+            double resolvedHours = workingHours != null
+                    ? workingHours
+                    : (attendanceStatus == Attendance.AttendanceStatus.HALF_DAY ? 4.0 : 8.5);
+
             Attendance attendance = Attendance.builder()
                     .employee(employee)
                     .date(date)
                     .checkInTime(java.time.LocalTime.of(10, 0)) // 10:00 AM
                     .checkOutTime(java.time.LocalTime.of(18, 30)) // 6:30 PM
-                    .workingHours(8.5) // 8 hours 30 minutes
-                    .status(Attendance.AttendanceStatus.PRESENT)
+                    .workingHours(resolvedHours)
+                    .status(attendanceStatus)
                     .build();
 
             attendance = attendanceRepository.save(attendance);
+            System.out.println("Created new PRESENT record for employee " + employeeId + " on date " + date);
             return convertToDTO(attendance);
         }
     }
 
     public AttendanceDTO updateAttendanceStatus(Long attendanceId, String status, Double workingHours) {
         Attendance attendance = attendanceRepository.findById(attendanceId)
-                .orElseThrow(() -> new RuntimeException("Attendance record not found"));
+                .orElseThrow(() -> new RuntimeException("Attendance record not found for ID: " + attendanceId));
 
         if (status != null) {
-            attendance.setStatus(Attendance.AttendanceStatus.valueOf(status));
+            try {
+                attendance.setStatus(Attendance.AttendanceStatus.valueOf(status));
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("Invalid status value: " + status);
+            }
         }
 
         if (workingHours != null) {

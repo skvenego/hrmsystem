@@ -1,12 +1,12 @@
 package com.hrm.hrmsystem.controller;
 
 import com.hrm.hrmsystem.dto.PayrollDTO;
-import com.hrm.hrmsystem.dto.PayslipDTO;
 import com.hrm.hrmsystem.service.PayrollService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/payroll")
@@ -19,67 +19,64 @@ public class PayrollController {
         this.payrollService = payrollService;
     }
 
-    @PostMapping("/generate/{employeeId}")
-    public ResponseEntity<PayrollDTO> generatePayroll(
-            @PathVariable Long employeeId,
-            @RequestParam Integer month,
-            @RequestParam Integer year) {
-        return ResponseEntity.ok(payrollService.generatePayroll(employeeId, month, year));
-    }
-
-    @PostMapping("/generate-all")
-    public ResponseEntity<String> generatePayrollForAll(
-            @RequestParam Integer month,
-            @RequestParam Integer year) {
-        try {
-            int generatedCount = payrollService.generatePayrollForAll(month, year).size();
-            return ResponseEntity.ok(generatedCount + " payroll records generated successfully!");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error generating payroll: " + e.getMessage());
+    // Get payrolls by month and year (query params) - used by frontend
+    @GetMapping
+    public ResponseEntity<List<PayrollDTO>> getPayrollByMonthYear(
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Integer year) {
+        if (month != null && year != null) {
+            return ResponseEntity.ok(payrollService.getPayrollByMonth(month, year));
         }
+        List<PayrollDTO> payrolls = payrollService.getAllPayrolls();
+        return ResponseEntity.ok(payrolls);
     }
 
+    // Get all payrolls
+    @GetMapping("/list")
+    public ResponseEntity<List<PayrollDTO>> getAllPayrolls() {
+        List<PayrollDTO> payrolls = payrollService.getAllPayrolls();
+        return ResponseEntity.ok(payrolls);
+    }
+
+    // Generate payroll for one employee (POST with JSON body)
+    @PostMapping("/generate")
+    public ResponseEntity<PayrollDTO> generatePayroll(@RequestBody Map<String, Object> request) {
+        Long employeeId = Long.parseLong(request.get("employeeId").toString());
+        Integer month = Integer.parseInt(request.get("month").toString());
+        Integer year = Integer.parseInt(request.get("year").toString());
+        
+        PayrollDTO payroll = payrollService.generatePayroll(employeeId, month, year);
+        return ResponseEntity.ok(payroll);
+    }
+
+    // Generate payroll for all employees (POST with JSON body)
+    @PostMapping("/generate-all")
+    public ResponseEntity<List<PayrollDTO>> generatePayrollForAll(@RequestBody Map<String, Object> request) {
+        Integer month = Integer.parseInt(request.get("month").toString());
+        Integer year = Integer.parseInt(request.get("year").toString());
+        
+        List<PayrollDTO> payrolls = payrollService.generatePayrollForAll(month, year);
+        return ResponseEntity.ok(payrolls);
+    }
+
+    // Process payroll
     @PostMapping("/process/{payrollId}")
     public ResponseEntity<PayrollDTO> processPayroll(@PathVariable Long payrollId) {
-        return ResponseEntity.ok(payrollService.processPayroll(payrollId));
+        PayrollDTO payroll = payrollService.processPayroll(payrollId);
+        return ResponseEntity.ok(payroll);
     }
 
+    // Mark as paid
     @PostMapping("/pay/{payrollId}")
     public ResponseEntity<PayrollDTO> markAsPaid(@PathVariable Long payrollId) {
-        return ResponseEntity.ok(payrollService.markAsPaid(payrollId));
+        PayrollDTO payroll = payrollService.markAsPaid(payrollId);
+        return ResponseEntity.ok(payroll);
     }
 
+    // Mark as unpaid
     @PostMapping("/unpay/{payrollId}")
     public ResponseEntity<PayrollDTO> markAsUnpaid(@PathVariable Long payrollId) {
-        return ResponseEntity.ok(payrollService.markAsUnpaid(payrollId));
-    }
-
-    @GetMapping("/employee/{employeeId}")
-    public ResponseEntity<List<PayrollDTO>> getPayrollByEmployee(@PathVariable Long employeeId) {
-        return ResponseEntity.ok(payrollService.getPayrollByEmployee(employeeId));
-    }
-
-    @GetMapping("/month")
-    public ResponseEntity<List<PayrollDTO>> getPayrollByMonth(
-            @RequestParam Integer month,
-            @RequestParam Integer year) {
-        return ResponseEntity.ok(payrollService.getPayrollByMonth(month, year));
-    }
-
-    @GetMapping("/payslip/{employeeId}")
-    public ResponseEntity<PayslipDTO> getPayslip(
-            @PathVariable Long employeeId,
-            @RequestParam Integer month,
-            @RequestParam Integer year) {
-        
-        // Generate and return payslip with all details
-        String monthYear = year + "-" + String.format("%02d", month);
-        PayslipDTO payslip = payrollService.generatePayslipForEmployee(employeeId, monthYear);
-        return ResponseEntity.ok(payslip);
-    }
-
-    @GetMapping
-    public ResponseEntity<List<PayrollDTO>> getAllPayroll() {
-        return ResponseEntity.ok(payrollService.getAllPayroll());
+        PayrollDTO payroll = payrollService.markAsUnpaid(payrollId);
+        return ResponseEntity.ok(payroll);
     }
 }

@@ -67,8 +67,14 @@ public class AttendanceController {
     @PostMapping("/mark-present/{employeeId}")
     public ResponseEntity<AttendanceDTO> markPresent(
             @PathVariable Long employeeId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return ResponseEntity.ok(attendanceService.markPresent(employeeId, date));
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Double workingHours) {
+        if (status != null && workingHours != null) {
+            return ResponseEntity.ok(attendanceService.markPresentWithOptions(employeeId, date, status, workingHours));
+        } else {
+            return ResponseEntity.ok(attendanceService.markPresent(employeeId, date));
+        }
     }
 
     @PutMapping("/{attendanceId}/mark-present")

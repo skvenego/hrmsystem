@@ -105,31 +105,6 @@ const Employees = () => {
     };
   }, []);
 
-  // Delete employee
-  const handleDelete = async (employee) => {
-    if (!window.confirm(`Are you sure you want to delete ${employee.firstName} ${employee.lastName}?`)) {
-      return;
-    }
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/employees/${employee.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (response.ok) {
-        alert('Employee deleted successfully!');
-        fetchEmployees();
-      } else {
-        const error = await response.text();
-        alert('Error: ' + error);
-      }
-    } catch (error) {
-      alert('Error deleting employee: ' + error.message);
-    }
-  };
-
   // View employee
   const handleView = (employee) => {
     setSelectedEmployee(employee);

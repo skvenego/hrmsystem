@@ -1,176 +1,336 @@
-import { useEffect, useState } from 'react'
-import { FaUsers, FaClock, FaMoneyBillWave, FaCalendarAlt, FaChartLine } from 'react-icons/fa'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
-import '../styles/Dashboard.css'
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Users, 
+  Calendar, 
+  DollarSign, 
+  TrendingUp,
+  MoreVertical,
+  ArrowUpRight,
+  ArrowDownRight,
+  UserPlus,
+  FileText,
+  CheckCircle,
+  BarChart
+} from 'lucide-react';
+import Sidebar from '../components/Sidebar';
+import { useState, useEffect } from 'react';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalEmployees: 0,
     presentToday: 0,
-    onLeave: 0,
-    payrollPending: 0
-  })
+    monthlyPayroll: 0,
+    leaveRequests: 0
+  });
+  const [recentEmployees, setRecentEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Sample data for charts
-  const attendanceData = [
-    { name: 'Mon', present: 45, absent: 5 },
-    { name: 'Tue', present: 48, absent: 2 },
-    { name: 'Wed', present: 47, absent: 3 },
-    { name: 'Thu', present: 46, absent: 4 },
-    { name: 'Fri', present: 44, absent: 6 },
-  ]
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
-  const departmentData = [
-    { name: 'Engineering', value: 25, color: '#4f46e5' },
-    { name: 'Sales', value: 15, color: '#06b6d4' },
-    { name: 'Marketing', value: 10, color: '#f59e0b' },
-    { name: 'HR', value: 8, color: '#10b981' },
-    { name: 'Finance', value: 12, color: '#ef4444' },
-  ]
+  const fetchDashboardData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
 
-  const recentActivities = [
-    { id: 1, type: 'employee', message: 'New employee John Doe joined', time: '2 hours ago' },
-    { id: 2, type: 'leave', message: 'Sarah Smith approved leave request', time: '3 hours ago' },
-    { id: 3, type: 'payroll', message: 'January payroll processed', time: '5 hours ago' },
-    { id: 4, type: 'attendance', message: 'Mark Johnson checked in', time: '6 hours ago' },
-  ]
+      // Fetch employees count
+      const employeesRes = await fetch('/api/employees', { headers });
+      if (employeesRes.ok) {
+        const employees = await employeesRes.json();
+        setStats(prev => ({ ...prev, totalEmployees: employees.length || 0 }));
+        setRecentEmployees(employees.slice(0, 5).map(emp => ({
+          id: emp.id,
+          name: `${emp.firstName} ${emp.lastName}`,
+          role: emp.designation || 'Employee',
+          department: emp.departmentName || emp.department?.name || 'N/A',
+          status: emp.status || 'Active',
+          joinDate: emp.joiningDate || 'N/A'
+        })));
+      }
+
+      // Fetch today's attendance for present count
+      const today = new Date().toISOString().split('T')[0];
+      const attendanceRes = await fetch(`/api/attendance/date/${today}`, { headers });
+      if (attendanceRes.ok) {
+        const attendance = await attendanceRes.json();
+        const presentCount = attendance.filter(a => a.status === 'PRESENT').length;
+        setStats(prev => ({ ...prev, presentToday: presentCount }));
+      }
+
+      // Fetch leave requests count
+      const leaveRes = await fetch('/api/leaves', { headers });
+      if (leaveRes.ok) {
+        const leaves = await leaveRes.json();
+        const pendingLeaves = leaves.filter(l => l.status === 'PENDING').length;
+        setStats(prev => ({ ...prev, leaveRequests: pendingLeaves }));
+      }
+
+      // Fetch payroll data for current month
+      const currentMonth = new Date().getMonth() + 1;
+      const currentYear = new Date().getFullYear();
+      const payrollRes = await fetch(`/api/payroll?month=${currentMonth}&year=${currentYear}`, { headers });
+      if (payrollRes.ok) {
+        const payroll = await payrollRes.json();
+        const totalPayroll = payroll.reduce((sum, p) => sum + (p.netSalary || 0), 0);
+        setStats(prev => ({ ...prev, monthlyPayroll: totalPayroll }));
+      }
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      setLoading(false);
+    }
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
+  const statsData = [
+    { 
+      title: 'Total Employees', 
+      value: stats.totalEmployees, 
+      change: '+12%', 
+      trend: 'up',
+      icon: <Users size={24} />,
+      color: 'blue'
+    },
+    { 
+      title: 'Present Today', 
+      value: stats.presentToday || stats.totalEmployees, 
+      change: '+5%', 
+      trend: 'up',
+      icon: <Calendar size={24} />,
+      color: 'green'
+    },
+    { 
+      title: 'Monthly Payroll', 
+      value: formatCurrency(stats.monthlyPayroll), 
+      change: '+8%', 
+      trend: 'up',
+      icon: <DollarSign size={24} />,
+      color: 'orange'
+    },
+    { 
+      title: 'Leave Requests', 
+      value: stats.leaveRequests, 
+      change: '-2%', 
+      trend: 'down',
+      icon: <TrendingUp size={24} />,
+      color: 'red'
+    },
+  ];
+
+  const quickActions = [
+    { label: 'Add New Employee', color: '#4f46e5', icon: <UserPlus size={18} />, path: '/dashboard/employees' },
+    { label: 'Process Payroll', color: '#10b981', icon: <DollarSign size={18} />, path: '/dashboard/payroll' },
+    { label: 'Approve Leave', color: '#f59e0b', icon: <CheckCircle size={18} />, path: '/dashboard/leave' },
+    { label: 'Generate Report', color: '#06b6d4', icon: <BarChart size={18} />, path: '/dashboard/payslips' },
+  ];
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.4 }
+    }
+  };
 
   return (
-    <div className="page-container">
-      <div className="container">
-        <div className="page-header">
-          <h1>Dashboard</h1>
-          <p>Welcome back! Here's what's happening today.</p>
+    <div className="dashboard">
+      <Sidebar />
+      
+      <main className="main-content">
+        <div className="dashboard-header">
+          <div>
+            <h1 className="dashboard-title">Dashboard</h1>
+            <p style={{ color: '#6b7280', marginTop: '0.25rem' }}>Welcome back! Here's what's happening today.</p>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate('/dashboard/employees')}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: 'linear-gradient(135deg, #4f46e5, #06b6d4)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+          >
+            <UserPlus size={18} />
+            Add Employee
+          </motion.button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon primary">
-              <FaUsers />
-            </div>
-            <div className="stat-content">
-              <h3>50</h3>
-              <p>Total Employees</p>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon success">
-              <FaClock />
-            </div>
-            <div className="stat-content">
-              <h3>45</h3>
-              <p>Present Today</p>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon warning">
-              <FaCalendarAlt />
-            </div>
-            <div className="stat-content">
-              <h3>5</h3>
-              <p>On Leave</p>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon danger">
-              <FaMoneyBillWave />
-            </div>
-            <div className="stat-content">
-              <h3>3</h3>
-              <p>Payroll Pending</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Charts Section */}
-        <div className="content-grid">
-          <div className="section-card">
-            <div className="section-header">
-              <h2><FaChartLine /> Weekly Attendance</h2>
-            </div>
-            <div className="section-body">
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={attendanceData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="name" stroke="#6b7280" />
-                  <YAxis stroke="#6b7280" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      background: 'white', 
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px'
-                    }} 
-                  />
-                  <Bar dataKey="present" fill="#4f46e5" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="absent" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="section-card">
-            <div className="section-header">
-              <h2>Department Distribution</h2>
-            </div>
-            <div className="section-body">
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={departmentData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {departmentData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="chart-legend">
-                {departmentData.map((dept, index) => (
-                  <div key={index} className="legend-item">
-                    <span className="legend-dot" style={{ background: dept.color }} />
-                    <span>{dept.name}</span>
-                  </div>
-                ))}
+        <motion.div 
+          className="stats-grid"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {statsData.map((stat, index) => (
+            <motion.div 
+              key={index}
+              className="stat-card"
+              variants={itemVariants}
+              whileHover={{ scale: 1.02 }}
+            >
+              <div className={`stat-icon ${stat.color}`}>
+                {stat.icon}
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="section-card">
-          <div className="section-header">
-            <h2>Recent Activity</h2>
-          </div>
-          <div className="section-body">
-            <div className="activity-list">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="activity-item">
-                  <div className={`activity-icon ${activity.type}`}>
-                    {activity.type === 'employee' && <FaUsers />}
-                    {activity.type === 'leave' && <FaCalendarAlt />}
-                    {activity.type === 'payroll' && <FaMoneyBillWave />}
-                    {activity.type === 'attendance' && <FaClock />}
-                  </div>
-                  <div className="activity-content">
-                    <p>{activity.message}</p>
-                    <span className="activity-time">{activity.time}</span>
-                  </div>
+              <div className="stat-info">
+                <h3>{stat.value}</h3>
+                <p>{stat.title}</p>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.25rem',
+                  marginTop: '0.5rem',
+                  fontSize: '0.875rem',
+                  color: stat.trend === 'up' ? '#10b981' : '#ef4444'
+                }}>
+                  {stat.trend === 'up' ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
+                  <span>{stat.change} from last month</span>
                 </div>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
+          <motion.div 
+            className="table-container"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.4 }}
+          >
+            <div className="table-header">
+              <h3 className="table-title">Recent Employees</h3>
+              <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
+                <MoreVertical size={20} />
+              </button>
+            </div>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Role</th>
+                  <th>Department</th>
+                  <th>Status</th>
+                  <th>Join Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentEmployees.map((employee) => (
+                  <tr key={employee.id}>
+                    <td style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #4f46e5, #06b6d4)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontWeight: 600,
+                        fontSize: '0.875rem'
+                      }}>
+                        {employee.name.split(' ').map(n => n[0]).join('')}
+                      </div>
+                      {employee.name}
+                    </td>
+                    <td>{employee.role}</td>
+                    <td>{employee.department}</td>
+                    <td>
+                      <span className={`badge badge-${
+                        employee.status === 'Active' ? 'success' : 
+                        employee.status === 'On Leave' ? 'warning' : 'danger'
+                      }`}>
+                        {employee.status}
+                      </span>
+                    </td>
+                    <td>{employee.joinDate}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </motion.div>
+
+          <motion.div 
+            style={{
+              background: 'white',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.5 }}
+          >
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>Quick Actions</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {quickActions.map((action, index) => (
+                <motion.button
+                  key={index}
+                  whileHover={{ scale: 1.02, x: 5 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => navigate(action.path)}
+                  style={{
+                    padding: '0.875rem 1rem',
+                    background: `${action.color}10`,
+                    color: action.color,
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    fontWeight: 500,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '0.5rem'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {action.icon}
+                    {action.label}
+                  </div>
+                  <ArrowUpRight size={18} />
+                </motion.button>
               ))}
             </div>
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </main>
     </div>
-  )
-}
+  );
+};
 
-export default Dashboard
+export default Dashboard;

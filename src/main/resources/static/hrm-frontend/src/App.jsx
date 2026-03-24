@@ -1,74 +1,179 @@
-import { Routes, Route } from 'react-router-dom'
-import { useAuth } from './context/AuthContext'
-import Navbar from './components/Navbar'
-import Home from './pages/Home'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import Dashboard from './pages/Dashboard'
-import Employees from './pages/Employees'
-import EmployeeForm from './pages/EmployeeForm'
-import Departments from './pages/Departments'
-import Attendance from './pages/Attendance'
-import Leaves from './pages/Leaves'
-import Payroll from './pages/Payroll'
-import ProtectedRoute from './components/ProtectedRoute'
-import './styles/App.css'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Navbar from './components/Navbar';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import Employees from './pages/Employees';
+import Attendance from './pages/Attendance';
+import Leave from './pages/Leave';
+import Payroll from './pages/Payroll';
+import Payslips from './pages/Payslips';
+import Departments from './pages/Departments';
+import Profile from './pages/Profile';
+import Settings from './pages/Settings';
+import './index.css';
+
+// Protected Route component
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        background: '#f3f4f6'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '50px',
+            height: '50px',
+            border: '4px solid #e5e7eb',
+            borderTop: '4px solid #4f46e5',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1rem'
+          }} />
+          <p style={{ color: '#6b7280' }}>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  return isAuthenticated ? children : <Navigate to="/login" />;
+};
+
+// Public Route component (redirects to dashboard if already logged in)
+const PublicRoute = ({ children }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        background: '#f3f4f6'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '50px',
+            height: '50px',
+            border: '4px solid #e5e7eb',
+            borderTop: '4px solid #4f46e5',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1rem'
+          }} />
+          <p style={{ color: '#6b7280' }}>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  return !isAuthenticated ? children : <Navigate to="/dashboard" />;
+};
+
+// Layout component for public pages
+const PublicLayout = ({ children }) => {
+  return (
+    <>
+      <Navbar />
+      {children}
+    </>
+  );
+};
 
 function App() {
-  const { user } = useAuth()
-
   return (
-    <div className="app">
-      <Navbar />
-      <main className="main-content">
+    <AuthProvider>
+      <Router>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          {/* Public Routes */}
+          <Route path="/" element={
+            <PublicLayout>
+              <Home />
+            </PublicLayout>
+          } />
+          
+          <Route path="/login" element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          } />
+          
+          <Route path="/register" element={
+            <PublicRoute>
+              <Register />
+            </PublicRoute>
+          } />
+          
+          {/* Protected Routes */}
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
           } />
-          <Route path="/employees" element={
+          
+          <Route path="/dashboard/employees" element={
             <ProtectedRoute>
               <Employees />
             </ProtectedRoute>
           } />
-          <Route path="/employees/new" element={
-            <ProtectedRoute>
-              <EmployeeForm />
-            </ProtectedRoute>
-          } />
-          <Route path="/employees/edit/:id" element={
-            <ProtectedRoute>
-              <EmployeeForm />
-            </ProtectedRoute>
-          } />
-          <Route path="/departments" element={
-            <ProtectedRoute>
-              <Departments />
-            </ProtectedRoute>
-          } />
-          <Route path="/attendance" element={
+          
+          <Route path="/dashboard/attendance" element={
             <ProtectedRoute>
               <Attendance />
             </ProtectedRoute>
           } />
-          <Route path="/leaves" element={
+
+          <Route path="/dashboard/departments" element={
             <ProtectedRoute>
-              <Leaves />
+              <Departments />
             </ProtectedRoute>
           } />
-          <Route path="/payroll" element={
+          
+          <Route path="/dashboard/leave" element={
+            <ProtectedRoute>
+              <Leave />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/dashboard/payroll" element={
             <ProtectedRoute>
               <Payroll />
             </ProtectedRoute>
           } />
+          
+          <Route path="/dashboard/payslips" element={
+            <ProtectedRoute>
+              <Payslips />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/dashboard/profile" element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/dashboard/settings" element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          } />
+          
+          {/* Fallback route */}
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
-      </main>
-    </div>
-  )
+      </Router>
+    </AuthProvider>
+  );
 }
 
-export default App
+export default App;

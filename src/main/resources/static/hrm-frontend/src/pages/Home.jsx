@@ -1,325 +1,281 @@
-import { useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion';
+import { Link, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { 
-  FaUsers, 
-  FaClock, 
-  FaMoneyBillWave, 
-  FaChartLine,
-  FaShieldAlt,
-  FaMobileAlt,
-  FaHeadset,
-  FaArrowRight,
-  FaCheckCircle
-} from 'react-icons/fa'
-import '../styles/Home.css'
+  Users, 
+  Calendar, 
+  DollarSign, 
+  FileText, 
+  TrendingUp, 
+  Shield,
+  ArrowRight,
+  CheckCircle
+} from 'lucide-react';
 
 const Home = () => {
-  const observerRef = useRef(null)
+  const { hash } = useLocation();
 
   useEffect(() => {
-    observerRef.current = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('animate-in')
-        }
-      })
-    }, { threshold: 0.1 })
-
-    const elements = document.querySelectorAll('.animate-on-scroll')
-    elements.forEach((el) => observerRef.current.observe(el))
-
-    return () => observerRef.current?.disconnect()
-  }, [])
+    if (hash) {
+      const id = hash.replace('#', '');
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [hash]);
 
   const features = [
     {
-      icon: FaUsers,
+      icon: <Users size={32} />,
       title: 'Employee Management',
-      description: 'Comprehensive employee database with profiles, documents, and history tracking.'
+      description: 'Comprehensive employee database with profiles, documents, and performance tracking.'
     },
     {
-      icon: FaClock,
+      icon: <Calendar size={32} />,
       title: 'Attendance Tracking',
-      description: 'Real-time attendance monitoring with biometric integration support.'
+      description: 'Automated attendance system with leave management and real-time reports.'
     },
     {
-      icon: FaMoneyBillWave,
+      icon: <DollarSign size={32} />,
       title: 'Payroll Processing',
-      description: 'Automated payroll calculation with tax compliance and payslip generation.'
+      description: 'Streamlined payroll with automated calculations, payslips, and tax compliance.'
     },
     {
-      icon: FaChartLine,
-      title: 'Analytics & Reports',
-      description: 'Insightful dashboards and customizable reports for data-driven decisions.'
+      icon: <FileText size={32} />,
+      title: 'Leave Management',
+      description: 'Easy leave requests, approvals, and balance tracking for all employees.'
     },
     {
-      icon: FaShieldAlt,
-      title: 'Secure & Compliant',
-      description: 'Enterprise-grade security with role-based access control and audit trails.'
+      icon: <TrendingUp size={32} />,
+      title: 'Performance Reviews',
+      description: '360-degree feedback system with goal setting and appraisal management.'
     },
     {
-      icon: FaMobileAlt,
-      title: 'Mobile Ready',
-      description: 'Access your HR data anywhere with our responsive mobile-friendly interface.'
+      icon: <Shield size={32} />,
+      title: 'Secure & Reliable',
+      description: 'Enterprise-grade security with role-based access control and data encryption.'
     }
-  ]
+  ];
 
-  const stats = [
-    { value: '10K+', label: 'Active Users' },
-    { value: '500+', label: 'Companies' },
-    { value: '99.9%', label: 'Uptime' },
-    { value: '24/7', label: 'Support' }
-  ]
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2
+      }
+    }
+  };
 
-  const benefits = [
-    'Reduce HR administrative work by 70%',
-    'Automate payroll processing',
-    'Streamline recruitment workflow',
-    'Ensure compliance with labor laws',
-    'Improve employee engagement',
-    'Real-time analytics and insights'
-  ]
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6 }
+    }
+  };
 
   return (
-    <div className="home-page">
+    <div>
       {/* Hero Section */}
-      <section className="hero-section">
-        <div className="hero-bg">
-          <div className="gradient-orb orb-1" />
-          <div className="gradient-orb orb-2" />
-          <div className="gradient-orb orb-3" />
-        </div>
-        <div className="container">
-          <div className="hero-content">
-            <div className="hero-badge">
-              <span className="badge-dot" />
-              <span>Now with AI-powered insights</span>
-            </div>
-            <h1 className="hero-title">
-              Modern HR Management
-              <span className="gradient-text"> Simplified</span>
-            </h1>
-            <p className="hero-description">
-              Streamline your HR operations with our comprehensive solution. 
-              From recruitment to retirement, manage your entire workforce 
-              efficiently in one powerful platform.
-            </p>
-            <div className="hero-cta">
-              <Link to="/register" className="btn btn-primary btn-lg">
-                Get Started Free
-                <FaArrowRight />
-              </Link>
-              <Link to="/login" className="btn btn-secondary btn-lg">
-                Sign In
-              </Link>
-            </div>
-            <div className="hero-stats">
-              {stats.map((stat, index) => (
-                <div key={index} className="stat-item">
-                  <span className="stat-value">{stat.value}</span>
-                  <span className="stat-label">{stat.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="hero-visual">
-            <div className="dashboard-preview">
-              <div className="preview-header">
-                <div className="preview-dots">
-                  <span />
-                  <span />
-                  <span />
-                </div>
-              </div>
-              <div className="preview-content">
-                <div className="preview-card">
-                  <div className="preview-card-header">
-                    <div className="preview-avatar" />
-                    <div className="preview-lines">
-                      <div />
-                      <div />
-                    </div>
-                  </div>
-                  <div className="preview-chart" />
-                </div>
-                <div className="preview-stats">
-                  <div className="preview-stat" />
-                  <div className="preview-stat" />
-                  <div className="preview-stat" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="scroll-indicator">
-          <div className="mouse">
-            <div className="wheel" />
-          </div>
-          <span>Scroll to explore</span>
+      <section className="hero">
+        <div className="hero-content">
+          <motion.h1 
+            className="hero-title"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            Modern HR Management
+          </motion.h1>
+          <motion.p 
+            className="hero-subtitle"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            Streamline your workforce management with our comprehensive HRM solution
+          </motion.p>
+          <motion.div 
+            className="hero-buttons"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+          >
+            <Link to="/register" className="btn btn-primary btn-large">
+              Get Started Free <ArrowRight size={20} />
+            </Link>
+            <Link to="/#features" className="btn btn-secondary btn-large">
+              Watch Demo
+            </Link>
+          </motion.div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="features-section">
+      <section id="features" className="features">
         <div className="container">
-          <div className="section-header animate-on-scroll">
-            <span className="section-tag">Features</span>
-            <h2>Everything you need to manage HR</h2>
-            <p>Powerful features to help you manage your workforce efficiently</p>
-          </div>
-          <div className="features-grid">
-            {features.map((feature, index) => {
-              const Icon = feature.icon
-              return (
-                <div 
-                  key={index} 
-                  className="feature-card animate-on-scroll"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <div className="feature-icon">
-                    <Icon />
-                  </div>
-                  <h3>{feature.title}</h3>
-                  <p>{feature.description}</p>
+          <motion.h2 
+            className="section-title"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            Powerful Features
+          </motion.h2>
+          <motion.p 
+            className="section-subtitle"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            Everything you need to manage your human resources effectively
+          </motion.p>
+
+          <motion.div 
+            className="features-grid"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            {features.map((feature, index) => (
+              <motion.div 
+                key={index}
+                className="feature-card"
+                variants={itemVariants}
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="feature-icon">
+                  {feature.icon}
                 </div>
-              )
-            })}
+                <h3 className="feature-title">{feature.title}</h3>
+                <p className="feature-description">{feature.description}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Stats Section - About */}
+      <section id="about" style={{ padding: '6rem 0', background: '#f3f4f6' }}>
+        <div className="container">
+          <div className="stats-grid">
+            {[
+              { number: '10K+', label: 'Active Users' },
+              { number: '500+', label: 'Companies' },
+              { number: '99.9%', label: 'Uptime' },
+              { number: '24/7', label: 'Support' }
+            ].map((stat, index) => (
+              <motion.div 
+                key={index}
+                className="stat-card"
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <div className="stat-info" style={{ textAlign: 'center', width: '100%' }}>
+                  <h3 style={{ fontSize: '2.5rem', color: '#4f46e5' }}>{stat.number}</h3>
+                  <p style={{ fontSize: '1.1rem' }}>{stat.label}</p>
+                </div>
+              </motion.div>
+            ))}
           </div>
+        </div>
+      </section>
+
+      {/* CTA Section - Contact */}
+      <section id="contact" style={{ padding: '6rem 0', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+        <div className="container" style={{ textAlign: 'center' }}>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 style={{ fontSize: '2.5rem', color: 'white', marginBottom: '1rem' }}>
+              Ready to Transform Your HR?
+            </h2>
+            <p style={{ fontSize: '1.25rem', color: 'rgba(255,255,255,0.9)', marginBottom: '2rem' }}>
+              Join thousands of companies already using our platform
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Link to="/register" className="btn btn-primary btn-large" style={{ background: 'white', color: '#667eea' }}>
+                Start Free Trial
+              </Link>
+              <Link to="/#contact" className="btn btn-secondary btn-large">
+                Contact Sales
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Benefits Section */}
-      <section className="benefits-section">
+      <section style={{ padding: '6rem 0', background: 'white' }}>
         <div className="container">
-          <div className="benefits-grid">
-            <div className="benefits-content animate-on-scroll">
-              <span className="section-tag">Why Choose Us</span>
-              <h2>Transform your HR operations</h2>
-              <p>
-                Join thousands of companies that have streamlined their HR processes 
-                and improved employee satisfaction with our platform.
-              </p>
-              <ul className="benefits-list">
-                {benefits.map((benefit, index) => (
-                  <li key={index} className="benefit-item">
-                    <FaCheckCircle className="benefit-icon" />
-                    <span>{benefit}</span>
-                  </li>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center' }}>
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <h2 style={{ fontSize: '2.5rem', marginBottom: '1.5rem', color: '#1f2937' }}>
+                Why Choose Our Platform?
+              </h2>
+              <ul style={{ listStyle: 'none', space: '1.5rem' }}>
+                {[
+                  'Intuitive and user-friendly interface',
+                  'Comprehensive reporting and analytics',
+                  'Mobile-responsive design',
+                  'Seamless integrations with popular tools',
+                  'Dedicated customer support',
+                  'Regular updates and new features'
+                ].map((benefit, index) => (
+                  <motion.li 
+                    key={index}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: '#4b5563' }}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: index * 0.1 }}
+                  >
+                    <CheckCircle size={20} style={{ color: '#10b981', flexShrink: 0 }} />
+                    {benefit}
+                  </motion.li>
                 ))}
               </ul>
-              <Link to="/register" className="btn btn-primary">
-                Start Free Trial
-                <FaArrowRight />
-              </Link>
-            </div>
-            <div className="benefits-visual animate-on-scroll">
-              <div className="floating-cards">
-                <div className="float-card card-1">
-                  <div className="float-icon">
-                    <FaUsers />
-                  </div>
-                  <div className="float-content">
-                    <span className="float-value">2,547</span>
-                    <span className="float-label">Total Employees</span>
-                  </div>
-                </div>
-                <div className="float-card card-2">
-                  <div className="float-icon success">
-                    <FaChartLine />
-                  </div>
-                  <div className="float-content">
-                    <span className="float-value">+23%</span>
-                    <span className="float-label">Growth Rate</span>
-                  </div>
-                </div>
-                <div className="float-card card-3">
-                  <div className="float-icon warning">
-                    <FaClock />
-                  </div>
-                  <div className="float-content">
-                    <span className="float-value">98.5%</span>
-                    <span className="float-label">Attendance</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="cta-section">
-        <div className="container">
-          <div className="cta-content animate-on-scroll">
-            <h2>Ready to streamline your HR?</h2>
-            <p>
-              Get started with a free 14-day trial. No credit card required. 
-              Cancel anytime.
-            </p>
-            <div className="cta-buttons">
-              <Link to="/register" className="btn btn-white btn-lg">
-                Get Started Free
-              </Link>
-              <a href="#contact" className="btn btn-outline-white btn-lg">
-                Contact Sales
-              </a>
-            </div>
-            <div className="cta-support">
-              <FaHeadset />
-              <span>Need help? Our team is available 24/7</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="footer">
-        <div className="container">
-          <div className="footer-grid">
-            <div className="footer-brand">
-              <div className="footer-logo">
-                <FaUsers />
-                <span>HRM<span className="highlight">System</span></span>
-              </div>
-              <p>
-                Modern HR management solution for businesses of all sizes. 
-                Simplify your workforce management.
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              style={{ 
+                background: 'linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%)',
+                borderRadius: '20px',
+                padding: '3rem',
+                color: 'white',
+                textAlign: 'center'
+              }}
+            >
+              <h3 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Get Started Today</h3>
+              <p style={{ marginBottom: '2rem', opacity: 0.9 }}>
+                Experience the future of HR management with our 14-day free trial
               </p>
-            </div>
-            <div className="footer-links">
-              <h4>Product</h4>
-              <ul>
-                <li><Link to="/features">Features</Link></li>
-                <li><Link to="/pricing">Pricing</Link></li>
-                <li><Link to="/integrations">Integrations</Link></li>
-                <li><Link to="/api">API</Link></li>
-              </ul>
-            </div>
-            <div className="footer-links">
-              <h4>Company</h4>
-              <ul>
-                <li><Link to="/about">About</Link></li>
-                <li><Link to="/blog">Blog</Link></li>
-                <li><Link to="/careers">Careers</Link></li>
-                <li><Link to="/contact">Contact</Link></li>
-              </ul>
-            </div>
-            <div className="footer-links">
-              <h4>Support</h4>
-              <ul>
-                <li><Link to="/help">Help Center</Link></li>
-                <li><Link to="/docs">Documentation</Link></li>
-                <li><Link to="/status">System Status</Link></li>
-              </ul>
-            </div>
-          </div>
-          <div className="footer-bottom">
-            <p>&copy; 2024 HRM System. All rights reserved.</p>
+              <Link to="/register" className="btn btn-primary" style={{ background: 'white', color: '#4f46e5' }}>
+                Create Free Account
+              </Link>
+            </motion.div>
           </div>
         </div>
-      </footer>
+      </section>
     </div>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;

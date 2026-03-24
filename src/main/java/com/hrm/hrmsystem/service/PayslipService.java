@@ -11,6 +11,7 @@ import com.hrm.hrmsystem.repository.PayslipRepository;
 import com.hrm.hrmsystem.repository.EmployeeRepository;
 import com.hrm.hrmsystem.repository.AttendanceRepository;
 import com.hrm.hrmsystem.repository.LeaveRepository;
+import com.hrm.hrmsystem.repository.PayrollRepository;
 import jakarta.persistence.EntityManager;
 import com.hrm.hrmsystem.util.PdfGeneratorUtil;
 import com.hrm.hrmsystem.util.SalaryCalculator;
@@ -27,6 +28,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,6 +51,9 @@ public class PayslipService {
 
     @Autowired
     private LeaveRepository leaveRepository;
+
+    @Autowired
+    private PayrollRepository payrollRepository;
 
     @Autowired
     private SalaryCalculator salaryCalculator;
@@ -109,6 +116,28 @@ public class PayslipService {
     }
 
     /**
+     * Clear all payslips for a month and regenerate them with fresh attendance/leave data.
+     */
+    public List<PayslipDTO> regeneratePayslipsForMonth(String monthYear) {
+        log.info("Regenerating all payslips for month: {}", monthYear);
+
+        payslipRepository.deleteByMonthYear(monthYear);
+
+        List<Employee> employees = employeeRepository.findByStatus(Employee.EmployeeStatus.ACTIVE);
+        return employees.stream()
+                .map(emp -> {
+                    try {
+                        return generatePayslip(emp.getId(), monthYear);
+                    } catch (Exception e) {
+                        log.warn("Could not regenerate payslip for employee {} month {}: {}", emp.getId(), monthYear, e.getMessage());
+                        return null;
+                    }
+                })
+                .filter(dto -> dto != null)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Calculate attendance for the month
      */
     private void calculateAttendance(Payslip payslip, int month, int year) {
@@ -129,6 +158,10 @@ public class PayslipService {
                 .filter(a -> Attendance.AttendanceStatus.ABSENT.equals(a.getStatus()))
                 .count();
 
+        int halfDays = (int) attendanceList.stream()
+                .filter(a -> a.getStatus() != null && Attendance.AttendanceStatus.HALF_DAY.equals(a.getStatus()))
+                .count();
+
         // Get absent dates
         java.util.List<String> absentDates = attendanceList.stream()
                 .filter(a -> Attendance.AttendanceStatus.ABSENT.equals(a.getStatus()))
@@ -144,6 +177,7 @@ public class PayslipService {
         payslip.setPresentDays(effectiveWorkingDays); // Show total paid days (present + leave)
         payslip.setAbsentDays(absentDays);
         payslip.setLeaveDays(approvedLeaveDays); // Show approved leave separately
+        payslip.setHalfDays(halfDays);
         payslip.setWorkingDays(26); // Standard working days
         payslip.setTotalDays(30); // Standard total days
         payslip.setAbsentDates(absentDates); // Store absent dates
@@ -191,11 +225,13 @@ public class PayslipService {
     private void calculateSalary(Payslip payslip, Employee employee) {
         log.info("Calculating salary for employee: {}", employee.getId());
 
-        // Get employee salary details
-        BigDecimal basicSalary = employee.getBasicSalary() != null ? employee.getBasicSalary() : BigDecimal.ZERO;
-        BigDecimal da = employee.getDa() != null ? employee.getDa() : BigDecimal.ZERO;
-        BigDecimal hra = employee.getHra() != null ? employee.getHra() : BigDecimal.ZERO;
-        BigDecimal otherAllowance = employee.getOtherAllowance() != null ? employee.getOtherAllowance() : BigDecimal.ZERO;
+        // Keep Payslip math exactly aligned with PayrollService:
+        // basic = employee.salary, hra=20%, da=10%, ta=5% (stored as otherAllowance), pf=12%, tax by slab, insurance=500.
+        BigDecimal basicSalary = employee.getSalary() != null ? employee.getSalary() : BigDecimal.ZERO;
+        BigDecimal hra = basicSalary.multiply(new BigDecimal("0.20"));
+        BigDecimal da = basicSalary.multiply(new BigDecimal("0.10"));
+        BigDecimal ta = basicSalary.multiply(new BigDecimal("0.05"));
+        BigDecimal otherAllowance = ta;
 
         // Set earnings
         payslip.setBasicSalary(basicSalary);
@@ -207,34 +243,155 @@ public class PayslipService {
         BigDecimal grossSalary = basicSalary.add(da).add(hra).add(otherAllowance);
         payslip.setGrossSalary(grossSalary);
 
-        // Calculate deductions
-        BigDecimal pf = salaryCalculator.calculatePF(basicSalary);
-        BigDecimal esi = salaryCalculator.calculateESI(grossSalary);
-        BigDecimal incomeTax = salaryCalculator.calculateIncomeTax(grossSalary);
+        // Calculate deductions (same as PayrollService)
+        BigDecimal pf = basicSalary.multiply(new BigDecimal("0.12"));
+        BigDecimal esi = BigDecimal.ZERO; // PayrollService does not apply ESI currently
+        BigDecimal incomeTax = calculatePayrollTax(basicSalary);
+        BigDecimal insurance = new BigDecimal("500.0");
 
         payslip.setPf(pf);
         payslip.setEsi(esi);
         payslip.setIncomeTax(incomeTax);
-        payslip.setOtherDeduction(BigDecimal.ZERO);
+        payslip.setOtherDeduction(insurance);
 
-        // Calculate total deduction
-        BigDecimal totalDeduction = pf.add(esi).add(incomeTax);
+        // Calculate total deduction (before absent/leave)
+        BigDecimal totalDeduction = pf.add(esi).add(incomeTax).add(insurance);
         payslip.setTotalDeduction(totalDeduction);
 
-        // Calculate net salary
+        // Calculate net salary before absent/leave deduction
         BigDecimal netSalary = grossSalary.subtract(totalDeduction);
-        payslip.setNetSalary(netSalary);
 
-        // Adjust for absent days (salary cut for absent days)
-        BigDecimal salaryPerDay = basicSalary.divide(new BigDecimal(26), 2, java.math.RoundingMode.HALF_UP);
-        BigDecimal absentDeduction = salaryPerDay.multiply(new BigDecimal(payslip.getAbsentDays()));
+        // Absent + Leave deduction: First 1.5 days free per month, then deduct
+        // Deductible days = max(0, absent + leave + halfDay*0.5 - 1.5)
+        int absentDays = payslip.getAbsentDays() != null ? payslip.getAbsentDays() : 0;
+        int leaveDays = payslip.getLeaveDays() != null ? payslip.getLeaveDays() : 0;
+        int halfDays = payslip.getHalfDays() != null ? payslip.getHalfDays() : 0;
+        double deductibleDays = getDeductibleDays(absentDays, leaveDays, halfDays);
 
-        // Apply absent day deduction
-        BigDecimal adjustedNetSalary = netSalary.subtract(absentDeduction);
+        BigDecimal salaryPerDay = basicSalary.compareTo(BigDecimal.ZERO) > 0
+                ? basicSalary.divide(new BigDecimal(26), 2, java.math.RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+        BigDecimal absentLeaveDeduction = salaryPerDay.multiply(BigDecimal.valueOf(deductibleDays))
+                .setScale(2, java.math.RoundingMode.HALF_UP);
+        payslip.setAbsentLeaveDeduction(absentLeaveDeduction);
+
+        // Apply absent/leave deduction and update total deduction
+        BigDecimal adjustedNetSalary = netSalary.subtract(absentLeaveDeduction);
         payslip.setNetSalary(adjustedNetSalary.compareTo(BigDecimal.ZERO) > 0 ? adjustedNetSalary : BigDecimal.ZERO);
+        payslip.setTotalDeduction(totalDeduction.add(absentLeaveDeduction));
 
-        log.info("Salary calculated - Gross: {}, Deduction: {}, Net: {}", 
-                 grossSalary, totalDeduction, payslip.getNetSalary());
+        log.info("Salary calculated - Gross: {}, Deduction: {}, AbsentLeaveDed: {}, Net: {}",
+                 grossSalary, totalDeduction, absentLeaveDeduction, payslip.getNetSalary());
+    }
+
+    private BigDecimal calculatePayrollTax(BigDecimal basicSalary) {
+        BigDecimal annualSalary = basicSalary.multiply(new BigDecimal("12"));
+        if (annualSalary.compareTo(new BigDecimal("1000000")) > 0) {
+            return basicSalary.multiply(new BigDecimal("0.30"));
+        } else if (annualSalary.compareTo(new BigDecimal("500000")) > 0) {
+            return basicSalary.multiply(new BigDecimal("0.20"));
+        } else if (annualSalary.compareTo(new BigDecimal("250000")) > 0) {
+            return basicSalary.multiply(new BigDecimal("0.10"));
+        }
+        return BigDecimal.ZERO;
+    }
+
+    /**
+     * Get present days for employee in a month/year
+     */
+    public int getPresentDaysForEmployee(Long employeeId, Integer month, Integer year) {
+        YearMonth yearMonth = YearMonth.of(year, month);
+        LocalDate startDate = yearMonth.atDay(1);
+        LocalDate endDate = yearMonth.atEndOfMonth();
+        
+        List<Attendance> attendances = attendanceRepository.findByEmployeeIdAndDateBetween(
+            employeeId, startDate, endDate);
+        
+        long presentDays = attendances.stream()
+            .filter(a -> a.getStatus() != null && Attendance.AttendanceStatus.PRESENT.equals(a.getStatus()))
+            .count();
+        
+        log.debug("Present days for employee {} in {}/{}: {}", employeeId, month, year, presentDays);
+        return (int) presentDays;
+    }
+    
+    /**
+     * Get absent days for employee in a month/year
+     */
+    public int getAbsentDaysForEmployee(Long employeeId, Integer month, Integer year) {
+        YearMonth yearMonth = YearMonth.of(year, month);
+        LocalDate startDate = yearMonth.atDay(1);
+        LocalDate endDate = yearMonth.atEndOfMonth();
+        
+        List<Attendance> attendances = attendanceRepository.findByEmployeeIdAndDateBetween(
+            employeeId, startDate, endDate);
+        
+        long absentDays = attendances.stream()
+            .filter(a -> a.getStatus() != null && Attendance.AttendanceStatus.ABSENT.equals(a.getStatus()))
+            .count();
+        
+        log.debug("Absent days for employee {} in {}/{}: {}", employeeId, month, year, absentDays);
+        return (int) absentDays;
+    }
+    
+    /**
+     * Get leave days for employee in a month/year
+     */
+    public int getLeaveDaysForEmployee(Long employeeId, Integer month, Integer year) {
+        YearMonth yearMonth = YearMonth.of(year, month);
+        LocalDate startDate = yearMonth.atDay(1);
+        LocalDate endDate = yearMonth.atEndOfMonth();
+        
+        List<Leave> leaves = leaveRepository.findByEmployeeIdAndStatus(
+            employeeId, Leave.LeaveStatus.APPROVED);
+        
+        long leaveDays = leaves.stream()
+            .filter(leave -> {
+                LocalDate lStart = leave.getStartDate();
+                LocalDate lEnd = leave.getEndDate();
+                
+                // Check if leave overlaps with the month
+                return !lEnd.isBefore(startDate) && !lStart.isAfter(endDate);
+            })
+            .mapToLong(leave -> {
+                LocalDate lStart = leave.getStartDate();
+                LocalDate lEnd = leave.getEndDate();
+                LocalDate overlapStart = lStart.isBefore(startDate) ? startDate : lStart;
+                LocalDate overlapEnd = lEnd.isAfter(endDate) ? endDate : lEnd;
+                return java.time.temporal.ChronoUnit.DAYS.between(overlapStart, overlapEnd) + 1;
+            })
+            .sum();
+        
+        log.debug("Leave days for employee {} in {}/{}: {}", employeeId, month, year, leaveDays);
+        return (int) leaveDays;
+    }
+
+    /**
+     * Get half days for employee in a month/year (each counts as 0.5 for deduction)
+     */
+    public int getHalfDaysForEmployee(Long employeeId, Integer month, Integer year) {
+        YearMonth yearMonth = YearMonth.of(year, month);
+        LocalDate startDate = yearMonth.atDay(1);
+        LocalDate endDate = yearMonth.atEndOfMonth();
+
+        List<Attendance> attendances = attendanceRepository.findByEmployeeIdAndDateBetween(
+                employeeId, startDate, endDate);
+
+        long halfDays = attendances.stream()
+                .filter(a -> a.getStatus() != null && Attendance.AttendanceStatus.HALF_DAY.equals(a.getStatus()))
+                .count();
+
+        log.debug("Half days for employee {} in {}/{}: {}", employeeId, month, year, halfDays);
+        return (int) halfDays;
+    }
+
+    /**
+     * Get deductible days: max(0, absent + leave + halfDay*0.5 - 1.5)
+     * First 1.5 days free per month, then deduct
+     */
+    public double getDeductibleDays(int absentDays, int leaveDays, int halfDays) {
+        double total = absentDays + leaveDays + (halfDays * 0.5);
+        return Math.max(0, total - 1.5);
     }
 
     /**
@@ -244,6 +401,15 @@ public class PayslipService {
         Payslip payslip = payslipRepository.findById(payslipId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payslip not found with id: " + payslipId));
         return convertToDTO(payslip);
+    }
+
+    /**
+     * Get all payslips
+     */
+    public List<PayslipDTO> getAllPayslips() {
+        log.info("Fetching all payslips");
+        List<Payslip> payslips = payslipRepository.findAll();
+        return payslips.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
     /**
@@ -261,8 +427,79 @@ public class PayslipService {
      * Get payslips for a specific month
      */
     public List<PayslipDTO> getPayslipsByMonth(String monthYear) {
-        List<Payslip> payslips = payslipRepository.findByMonthYear(monthYear);
-        return payslips.stream().map(this::convertToDTO).collect(Collectors.toList());
+        // Rule: show payslip on UI only if payroll is PAID for that month/year.
+        // For unpaid employees, still return employee details but all salary/deduction values as 0.
+        String[] parts = monthYear.split("-");
+        int month = Integer.parseInt(parts[1]);
+        int year = Integer.parseInt(parts[0]);
+
+        List<Employee> employees = employeeRepository.findByStatus(Employee.EmployeeStatus.ACTIVE);
+
+        // Existing payslips for this month/year (may be missing for some employees)
+        List<Payslip> existingPayslips = payslipRepository.findByMonthYear(monthYear);
+        Map<Long, Payslip> payslipByEmployeeId = new HashMap<>();
+        if (existingPayslips != null) {
+            for (Payslip p : existingPayslips) {
+                if (p != null && p.getEmployee() != null) {
+                    payslipByEmployeeId.put(p.getEmployee().getId(), p);
+                }
+            }
+        }
+
+        List<PayslipDTO> result = new ArrayList<>();
+        for (Employee employee : employees) {
+            if (employee == null) continue;
+
+            java.util.Optional<com.hrm.hrmsystem.model.Payroll> payrollOpt =
+                    payrollRepository.findByEmployeeIdAndMonthAndYear(employee.getId(), month, year);
+
+            String payrollStatus = payrollOpt.map(p -> p.getStatus().name()).orElse(null);
+            boolean isPaid = payrollOpt.isPresent() && payrollOpt.get().getStatus() == com.hrm.hrmsystem.model.Payroll.PayrollStatus.PAID;
+
+            if (isPaid) {
+                // Always regenerate for PAID payroll so values are guaranteed in-sync with latest payroll formula.
+                PayslipDTO dto = generatePayslip(employee.getId(), monthYear);
+                dto.setPayrollStatus("PAID");
+                result.add(dto);
+            } else {
+                // Unpaid: show employee details but zero everything.
+                PayslipDTO dto = new PayslipDTO();
+                dto.setId(employee.getId()); // unique key for UI lists
+                dto.setEmployeeId(employee.getId());
+                dto.setEmployeeName(employee.getFirstName() + " " + employee.getLastName());
+                dto.setMonthYear(monthYear);
+                dto.setPayrollStatus(payrollStatus != null ? payrollStatus : "UNPAID");
+
+                dto.setBasicSalary(BigDecimal.ZERO);
+                dto.setGrossSalary(BigDecimal.ZERO);
+                dto.setNetSalary(BigDecimal.ZERO);
+                dto.setPf(BigDecimal.ZERO);
+                dto.setEsi(BigDecimal.ZERO);
+                dto.setIncomeTax(BigDecimal.ZERO);
+                dto.setOtherDeduction(BigDecimal.ZERO);
+                dto.setTotalDeduction(BigDecimal.ZERO);
+                dto.setAbsentLeaveDeduction(BigDecimal.ZERO);
+
+                dto.setPresentDays(0);
+                dto.setAbsentDays(0);
+                dto.setLeaveDays(0);
+                dto.setHalfDays(0);
+                dto.setWorkingDays(26);
+                dto.setTotalDays(30);
+                dto.setAbsentDates(new ArrayList<>());
+
+                dto.setStatus("UNPAID");
+                result.add(dto);
+            }
+        }
+
+        return result.stream()
+                .sorted((a, b) -> {
+                    String an = a.getEmployeeName() == null ? "" : a.getEmployeeName();
+                    String bn = b.getEmployeeName() == null ? "" : b.getEmployeeName();
+                    return an.compareToIgnoreCase(bn);
+                })
+                .collect(Collectors.toList());
     }
 
     /**
@@ -424,11 +661,14 @@ public class PayslipService {
         dto.setPresentDays(payslip.getPresentDays());
         dto.setAbsentDays(payslip.getAbsentDays());
         dto.setLeaveDays(payslip.getLeaveDays());
+        dto.setHalfDays(payslip.getHalfDays());
+        dto.setAbsentLeaveDeduction(payslip.getAbsentLeaveDeduction());
         dto.setStatus(payslip.getStatus().toString());
         dto.setGeneratedDate(payslip.getGeneratedDate());
         dto.setApprovedDate(payslip.getApprovedDate());
         dto.setApprovedBy(payslip.getApprovedBy());
         dto.setRemarks(payslip.getRemarks());
+        dto.setPdfFilePath(payslip.getPdfFilePath());
         return dto;
     }
 }

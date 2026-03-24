@@ -1,140 +1,77 @@
-import { useState, useEffect } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { 
-  FaHome, 
-  FaUsers, 
-  FaBuilding, 
-  FaClock, 
-  FaCalendarAlt, 
-  FaMoneyBillWave,
-  FaChartDashboard,
-  FaBars,
-  FaTimes,
-  FaUserCircle,
-  FaSignOutAlt,
-  FaChevronDown
-} from 'react-icons/fa'
-import '../styles/Navbar.css'
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Users, Menu, X } from 'lucide-react';
+import { useState } from 'react';
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
-  const [showProfileMenu, setShowProfileMenu] = useState(false)
-  const { user, logout } = useAuth()
-  const location = useLocation()
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
-  }
-
-  const navLinks = [
-    { path: '/', label: 'Home', icon: FaHome, public: true },
-    { path: '/dashboard', label: 'Dashboard', icon: FaChartDashboard, public: false },
-    { path: '/employees', label: 'Employees', icon: FaUsers, public: false },
-    { path: '/departments', label: 'Departments', icon: FaBuilding, public: false },
-    { path: '/attendance', label: 'Attendance', icon: FaClock, public: false },
-    { path: '/leaves', label: 'Leaves', icon: FaCalendarAlt, public: false },
-    { path: '/payroll', label: 'Payroll', icon: FaMoneyBillWave, public: false },
-  ]
-
-  const isActive = (path) => location.pathname === path
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
-      <div className="navbar-container">
+    <motion.nav 
+      className="navbar"
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="container navbar-content">
         <Link to="/" className="navbar-logo">
-          <div className="logo-icon">
-            <FaUsers />
-          </div>
-          <span className="logo-text">HRM<span className="logo-highlight">System</span></span>
+          <Users size={32} />
+          <span>HRM System</span>
         </Link>
+
+        <ul className="navbar-links">
+          <motion.li whileHover={{ scale: 1.05 }}>
+            <Link to="/">Home</Link>
+          </motion.li>
+          <motion.li whileHover={{ scale: 1.05 }}>
+            <Link to="/#features">Features</Link>
+          </motion.li>
+          <motion.li whileHover={{ scale: 1.05 }}>
+            <Link to="/#about">About</Link>
+          </motion.li>
+          <motion.li whileHover={{ scale: 1.05 }}>
+            <Link to="/#contact">Contact</Link>
+          </motion.li>
+        </ul>
+
+        <div className="navbar-auth">
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Link to="/login" className="btn btn-secondary">Sign In</Link>
+          </motion.div>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Link to="/register" className="btn btn-primary">Get Started</Link>
+          </motion.div>
+        </div>
 
         <button 
           className="mobile-menu-btn"
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label="Toggle menu"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          style={{ background: 'none', color: 'white' }}
         >
-          {isOpen ? <FaTimes /> : <FaBars />}
+          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
+      </div>
 
-        <div className={`navbar-menu ${isOpen ? 'active' : ''}`}>
-          <ul className="navbar-links">
-            {navLinks.map((link) => {
-              if (!link.public && !user) return null
-              const Icon = link.icon
-              return (
-                <li key={link.path}>
-                  <Link
-                    to={link.path}
-                    className={`nav-link ${isActive(link.path) ? 'active' : ''}`}
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <Icon className="nav-icon" />
-                    <span>{link.label}</span>
-                    {isActive(link.path) && <div className="active-indicator" />}
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
-
-          <div className="navbar-actions">
-            {user ? (
-              <div className="profile-dropdown">
-                <button 
-                  className="profile-btn"
-                  onClick={() => setShowProfileMenu(!showProfileMenu)}
-                >
-                  <div className="profile-avatar">
-                    {user.username.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="profile-name">{user.username}</span>
-                  <FaChevronDown className={`dropdown-arrow ${showProfileMenu ? 'open' : ''}`} />
-                </button>
-                
-                {showProfileMenu && (
-                  <div className="dropdown-menu">
-                    <div className="dropdown-header">
-                      <FaUserCircle className="dropdown-icon" />
-                      <div>
-                        <p className="dropdown-name">{user.username}</p>
-                        <p className="dropdown-role">{user.role}</p>
-                      </div>
-                    </div>
-                    <div className="dropdown-divider" />
-                    <button onClick={handleLogout} className="dropdown-item logout">
-                      <FaSignOutAlt />
-                      <span>Logout</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="auth-buttons">
-                <Link to="/login" className="btn btn-secondary btn-sm">
-                  Login
-                </Link>
-                <Link to="/register" className="btn btn-primary btn-sm">
-                  Register
-                </Link>
-              </div>
-            )}
+      {isMenuOpen && (
+        <div className="mobile-menu">
+          <div className="mobile-menu-inner">
+            <Link to="/" onClick={() => setIsMenuOpen(false)}>Home</Link>
+            <Link to="/#features" onClick={() => setIsMenuOpen(false)}>Features</Link>
+            <Link to="/#about" onClick={() => setIsMenuOpen(false)}>About</Link>
+            <Link to="/#contact" onClick={() => setIsMenuOpen(false)}>Contact</Link>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <Link to="/login" onClick={() => setIsMenuOpen(false)} className="btn btn-secondary" style={{ justifyContent: 'center' }}>
+                Sign In
+              </Link>
+              <Link to="/register" onClick={() => setIsMenuOpen(false)} className="btn btn-primary" style={{ justifyContent: 'center' }}>
+                Get Started
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
-    </nav>
-  )
-}
+      )}
+    </motion.nav>
+  );
+};
 
-export default Navbar
+export default Navbar;

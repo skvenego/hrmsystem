@@ -92,14 +92,12 @@ public class EmployeeService {
     }
 
     @Transactional
-    public void deleteEmployee(Long id) {
-        Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
-        
-        // Set status to TERMINATED instead of hard delete to preserve historical data
-        employee.setStatus(Employee.EmployeeStatus.TERMINATED);
-        employeeRepository.save(employee);
+public void deleteEmployee(Long id) {
+    if (!employeeRepository.existsById(id)) {
+        throw new RuntimeException("Employee not found");
     }
+    employeeRepository.deleteById(id);
+}
 
     private EmployeeDTO convertToDTO(Employee employee) {
         return EmployeeDTO.builder()

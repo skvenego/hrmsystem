@@ -72,11 +72,12 @@ const Dashboard = () => {
       }
 
       // Fetch payroll data for current month
-      const payrollRes = await fetch('/api/payroll', { headers });
+      const currentMonth = new Date().getMonth() + 1;
+      const currentYear = new Date().getFullYear();
+      const payrollRes = await fetch(`/api/payroll/list?t=${Date.now()}`, { headers });
       if (payrollRes.ok) {
         const payroll = await payrollRes.json();
-        const currentMonth = new Date().getMonth() + 1;
-        const currentYear = new Date().getFullYear();
+        // Filter by current month and year
         const currentMonthPayroll = payroll.filter(p => p.month === currentMonth && p.year === currentYear);
         const totalPayroll = currentMonthPayroll.reduce((sum, p) => sum + (p.netSalary || 0), 0);
         setStats(prev => ({ ...prev, monthlyPayroll: totalPayroll }));
