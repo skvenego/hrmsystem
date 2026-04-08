@@ -1,0 +1,17 @@
+/* HRM System - Main CSS Imports */
+/* Based on Backend: Employee, Department, User, Leave, Attendance, Payroll, Payslip */
+
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* Core Design System - Based on Java Backend Entities */
+@import url('hrm-design-system.css');
+
+/* Legacy Module Imports (to be refactored) */
+@import url('modules/auth.css');
+@import url('modules/dashboard.css');
+@import url('modules/employee.css');
+@import url('modules/department.css');
+@import url('modules/attendance.css');
+@import url('modules/payroll.css');
+@import url('modules/profile.css');

@@ -1,0 +1,95 @@
+<!-- Shift Management Section Module -->
+<!-- Backend: Shift.java - id, name, startTime, endTime, workingHours, description, isDefault, active -->
+<div class="header">
+    <h1>⏰ Shift Management</h1>
+    <p>Configure office shifts and working hours</p>
+</div>
+
+<div class="card">
+    <h2>📋 Shift List</h2>
+    <div class="actions-bar">
+        <button onclick="openShiftModal()">➕ Add New Shift</button>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table" id="shiftTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Shift Name</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Working Hours</th>
+                    <th>Default</th>
+                    <th>Status</th>
+                    <th>Description</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="shiftList">
+                <!-- Loaded dynamically from Shift.java -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Shift Modal -->
+<div id="shiftModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="shiftModalTitle">➕ Add Shift</h2>
+            <button class="close-btn" onclick="closeShiftModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="shiftForm" onsubmit="saveShift(event)">
+                <input type="hidden" id="shiftId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Shift Name *</label>
+                        <input type="text" id="shiftName" name="name" required placeholder="e.g., Morning Shift">
+                    </div>
+                    <div class="form-group">
+                        <label>Working Hours *</label>
+                        <input type="number" id="shiftWorkingHours" name="workingHours" step="0.5" required placeholder="8.0">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Time *</label>
+                        <input type="time" id="shiftStartTime" name="startTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label>End Time *</label>
+                        <input type="time" id="shiftEndTime" name="endTime" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="shiftDescription" name="description" rows="2" placeholder="Enter shift description"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="shiftIsDefault" name="isDefault">
+                            Set as Default Shift
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="shiftActive" name="active" checked>
+                            Active
+                        </label>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit">💾 Save Shift</button>
+                    <button type="button" onclick="closeShiftModal()" class="btn-secondary">❌ Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Load shifts when page loads
+    loadShifts();
+</script>

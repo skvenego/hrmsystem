@@ -1,0 +1,412 @@
+/* Department Module - Professional Styles */
+/* HRM System Department Management */
+
+/* Department Form */
+#departmentForm {
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* Department Stats Grid */
+.department-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-5);
+  margin-bottom: var(--space-8);
+}
+
+.department-stats .stat-card {
+  text-align: center;
+  padding: var(--space-5);
+}
+
+.department-stats .stat-card::before {
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+}
+
+/* Document Module Styles */
+/* HRM System Document Management */
+
+.document-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* File Upload Area */
+.file-upload-area {
+  border: 2px dashed var(--gray-300);
+  border-radius: var(--radius-xl);
+  padding: var(--space-10);
+  text-align: center;
+  background: linear-gradient(135deg, var(--gray-50) 0%, var(--bg-primary) 100%);
+  transition: all var(--transition-base);
+  cursor: pointer;
+}
+
+.file-upload-area:hover {
+  border-color: var(--primary-light);
+  background: var(--gray-50);
+  box-shadow: var(--shadow-md);
+}
+
+.file-upload-area input[type="file"] {
+  display: none;
+}
+
+.file-upload-area .upload-icon {
+  font-size: 3rem;
+  margin-bottom: var(--space-4);
+  color: var(--gray-400);
+}
+
+.file-upload-area:hover .upload-icon {
+  color: var(--primary-light);
+}
+
+/* File Info Text */
+.file-info {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  margin-top: var(--space-4);
+}
+
+.file-info small {
+  display: block;
+  margin: var(--space-1) 0;
+}
+
+/* Document Filters */
+.document-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+  padding: var(--space-4);
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  flex-wrap: wrap;
+}
+
+.document-filters select {
+  flex: 1;
+  min-width: 180px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  background: var(--bg-primary);
+}
+
+.document-filters button {
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.875rem;
+}
+
+/* Read-only Field Styling */
+.readonly-field {
+  background: var(--gray-100) !important;
+  color: var(--text-muted) !important;
+  cursor: not-allowed !important;
+  border-color: var(--gray-200) !important;
+}
+
+/* Document List Table Actions */
+#documentsList button {
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.75rem;
+  margin-right: var(--space-1);
+}
+
+/* Document Type Badges */
+.doc-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.doc-type-badge.pdf {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.doc-type-badge.doc,
+.doc-type-badge.docx {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.doc-type-badge.jpg,
+.doc-type-badge.jpeg,
+.doc-type-badge.png {
+  background: #d1fae5;
+  color: #059669;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .document-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .document-filters select {
+    min-width: 100%;
+  }
+  
+  .department-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* View Button */
+.btn-view {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.btn-view:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  transform: translateY(-1px);
+}
+
+/* Department View Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.department-view-modal {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.department-view-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 2px solid #f1f5f9;
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: white;
+  border-radius: 16px 16px 0 0;
+}
+
+.department-view-modal .modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.department-view-modal .close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.department-view-modal .close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.department-view-modal .modal-body {
+  padding: 2rem;
+}
+
+.dept-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.dept-avatar-large {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.dept-title h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  color: #1e293b;
+}
+
+.dept-id-badge {
+  background: #e0e7ff;
+  color: #3730a3;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-right: 0.5rem;
+}
+
+.employee-count-badge {
+  background: #dcfce7;
+  color: #166534;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.info-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.info-section {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.info-section h4 {
+  margin: 0 0 1rem 0;
+  color: #059669;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.info-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.info-item label {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-item span {
+  font-size: 0.95rem;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.count-highlight {
+  color: #059669;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.department-view-modal .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  border-top: 2px solid #f1f5f9;
+  background: #f8fafc;
+  border-radius: 0 0 16px 16px;
+}
+
+.btn-secondary {
+  background: white;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #f1f5f9;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #047857, #059669);
+  transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dept-profile-header {
+    flex-direction: column;
+    text-align: center;
+  }
+}

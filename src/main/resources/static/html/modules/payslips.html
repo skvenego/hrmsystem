@@ -1,0 +1,50 @@
+<!-- Payslips Section Module -->
+<!-- Backend: Payslip.java - id, employee, monthYear, basicSalary, da, hra, otherAllowance, grossSalary, pf, esi, incomeTax, otherDeduction, totalDeduction, netSalary, totalDays, workingDays, presentDays, absentDays, leaveDays, halfDays, status (DRAFT, GENERATED, APPROVED, SENT, REJECTED), generatedDate, approvedDate, sentDate, approvedBy, remarks, pdfGenerated -->
+<div class="header">
+    <h1>💰 My Payslips</h1>
+    <p>View and download your salary slips</p>
+</div>
+
+<div class="card">
+    <h2>📋 Payslip History</h2>
+    <div class="actions-bar">
+        <select id="payslipYearFilter" class="filter-select">
+            <option value="">All Years</option>
+        </select>
+        <button onclick="refreshPayslips()">🔄 Refresh</button>
+    </div>
+    <table class="data-table" id="payslipsTable">
+        <thead>
+            <tr>
+                <th>Month/Year</th>
+                <th>Basic Salary</th>
+                <th>Gross Salary</th>
+                <th>Total Deductions</th>
+                <th>Net Salary</th>
+                <th>Working Days</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="payslipsList">
+            <!-- Loaded dynamically from Payslip.java -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Payslip Detail Modal -->
+<div id="payslipModal" class="modal">
+    <div class="modal-content payslip-modal">
+        <div class="modal-header">
+            <h2>📄 Salary Slip</h2>
+            <button class="close-btn" onclick="closePayslipModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="payslipDetails">
+            <!-- Payslip details loaded dynamically -->
+        </div>
+        <div class="modal-footer">
+            <button onclick="downloadPayslipPdf()" id="downloadPayslipBtn" style="display: none;">📥 Download PDF</button>
+            <button onclick="closePayslipModal()" class="btn-secondary">Close</button>
+        </div>
+    </div>
+</div>

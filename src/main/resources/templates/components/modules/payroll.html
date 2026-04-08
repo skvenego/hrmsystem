@@ -1,0 +1,124 @@
+<!-- Payroll Module: Payroll Management Section -->
+<!-- Corresponds to: PayrollController.java, PayrollService.java, Payroll.java, PayrollApprovalController.java -->
+<div id="payrollSection" class="content-section">
+    <div class="header">
+        <h1>Payroll Management</h1>
+        <p>Manage employee payroll and salary processing</p>
+    </div>
+    
+    <div class="card">
+        <h2>💰 Generate/Edit Payroll</h2>
+        <form id="payrollForm" onsubmit="savePayroll(event)">
+            <input type="hidden" id="payrollId">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Employee *</label>
+                    <select id="payrollEmployeeId" required>
+                        <option value="">Select Employee</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Pay Period *</label>
+                    <input type="month" id="payPeriod" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Basic Salary *</label>
+                    <input type="number" id="payrollBasicSalary" placeholder="35000" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>HRA</label>
+                    <input type="number" id="payrollHra" placeholder="8750" min="0">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>DA</label>
+                    <input type="number" id="payrollDa" placeholder="1750" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Conveyance</label>
+                    <input type="number" id="payrollConveyance" placeholder="0" min="0">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Medical</label>
+                    <input type="number" id="payrollMedical" placeholder="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Special Allowance</label>
+                    <input type="number" id="payrollSpecial" placeholder="0" min="0">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>PF</label>
+                    <input type="number" id="payrollPf" placeholder="4200" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Tax (TDS)</label>
+                    <input type="number" id="payrollTax" placeholder="500" min="0">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Other Deductions</label>
+                    <input type="number" id="payrollOtherDeductions" placeholder="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Net Salary</label>
+                    <input type="number" id="payrollNetSalary" placeholder="45000" min="0" readonly>
+                </div>
+            </div>
+            
+            <div style="margin-top: 15px;">
+                <button type="submit">💾 Save Payroll</button>
+                <button type="button" onclick="calculateNetSalary()" style="background: #17a2b8; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-left: 10px;">🧮 Calculate</button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="card">
+        <h2>📋 Payroll Records</h2>
+        <div class="search-filter-bar">
+            <input type="text" id="payrollSearch" placeholder="Search by employee..." class="search-input">
+            <input type="month" id="payrollMonthFilter" class="filter-select">
+            <select id="payrollStatusFilter" class="filter-select">
+                <option value="">All Status</option>
+                <option value="DRAFT">Draft</option>
+                <option value="PENDING_APPROVAL">Pending Approval</option>
+                <option value="APPROVED">Approved</option>
+                <option value="PAID">Paid</option>
+            </select>
+            <button onclick="searchPayroll()" class="search-btn">🔍 Search</button>
+            <button onclick="generatePayroll()">🔄 Generate</button>
+            <button onclick="exportPayroll()">📥 Export</button>
+        </div>
+        
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Pay Period</th>
+                    <th>Basic Salary</th>
+                    <th>HRA</th>
+                    <th>DA</th>
+                    <th>Deductions</th>
+                    <th>Net Salary</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="payrollList">
+                <!-- Dynamically populated -->
+            </tbody>
+        </table>
+    </div>
+</div>

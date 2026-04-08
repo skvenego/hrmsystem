@@ -1,0 +1,105 @@
+<!-- Payslip Module: Payslip Management Sections -->
+<!-- Corresponds to: PayslipController.java, PayslipService.java, Payslip.java -->
+
+<!-- Employee Payslips View -->
+<div id="payslipsSection" class="content-section">
+    <div class="header">
+        <h1>My Payslips</h1>
+        <p>View and download your monthly payslips</p>
+    </div>
+    
+    <div class="card">
+        <h2>💰 Payslip History</h2>
+        <div class="search-filter-bar">
+            <input type="month" id="myPayslipMonthFilter" class="filter-select">
+            <input type="number" id="myPayslipYearFilter" placeholder="Year" class="filter-select" min="2020">
+            <button onclick="searchMyPayslips()" class="search-btn">🔍 Search</button>
+        </div>
+        
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th>Year</th>
+                    <th>Basic Salary</th>
+                    <th>Gross Salary</th>
+                    <th>Deductions</th>
+                    <th>Net Salary</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="myPayslipsList">
+                <!-- Dynamically populated -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Admin Payslips View -->
+<div id="adminPayslipsSection" class="content-section">
+    <div class="header">
+        <h1>All Payslips</h1>
+        <p>Generate and manage employee payslips</p>
+    </div>
+    
+    <div class="card">
+        <h2>🔄 Generate Payslips</h2>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Month</label>
+                <input type="month" id="bulkPayslipMonth">
+            </div>
+            <div class="form-group">
+                <label>&nbsp;</label>
+                <button onclick="generateBulkPayslips()">🔄 Generate All</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h2>📋 All Payslips</h2>
+        <div class="search-filter-bar">
+            <input type="text" id="payslipSearch" placeholder="Search by employee..." class="search-input">
+            <input type="month" id="payslipMonthFilter" class="filter-select">
+            <input type="number" id="payslipYearFilter" placeholder="Year" class="filter-select" min="2020">
+            <button onclick="searchPayslips()" class="search-btn">🔍 Search</button>
+            <button onclick="exportAllPayslips()">📥 Export All</button>
+        </div>
+        
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Month</th>
+                    <th>Year</th>
+                    <th>Basic Salary</th>
+                    <th>Gross Salary</th>
+                    <th>Net Salary</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="adminPayslipsList">
+                <!-- Dynamically populated -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Payslip View Modal -->
+<div id="payslipModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>📄 Payslip</h2>
+            <button onclick="closePayslipModal()" class="close-btn">&times;</button>
+        </div>
+        <div id="payslipContent" class="modal-body">
+            <!-- Payslip content populated dynamically -->
+        </div>
+        <div class="modal-footer">
+            <button onclick="downloadPayslipFromModal()">📥 Download</button>
+            <button onclick="emailPayslipFromModal()">📧 Email</button>
+        </div>
+    </div>
+</div>

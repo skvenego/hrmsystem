@@ -1,0 +1,89 @@
+<!-- Departments Section Module -->
+<!-- Backend: Department.java - id, name, description, headOfDepartment, createdDate, employeeCount -->
+<div class="header">
+    <h1>🏢 Department Management</h1>
+    <p>Manage organizational departments</p>
+</div>
+
+<div class="card" id="addDepartmentCard" style="display: none;">
+    <h2>➕ Add Department</h2>
+    <form id="departmentForm" onsubmit="saveDepartment(event)">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Department Name *</label>
+                <input type="text" id="deptName" name="name" placeholder="e.g., Information Technology" required>
+            </div>
+            <div class="form-group">
+                <label>Head of Department</label>
+                <input type="text" id="headOfDepartment" name="headOfDepartment" placeholder="e.g., John Doe">
+            </div>
+        </div>
+        <div class="form-group full-width">
+            <label>Description</label>
+            <textarea id="deptDescription" name="description" placeholder="Enter department description" rows="3"></textarea>
+        </div>
+        <div class="form-actions" style="text-align: center; margin-top: 20px;">
+            <button type="submit">💾 Save Department</button>
+            <button type="button" onclick="hideAddDepartmentForm()" class="btn-secondary">❌ Cancel</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <h2>📋 Department List</h2>
+    <div class="actions-bar">
+        <input type="text" id="departmentSearch" placeholder="Search departments..." class="search-input">
+        <button onclick="searchDepartments()">🔍 Search</button>
+        <button onclick="showAddDepartmentForm()">➕ Add Department</button>
+        <button onclick="refreshDepartments()">🔄 Refresh</button>
+    </div>
+    <table class="data-table" id="departmentsTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Head</th>
+                <th>Created Date</th>
+                <th>Employees</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="departmentsList">
+            <!-- Loaded dynamically from Department.java -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Edit Department Modal -->
+<div id="editDepartmentModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>✏️ Edit Department</h2>
+            <button class="close-btn" onclick="closeEditDepartmentModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="editDepartmentForm" onsubmit="updateDepartment(event)">
+                <input type="hidden" id="editDepartmentId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Department Name *</label>
+                        <input type="text" id="editDeptName" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Head of Department</label>
+                        <input type="text" id="editHeadOfDepartment" name="headOfDepartment">
+                    </div>
+                </div>
+                <div class="form-group full-width">
+                    <label>Description</label>
+                    <textarea id="editDeptDescription" name="description" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit">💾 Save Changes</button>
+                    <button type="button" onclick="closeEditDepartmentModal()" class="btn-secondary">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

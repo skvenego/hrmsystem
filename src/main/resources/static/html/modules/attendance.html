@@ -1,0 +1,136 @@
+<!-- Attendance Section Module -->
+<!-- Backend: Attendance.java - id, employee, date, checkInTime, checkOutTime, workingHours, overtimeHours, status (PRESENT, ABSENT, HALF_DAY, LATE, ON_LEAVE), remarks -->
+<div class="header">
+    <h1>📅 Attendance Management</h1>
+    <p>Track employee attendance and working hours</p>
+</div>
+
+<div class="card">
+    <h2>📊 Daily Attendance</h2>
+    <div class="actions-bar">
+        <input type="date" id="attendanceDate" class="filter-select" onchange="loadAttendanceData()">
+        <button onclick="markAllPresent()">✅ Mark All Present</button>
+        <button onclick="exportAttendance()">📥 Export</button>
+        <select id="shiftSelect" class="filter-select" onchange="onShiftChange()">
+            <option value="">⏰ Select Shift</option>
+        </select>
+        <button onclick="openQuickAddShiftModal()">➕ Add Shift</button>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table" id="attendanceTable">
+            <thead>
+                <tr>
+                    <th>Employee ID</th>
+                    <th>Check In</th>
+                    <th>Check Out</th>
+                    <th>Date</th>
+                    <th>OT Hours</th>
+                    <th>Remarks</th>
+                    <th>Status</th>
+                    <th>Working Hours</th>
+                    <th>Employee Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="attendanceList">
+                <!-- Loaded dynamically from Attendance.java -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Quick Add Shift Modal -->
+<div id="quickAddShiftModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>➕ Add New Shift</h2>
+            <button class="close-btn" onclick="closeQuickAddShiftModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="quickAddShiftForm" onsubmit="saveQuickShift(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Shift Name *</label>
+                        <input type="text" id="quickShiftName" name="name" required placeholder="e.g., Morning Shift">
+                    </div>
+                    <div class="form-group">
+                        <label>Working Hours *</label>
+                        <input type="number" id="quickShiftWorkingHours" name="workingHours" step="0.5" required placeholder="8.0">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Time *</label>
+                        <input type="time" id="quickShiftStartTime" name="startTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label>End Time *</label>
+                        <input type="time" id="quickShiftEndTime" name="endTime" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="quickShiftDescription" name="description" rows="2" placeholder="Enter shift description"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit">💾 Save Shift</button>
+                    <button type="button" onclick="closeQuickAddShiftModal()" class="btn-secondary">❌ Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Attendance Modal -->
+<div id="editAttendanceModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>✏️ Edit Attendance</h2>
+            <button class="close-btn" onclick="closeEditAttendanceModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="editAttendanceForm" onsubmit="updateAttendance(event)">
+                <input type="hidden" id="editAttendanceId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Check In Time</label>
+                        <input type="time" id="editCheckInTime" name="checkInTime">
+                    </div>
+                    <div class="form-group">
+                        <label>Check Out Time</label>
+                        <input type="time" id="editCheckOutTime" name="checkOutTime">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Status *</label>
+                        <select id="editAttendanceStatus" name="status" required>
+                            <option value="PRESENT">Present</option>
+                            <option value="ABSENT">Absent</option>
+                            <option value="HALF_DAY">Half Day</option>
+                            <option value="LATE">Late</option>
+                            <option value="ON_LEAVE">On Leave</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Working Hours</label>
+                        <input type="number" id="editWorkingHours" name="workingHours" step="0.1" placeholder="Auto calculated">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Remarks</label>
+                    <textarea id="editRemarks" name="remarks" rows="2" placeholder="Enter remarks"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit">💾 Save Changes</button>
+                    <button type="button" onclick="closeEditAttendanceModal()" class="btn-secondary">❌ Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize attendance page with today's date and data
+    initAttendancePage();
+</script>

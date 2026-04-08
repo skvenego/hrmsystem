@@ -1,0 +1,66 @@
+<!-- Dashboard Layout: Sidebar & Main Content Structure -->
+<!-- Corresponds to: Main application layout, navigation -->
+<div id="dashboardPage" class="page">
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>HRM System</h2>
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">S</div>
+                    <div>
+                        <div id="userName">Sachin</div>
+                        <div id="userRole">Employee</div>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="nav-menu">
+                <div class="nav-section">
+                    <h3>Menu</h3>
+                    <!-- Employee Menu -->
+                    <ul id="employeeMenu">
+                        <li><a href="#" onclick="showSection('dashboard')">📊 Dashboard</a></li>
+                        <li><a href="#" onclick="showSection('leave')">📝 Leave Request</a></li>
+                        <li><a href="#" onclick="showSection('payslips')">💰 My Payslips</a></li>
+                        <li><a href="#" onclick="showSection('profile')">👤 My Profile</a></li>
+                        <li><a href="#" onclick="showSection('settings')">⚙️ Settings</a></li>
+                    </ul>
+                    <!-- Admin Menu -->
+                    <ul id="adminMenu" style="display: none;">
+                        <li><a href="#" onclick="showSection('dashboard')">📊 Admin Dashboard</a></li>
+                        <li><a href="#" onclick="showSection('employees')">👥 Employees</a></li>
+                        <li><a href="#" onclick="showSection('departments')">🏢 Departments</a></li>
+                        <li><a href="#" onclick="showSection('attendance')">📅 Attendance</a></li>
+                        <li><a href="#" onclick="showSection('leaveManagement')">📝 Leave Management</a></li>
+                        <li><a href="#" onclick="showSection('payroll')">💰 Payroll</a></li>
+                        <li><a href="#" onclick="showSection('adminPayslips')">📄 Payslips</a></li>
+                        <li><a href="#" onclick="showSection('documents')">📁 Documents</a></li>
+                        <li><a href="#" onclick="showSection('profile')">👤 My Profile</a></li>
+                        <li><a href="#" onclick="showSection('settings')">⚙️ Settings</a></li>
+                    </ul>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button onclick="logout()">🚪 Logout</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1>Welcome back, <span id="dashboardUserName">Sachin</span>! 👋</h1>
+                <p>Here's your personal overview for today.</p>
+            </div>
+            
+            <!-- Dynamic Sections Loaded Here -->
+            <div id="contentSections">
+                <!-- Dashboard Section -->
+                <div id="dashboardSection" class="content-section active">
+                    <!-- Content loaded from dashboard.html -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

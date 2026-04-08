@@ -1,0 +1,196 @@
+/* Payroll & Payslip Module - Professional Styles */
+/* HRM System Payroll Management */
+
+/* Payroll Form */
+#payrollForm {
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.payroll-form .form-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-5);
+}
+
+/* Payroll Status Badges */
+.badge.draft {
+  background: var(--gray-100);
+  color: var(--gray-700);
+}
+
+.badge.pending_approval {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+
+.badge.approved {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.badge.rejected {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+.badge.paid {
+  background: var(--info-light);
+  color: var(--info);
+}
+
+/* Payslip Modal Styling */
+#payslipModal .modal-content {
+  max-width: 700px;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.payslip-details {
+  padding: var(--space-8);
+  background: var(--bg-primary);
+}
+
+.payslip-details h3 {
+  text-align: center;
+  margin-bottom: var(--space-6);
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  border-bottom: 3px solid var(--accent);
+  padding-bottom: var(--space-4);
+}
+
+.payslip-header {
+  margin-bottom: var(--space-6);
+  padding: var(--space-5);
+  background: linear-gradient(135deg, var(--gray-50) 0%, var(--bg-primary) 100%);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+}
+
+.payslip-header p {
+  margin: var(--space-2) 0;
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+}
+
+.payslip-header strong {
+  color: var(--text-primary);
+}
+
+.payslip-body {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-8);
+  margin-bottom: var(--space-6);
+}
+
+.earnings, .deductions {
+  background: linear-gradient(135deg, var(--gray-50) 0%, var(--bg-primary) 100%);
+  padding: var(--space-6);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--gray-200);
+}
+
+.earnings h4, .deductions h4 {
+  margin-bottom: var(--space-4);
+  color: var(--text-primary);
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.earnings h4 {
+  color: var(--success);
+}
+
+.deductions h4 {
+  color: var(--danger);
+}
+
+.earnings p, .deductions p {
+  display: flex;
+  justify-content: space-between;
+  margin: var(--space-3) 0;
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px dashed var(--gray-200);
+}
+
+.earnings p:last-child,
+.deductions p:last-child {
+  border-bottom: none;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 1rem;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 2px solid var(--gray-300);
+}
+
+.payslip-footer {
+  border-top: 3px solid var(--accent);
+  padding-top: var(--space-6);
+  text-align: center;
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+  margin: 0 calc(-1 * var(--space-8)) calc(-1 * var(--space-8));
+  padding: var(--space-6) var(--space-8);
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+}
+
+.payslip-footer h4 {
+  font-size: 1.5rem;
+  color: white;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.payslip-footer h4 span {
+  color: var(--accent-light);
+}
+
+/* Payroll Summary Cards */
+.payroll-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-5);
+  margin-bottom: var(--space-8);
+}
+
+.payroll-summary .stat-card {
+  text-align: center;
+}
+
+.payroll-summary .stat-card.positive {
+  border-left: 4px solid var(--success);
+}
+
+.payroll-summary .stat-card.negative {
+  border-left: 4px solid var(--danger);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .payslip-body {
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+  }
+  
+  .payroll-form .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .payslip-details {
+    padding: var(--space-5);
+  }
+  
+  .payslip-footer {
+    margin: 0 calc(-1 * var(--space-5)) calc(-1 * var(--space-5));
+    padding: var(--space-5);
+  }
+}

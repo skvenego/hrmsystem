@@ -1,0 +1,192 @@
+<!-- Employees Section Module -->
+<!-- Backend: Employee.java - id, firstName, lastName, email, phone, department, designation, joiningDate, salary, basicSalary, da, hra, otherAllowance, status, gender, address, pf, tax -->
+<div class="header">
+    <h1>Employee Management</h1>
+    <p>Manage your workforce efficiently</p>
+</div>
+
+<div class="card" id="addEmployeeCard" style="display: none;">
+    <h2>➕ Add Employee</h2>
+    <form id="addEmployeeForm" class="employee-form" onsubmit="addEmployee(event)">
+        <div class="form-row">
+            <div class="form-group">
+                <label>First Name *</label>
+                <input type="text" id="firstName" name="firstName" placeholder="Enter first name" required>
+            </div>
+            <div class="form-group">
+                <label>Last Name *</label>
+                <input type="text" id="lastName" name="lastName" placeholder="Enter last name" required>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Email *</label>
+                <input type="email" id="email" name="email" placeholder="employee@company.com" required>
+            </div>
+            <div class="form-group">
+                <label>Phone Number</label>
+                <input type="tel" id="phone" name="phone" placeholder="+91 9876543210">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Gender</label>
+                <select id="gender" name="gender">
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Joining Date *</label>
+                <input type="date" id="joiningDate" name="joiningDate" required>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Department *</label>
+                <select id="department" name="department" required>
+                    <option value="">Select Department</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Designation *</label>
+                <input type="text" id="designation" name="designation" placeholder="e.g., Software Engineer" required>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Salary *</label>
+                <input type="number" id="salary" name="salary" placeholder="50000" min="0" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <select id="status" name="status">
+                    <option value="ACTIVE">Active</option>
+                    <option value="INACTIVE">Inactive</option>
+                    <option value="ON_LEAVE">On Leave</option>
+                    <option value="TERMINATED">Terminated</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Probation Period (Months)</label>
+                <input type="number" id="probationPeriodMonths" name="probationPeriodMonths" placeholder="3" min="0" max="24" value="0">
+                <small>Enter 0 if no probation period</small>
+            </div>
+        </div>
+        
+        <h3 style="margin-top: 20px; margin-bottom: 15px; color: var(--primary);">Salary Components</h3>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Basic Salary</label>
+                <input type="number" id="basicSalary" name="basicSalary" placeholder="25000" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>DA (Dearness Allowance)</label>
+                <input type="number" id="da" name="da" placeholder="5000" min="0" step="0.01">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>HRA (House Rent Allowance)</label>
+                <input type="number" id="hra" name="hra" placeholder="10000" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Other Allowance</label>
+                <input type="number" id="otherAllowance" name="otherAllowance" placeholder="10000" min="0" step="0.01">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>PF (Provident Fund)</label>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="calculatePf" name="calculatePf" onchange="togglePfCalculation()">
+                    <label for="calculatePf">Calculate PF (12% of Basic)</label>
+                </div>
+                <input type="number" id="pf" name="pf" placeholder="1800" min="0" step="0.01" disabled>
+            </div>
+            <div class="form-group">
+                <label>Tax</label>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="calculateTax" name="calculateTax" onchange="toggleTaxCalculation()">
+                    <label for="calculateTax">Calculate Tax (10% of Salary)</label>
+                </div>
+                <input type="number" id="tax" name="tax" placeholder="500" min="0" step="0.01" disabled>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group full-width">
+                <label>Address</label>
+                <textarea id="address" name="address" placeholder="Enter employee address" rows="3"></textarea>
+            </div>
+        </div>
+        
+        <div class="form-actions" style="margin-top: 20px; text-align: center;">
+            <button type="submit">➕ Add Employee</button>
+            <button type="button" onclick="clearEmployeeForm()" class="btn-secondary">🔄 Clear</button>
+            <button type="button" onclick="hideAddEmployeeForm()" class="btn-secondary">❌ Cancel</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <h2>🔍 Search & Filter Employees</h2>
+    <div class="search-filter-bar">
+        <input type="text" id="employeeSearch" placeholder="Search by name, email, department..." class="search-input">
+        <select id="departmentFilter" class="filter-select">
+            <option value="">All Departments</option>
+        </select>
+        <select id="statusFilter" class="filter-select">
+            <option value="">All Status</option>
+            <option value="ACTIVE">Active</option>
+            <option value="INACTIVE">Inactive</option>
+            <option value="ON_LEAVE">On Leave</option>
+            <option value="TERMINATED">Terminated</option>
+        </select>
+        <button onclick="searchEmployees()" class="search-btn">🔍 Search</button>
+        <button onclick="showAddEmployeeForm()" class="btn btn-primary">➕ Add New</button>
+    </div>
+    
+    <table class="data-table" id="employeesTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Department</th>
+                <th>Designation</th>
+                <th>Salary</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="employeesList">
+            <!-- Loaded dynamically from Employee.java -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Edit Employee Modal -->
+<div id="editEmployeeModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>✏️ Edit Employee</h2>
+            <button class="close-btn" onclick="closeEditEmployeeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="editEmployeeForm" class="employee-form" onsubmit="updateEmployee(event)">
+                <input type="hidden" id="editEmployeeId">
+                <!-- Form fields populated dynamically to match Employee.java -->
+            </form>
+        </div>
+    </div>
+</div>
