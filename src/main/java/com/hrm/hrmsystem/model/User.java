@@ -34,7 +34,8 @@ public class User {
     private LocalDateTime lastLogin;
 
     public enum Role {
-        ADMIN, HR, MANAGER, EMPLOYEE
+        ROLE_ADMIN, ROLE_HR, ROLE_MANAGER, ROLE_EMPLOYEE,
+        ROLE_ACCOUNTANT, ROLE_DIRECTOR
     }
 
     // Default Constructor

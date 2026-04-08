@@ -41,8 +41,14 @@ public class Payroll {
     @Enumerated(EnumType.STRING)
     private PayrollStatus status;
 
+    // Dual approval fields
+    private Boolean accountantApproved = false;
+    private Boolean directorApproved = false;
+    private Boolean payslipGenerated = false;
+    private LocalDate finalApprovalDate;
+
     public enum PayrollStatus {
-        PENDING, PROCESSED, PAID
+        PENDING, PROCESSED, PENDING_APPROVAL, PAID
     }
 
     // Default Constructor
@@ -93,6 +99,10 @@ public class Payroll {
     public Double getNetSalary() { return netSalary; }
     public LocalDate getPaymentDate() { return paymentDate; }
     public PayrollStatus getStatus() { return status; }
+    public Boolean getAccountantApproved() { return accountantApproved; }
+    public Boolean getDirectorApproved() { return directorApproved; }
+    public Boolean getPayslipGenerated() { return payslipGenerated; }
+    public LocalDate getFinalApprovalDate() { return finalApprovalDate; }
 
     // Setters
     public void setId(Long id) { this.id = id; }
@@ -113,6 +123,10 @@ public class Payroll {
     public void setNetSalary(Double netSalary) { this.netSalary = netSalary; }
     public void setPaymentDate(LocalDate paymentDate) { this.paymentDate = paymentDate; }
     public void setStatus(PayrollStatus status) { this.status = status; }
+    public void setAccountantApproved(Boolean accountantApproved) { this.accountantApproved = accountantApproved; }
+    public void setDirectorApproved(Boolean directorApproved) { this.directorApproved = directorApproved; }
+    public void setPayslipGenerated(Boolean payslipGenerated) { this.payslipGenerated = payslipGenerated; }
+    public void setFinalApprovalDate(LocalDate finalApprovalDate) { this.finalApprovalDate = finalApprovalDate; }
 
     // Builder
     public static Builder builder() {
