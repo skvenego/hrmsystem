@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Employee - HRM System</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/pages.css">
+    <style>
+        .form-section { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb; }
+        .form-section h3 { color: #4f46e5; margin-bottom: 1rem; font-size: 1.1rem; }
+        .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        @media (max-width: 1024px) { .form-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
+        .salary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+        @media (max-width: 1024px) { .salary-grid { grid-template-columns: repeat(2, 1fr); } }
+        .btn-group { display: flex; gap: 1rem; margin-top: 2rem; }
+        .btn-secondary { padding: 0.625rem 1.5rem; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header"><h2>HRM System</h2></div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>Dashboard</a>
+                <a href="employees.html" class="nav-item active"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Employees</a>
+                <a href="departments.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"></path><path d="M5 21V7l8-4 8 4v14"></path><path d="M9 21v-6h6v6"></path></svg>Departments</a>
+                <a href="attendance.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" x2="16" y1="2" y2="6"></line><line x1="8" x2="8" y1="2" y2="6"></line><line x1="3" x2="21" y1="10" y2="10"></line></svg>Attendance</a>
+                <a href="leave.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" x2="8" y1="13" y2="13"></line><line x1="16" x2="8" y1="17" y2="17"></line></svg>Leave</a>
+                <a href="payroll.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="2" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>Payroll</a>
+                <a href="payslips.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" x2="8" y1="13" y2="13"></line><line x1="16" x2="8" y1="17" y2="17"></line></svg>Payslips</a>
+                <a href="profile.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>Profile</a>
+                <a href="settings.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Settings</a>
+            </nav>
+            <div class="sidebar-footer"><button onclick="logout()" class="logout-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>Logout</button></div>
+        </aside>
+
+        <main class="main-content">
+            <header class="dashboard-header">
+                <h1 id="page-title">Add New Employee</h1>
+                <a href="employees.html" class="btn-secondary">← Back to List</a>
+            </header>
+
+            <div class="page-content">
+                <div class="card">
+                    <form id="employee-form">
+                        <!-- Personal Information -->
+                        <div class="form-section">
+                            <h3>👤 Personal Information</h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">First Name *</label>
+                                    <input type="text" name="firstName" id="firstName" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Last Name *</label>
+                                    <input type="text" name="lastName" id="lastName" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Email *</label>
+                                    <input type="email" name="email" id="email" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Phone *</label>
+                                    <input type="tel" name="phone" id="phone" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Gender *</label>
+                                    <select name="gender" id="gender" class="form-input" required>
+                                        <option value="">Select Gender</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Joining Date *</label>
+                                    <input type="date" name="joiningDate" id="joiningDate" class="form-input" required>
+                                </div>
+                                <div class="form-group" style="grid-column: span 3;">
+                                    <label class="form-label">Address</label>
+                                    <textarea name="address" id="address" class="form-input" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Employment Details -->
+                        <div class="form-section">
+                            <h3>💼 Employment Details</h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Department *</label>
+                                    <select name="departmentId" id="departmentId" class="form-input" required>
+                                        <option value="">Select Department</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Designation *</label>
+                                    <input type="text" name="designation" id="designation" class="form-input" required placeholder="e.g., Developer, Manager">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Shift</label>
+                                    <select name="shiftId" id="shiftId" class="form-input">
+                                        <option value="">Select Shift</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Status</label>
+                                    <select name="status" id="status" class="form-input">
+                                        <option value="ACTIVE">Active</option>
+                                        <option value="ON_LEAVE">On Leave</option>
+                                        <option value="INACTIVE">Inactive</option>
+                                        <option value="PROBATION">Probation</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Probation Period (Months)</label>
+                                    <input type="number" name="probationPeriodMonths" id="probationPeriodMonths" class="form-input" min="0" value="3">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Salary Details -->
+                        <div class="form-section">
+                            <h3>💰 Salary Details</h3>
+                            <div class="salary-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Basic Salary *</label>
+                                    <input type="number" name="basicSalary" id="basicSalary" class="form-input" required step="0.01" min="0" onchange="calculateTotal()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">DA (Dearness Allowance)</label>
+                                    <input type="number" name="da" id="da" class="form-input" step="0.01" min="0" value="0" onchange="calculateTotal()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">HRA</label>
+                                    <input type="number" name="hra" id="hra" class="form-input" step="0.01" min="0" value="0" onchange="calculateTotal()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Other Allowance</label>
+                                    <input type="number" name="otherAllowance" id="otherAllowance" class="form-input" step="0.01" min="0" value="0" onchange="calculateTotal()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">PF (Provident Fund)</label>
+                                    <input type="number" name="pf" id="pf" class="form-input" step="0.01" min="0" value="0" onchange="calculateTotal()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Tax</label>
+                                    <input type="number" name="tax" id="tax" class="form-input" step="0.01" min="0" value="0" onchange="calculateTotal()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Total Salary (Auto)</label>
+                                    <input type="number" name="salary" id="salary" class="form-input" readonly style="background: #f3f4f6; font-weight: 600;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="btn-group">
+                            <button type="submit" class="btn-primary">💾 Save Employee</button>
+                            <button type="button" onclick="resetForm()" class="btn-secondary">Reset</button>
+                            <a href="employees.html" style="padding: 0.625rem 1.5rem; color: #6b7280;">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script>
+        if (!auth.requireAuth()) throw new Error('Auth required');
+        
+        // Load dropdowns
+        async function loadDropdowns() {
+            try {
+                const [deptRes, shiftRes] = await Promise.all([
+                    auth.apiCall('/api/departments'),
+                    auth.apiCall('/api/shifts')
+                ]);
+                
+                if (deptRes && deptRes.ok) {
+                    const depts = await deptRes.json();
+                    const deptSelect = document.getElementById('departmentId');
+                    depts.forEach(d => {
+                        deptSelect.innerHTML += `<option value="${d.id}">${d.name}</option>`;
+                    });
+                }
+                
+                if (shiftRes && shiftRes.ok) {
+                    const shifts = await shiftRes.json();
+                    const shiftSelect = document.getElementById('shiftId');
+                    shifts.forEach(s => {
+                        shiftSelect.innerHTML += `<option value="${s.id}">${s.name} (${s.startTime}-${s.endTime})</option>`;
+                    });
+                }
+                
+                // Mark dropdowns as loaded
+                dropdownsLoaded = true;
+                console.log('Dropdowns loaded');
+                
+                // If employee data was already loaded, set form values now
+                if (employeeData) {
+                    console.log('Setting employee values after dropdowns loaded');
+                    setEmployeeFormValues(employeeData);
+                }
+            } catch (e) { console.error('Error loading dropdowns:', e); }
+        }
+        
+        // Calculate total salary
+        function calculateTotal() {
+            const basic = parseFloat(document.getElementById('basicSalary').value) || 0;
+            const da = parseFloat(document.getElementById('da').value) || 0;
+            const hra = parseFloat(document.getElementById('hra').value) || 0;
+            const other = parseFloat(document.getElementById('otherAllowance').value) || 0;
+            const pf = parseFloat(document.getElementById('pf').value) || 0;
+            const tax = parseFloat(document.getElementById('tax').value) || 0;
+            
+            const gross = basic + da + hra + other;
+            const total = gross - pf - tax;
+            document.getElementById('salary').value = total.toFixed(2);
+        }
+        
+        // Check if editing
+        const urlParams = new URLSearchParams(window.location.search);
+        const editId = urlParams.get('edit');
+        
+        // Store employee data globally to set after dropdowns load
+        let employeeData = null;
+        let dropdownsLoaded = false;
+        
+        if (editId) {
+            document.getElementById('page-title').textContent = 'Edit Employee';
+            loadEmployee(editId);
+        }
+        
+        async function loadEmployee(id) {
+            try {
+                const res = await auth.apiCall(`/api/employees/${id}`);
+                if (res && res.ok) {
+                    employeeData = await res.json();
+                    console.log('Loaded employee:', employeeData);
+                    
+                    // If dropdowns already loaded, set values now
+                    if (dropdownsLoaded) {
+                        setEmployeeFormValues(employeeData);
+                    }
+                    // Otherwise, wait for dropdowns to load (see loadDropdowns)
+                }
+            } catch (e) { console.error('Error loading employee:', e); }
+        }
+        
+        function setEmployeeFormValues(emp) {
+            if (!emp) return;
+            console.log('Setting form values, departmentId:', emp.departmentId);
+            
+            document.getElementById('firstName').value = emp.firstName || '';
+            document.getElementById('lastName').value = emp.lastName || '';
+            document.getElementById('email').value = emp.email || '';
+            document.getElementById('phone').value = emp.phone || '';
+            // Gender comes as uppercase enum (MALE/FEMALE/OTHER), convert to Title Case for select
+            const genderValue = emp.gender ? emp.gender.charAt(0) + emp.gender.slice(1).toLowerCase() : '';
+            document.getElementById('gender').value = genderValue;
+            document.getElementById('joiningDate').value = emp.joiningDate || '';
+            document.getElementById('address').value = emp.address || '';
+            document.getElementById('designation').value = emp.designation || '';
+            document.getElementById('status').value = emp.status || 'ACTIVE';
+            document.getElementById('probationPeriodMonths').value = emp.probationPeriodMonths || 3;
+            document.getElementById('basicSalary').value = emp.basicSalary || 0;
+            document.getElementById('da').value = emp.da || 0;
+            document.getElementById('hra').value = emp.hra || 0;
+            document.getElementById('otherAllowance').value = emp.otherAllowance || 0;
+            document.getElementById('pf').value = emp.pf || 0;
+            document.getElementById('tax').value = emp.tax || 0;
+            
+            // Set dropdown values - these need options to exist first
+            if (emp.departmentId) {
+                const deptSelect = document.getElementById('departmentId');
+                // Check if option exists
+                if (deptSelect.querySelector(`option[value="${emp.departmentId}"]`)) {
+                    deptSelect.value = emp.departmentId;
+                } else {
+                    console.warn('Department option not found for id:', emp.departmentId);
+                }
+            }
+            
+            if (emp.shiftId) {
+                const shiftSelect = document.getElementById('shiftId');
+                if (shiftSelect.querySelector(`option[value="${emp.shiftId}"]`)) {
+                    shiftSelect.value = emp.shiftId;
+                }
+            }
+            
+            calculateTotal();
+        }
+        
+        // Form submit
+        document.getElementById('employee-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                gender: document.getElementById('gender').value,
+                joiningDate: document.getElementById('joiningDate').value,
+                address: document.getElementById('address').value,
+                departmentId: parseInt(document.getElementById('departmentId').value),
+                designation: document.getElementById('designation').value,
+                shiftId: document.getElementById('shiftId').value ? parseInt(document.getElementById('shiftId').value) : null,
+                status: document.getElementById('status').value,
+                probationPeriodMonths: parseInt(document.getElementById('probationPeriodMonths').value) || 0,
+                basicSalary: parseFloat(document.getElementById('basicSalary').value) || 0,
+                da: parseFloat(document.getElementById('da').value) || 0,
+                hra: parseFloat(document.getElementById('hra').value) || 0,
+                otherAllowance: parseFloat(document.getElementById('otherAllowance').value) || 0,
+                pf: parseFloat(document.getElementById('pf').value) || 0,
+                tax: parseFloat(document.getElementById('tax').value) || 0,
+                salary: parseFloat(document.getElementById('salary').value) || 0
+            };
+            
+            try {
+                const url = editId ? `/api/employees/${editId}` : '/api/employees';
+                const method = editId ? 'PUT' : 'POST';
+                const res = await auth.apiCall(url, {
+                    method: method,
+                    body: JSON.stringify(data)
+                });
+                
+                if (res && res.ok) {
+                    auth.showNotification(editId ? 'Employee updated!' : 'Employee added!', 'success');
+                    window.location.href = 'employees.html';
+                } else {
+                    const err = await res.text();
+                    auth.showNotification('Error: ' + err, 'error');
+                }
+            } catch (e) {
+                auth.showNotification('Error: ' + e.message, 'error');
+            }
+        });
+        
+        function resetForm() {
+            document.getElementById('employee-form').reset();
+            calculateTotal();
+        }
+        
+        function logout() { auth.logout(); }
+        
+        loadDropdowns();
+    </script>
+</body>
+</html>

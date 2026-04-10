@@ -54,12 +54,11 @@ public class SecurityConfig {
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/index.html", "/static/**", "/assets/**", "/vite.svg").permitAll()
+                .requestMatchers("/", "/index.html", "/login", "/register").permitAll()
+                .requestMatchers("/static/**", "/assets/**", "/css/**", "/js/**", "/html/**", "/vite.svg").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                .requestMatchers("/api/employees/**").permitAll()
-                .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             );
 

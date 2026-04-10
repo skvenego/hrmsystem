@@ -2,7 +2,10 @@ package com.hrm.hrmsystem.repository;
 
 import com.hrm.hrmsystem.model.PayrollApproval;
 import com.hrm.hrmsystem.model.User;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -41,5 +44,16 @@ public interface PayrollApprovalRepository extends JpaRepository<PayrollApproval
     List<PayrollApproval> findByApproverRoleAndStatus(
         User.Role role, 
         PayrollApproval.ApprovalStatus status
+    );
+    
+    /**
+     * Find pending approvals with eager fetching of payroll and employee
+     * Uses EntityGraph to avoid LazyInitializationException
+     */
+    @EntityGraph(attributePaths = {"payroll", "payroll.employee"})
+    @Query("SELECT pa FROM PayrollApproval pa WHERE pa.approverRole = :role AND pa.status = :status")
+    List<PayrollApproval> findPendingApprovalsWithDetails(
+        @Param("role") User.Role role, 
+        @Param("status") PayrollApproval.ApprovalStatus status
     );
 }

@@ -4,6 +4,7 @@ import com.hrm.hrmsystem.dto.DepartmentDTO;
 import com.hrm.hrmsystem.model.Department;
 import com.hrm.hrmsystem.repository.DepartmentRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -18,19 +19,32 @@ public class DepartmentService {
         this.departmentRepository = departmentRepository;
     }
 
+    @Transactional(readOnly = true)
     public List<DepartmentDTO> getAllDepartments() {
-        return departmentRepository.findAll()
-                .stream()
+        List<Department> departments = departmentRepository.findAll();
+        // Initialize lazy collections within transaction
+        departments.forEach(dept -> {
+            if (dept.getEmployees() != null) {
+                dept.getEmployees().size(); // Force initialization
+            }
+        });
+        return departments.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public DepartmentDTO getDepartmentById(Long id) {
         Department department = departmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Department not found"));
+        // Initialize lazy collection
+        if (department.getEmployees() != null) {
+            department.getEmployees().size();
+        }
         return convertToDTO(department);
     }
 
+    @Transactional
     public DepartmentDTO createDepartment(DepartmentDTO dto) {
         if (departmentRepository.existsByName(dto.getName())) {
             throw new RuntimeException("Department already exists");
@@ -41,6 +55,7 @@ public class DepartmentService {
         return convertToDTO(department);
     }
 
+    @Transactional
     public DepartmentDTO updateDepartment(Long id, DepartmentDTO dto) {
         Department department = departmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Department not found"));
@@ -53,6 +68,7 @@ public class DepartmentService {
         return convertToDTO(department);
     }
 
+    @Transactional
     public void deleteDepartment(Long id) {
         departmentRepository.deleteById(id);
     }

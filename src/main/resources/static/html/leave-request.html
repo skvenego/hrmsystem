@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Request - HRM System</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/pages.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header"><h2>HRM System</h2></div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>Dashboard</a>
+                <a href="attendance.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" x2="16" y1="2" y2="6"></line><line x1="8" x2="8" y1="2" y2="6"></line><line x1="3" x2="21" y1="10" y2="10"></line></svg>Attendance</a>
+                <a href="leave.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" x2="8" y1="13" y2="13"></line><line x1="16" x2="8" y1="17" y2="17"></line></svg>Leave</a>
+                <a href="leave-request.html" class="nav-item active"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="5" y2="19"></line><line x1="5" x2="19" y1="12" y2="12"></line></svg>Apply Leave</a>
+                <a href="payslips.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" x2="8" y1="13" y2="13"></line><line x1="16" x2="8" y1="17" y2="17"></line></svg>Payslips</a>
+                <a href="profile.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>Profile</a>
+                <a href="settings.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Settings</a>
+            </nav>
+            <div class="sidebar-footer"><button onclick="logout()" class="logout-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>Logout</button></div>
+        </aside>
+
+        <main class="main-content">
+            <header class="dashboard-header">
+                <h1>Apply for Leave</h1>
+            </header>
+
+            <div class="page-content">
+                <!-- Leave Balance Preview -->
+                <div class="card" style="margin-bottom: 1.5rem; background: #f0fdf4; border-left: 4px solid #22c55e;">
+                    <div style="padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h4 style="margin: 0 0 0.5rem 0; color: #166534;">Your Leave Balance</h4>
+                            <p style="margin: 0; color: #15803d; font-size: 0.9rem;">
+                                Available: <strong id="balance-preview">-</strong> | 
+                                Cycle: <span id="cycle-preview">-</span>
+                            </p>
+                        </div>
+                        <div id="probation-badge" style="display: none; background: #fef3c7; color: #92400e; padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.85rem;">
+                            In Probation - Unpaid Only
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card" style="max-width: 600px;">
+                    <form id="leave-form" class="profile-form">
+                        <div class="form-group">
+                            <label class="form-label">Leave Type</label>
+                            <select name="leaveType" id="leaveType" class="form-input" required>
+                                <option value="CASUAL">Casual Leave</option>
+                                <option value="SICK">Sick Leave</option>
+                                <option value="ANNUAL">Annual Leave</option>
+                                <option value="MATERNITY">Maternity Leave</option>
+                                <option value="PATERNITY">Paternity Leave</option>
+                                <option value="HALF_DAY">Half Day Leave</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Start Date</label>
+                                <input type="date" name="startDate" id="startDate" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">End Date</label>
+                                <input type="date" name="endDate" id="endDate" class="form-input" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="isHalfDay" style="width: 18px; height: 18px;">
+                                <span>Half Day Leave (only 0.5 day will be deducted)</span>
+                            </label>
+                        </div>
+                        <div id="leave-preview" class="form-group" style="background: #f8fafc; padding: 1rem; border-radius: 0.375rem; display: none;">
+                            <h4 style="margin: 0 0 0.5rem 0; color: #1e293b;">Leave Preview</h4>
+                            <p style="margin: 0.25rem 0; color: #475569; font-size: 0.9rem;">Total Days: <strong id="preview-total">0</strong></p>
+                            <p style="margin: 0.25rem 0; color: #166534; font-size: 0.9rem;">Paid Days: <strong id="preview-paid">0</strong></p>
+                            <p style="margin: 0.25rem 0; color: #991b1b; font-size: 0.9rem;">Unpaid Days: <strong id="preview-unpaid">0</strong></p>
+                            <p id="preview-message" style="margin: 0.5rem 0 0 0; color: #0ea5e9; font-size: 0.85rem;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Reason</label>
+                            <textarea name="reason" id="reason" class="form-input" rows="4" required placeholder="Please provide a reason for your leave..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Contact Number (during leave)</label>
+                            <input type="tel" name="contact" id="contact" class="form-input" placeholder="Optional">
+                        </div>
+                        <button type="submit" class="btn-auth">Submit Leave Application</button>
+                        <a href="my-leaves.html" style="display: block; text-align: center; margin-top: 1rem; color: #6b7280;">View my leave history</a>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script>
+        if (!auth.requireAuth()) throw new Error('Auth required');
+        
+        const user = auth.getCurrentUser();
+        let leaveBalance = {};
+        
+        // Load leave balance on page load
+        async function loadLeaveBalance() {
+            try {
+                const res = await auth.apiCall('/api/leaves/balance');
+                if (res && res.ok) {
+                    leaveBalance = await res.json();
+                    document.getElementById('balance-preview').textContent = (leaveBalance.availableLeaves || 0) + ' days';
+                    document.getElementById('cycle-preview').textContent = 'Cycle ' + (leaveBalance.cycle || 1) + ' - ' + (leaveBalance.year || new Date().getFullYear());
+                    
+                    // Show probation badge if applicable
+                    if (leaveBalance.inProbation) {
+                        document.getElementById('probation-badge').style.display = 'block';
+                    }
+                }
+            } catch (e) { console.error('Failed to load balance', e); }
+        }
+        
+        loadLeaveBalance();
+        
+        // Set min date to today
+        document.getElementById('startDate').min = new Date().toISOString().split('T')[0];
+        document.getElementById('endDate').min = new Date().toISOString().split('T')[0];
+        
+        // Calculate leave preview when dates change
+        function updateLeavePreview() {
+            const startInput = document.getElementById('startDate').value;
+            const endInput = document.getElementById('endDate').value;
+            const isHalfDay = document.getElementById('isHalfDay').checked;
+            
+            if (!startInput || !endInput) return;
+            
+            const start = new Date(startInput);
+            const end = new Date(endInput);
+            
+            if (end < start) return;
+            
+            // Calculate total days
+            let totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+            if (isHalfDay) totalDays = 1;
+            
+            // Calculate paid/unpaid based on policy
+            let paidDays = 0;
+            let unpaidDays = 0;
+            let message = '';
+            
+            if (leaveBalance.inProbation) {
+                // During probation - all unpaid
+                paidDays = 0;
+                unpaidDays = totalDays;
+                message = 'During probation period, all leaves are unpaid.';
+            } else {
+                const availableBalance = leaveBalance.availableLeaves || 0;
+                // Max 3 paid at once
+                const maxPaid = Math.min(3, availableBalance);
+                
+                if (totalDays <= maxPaid) {
+                    paidDays = totalDays;
+                    unpaidDays = 0;
+                    message = 'All ' + totalDays + ' day(s) will be paid leave.';
+                } else {
+                    paidDays = maxPaid;
+                    unpaidDays = totalDays - maxPaid;
+                    message = 'Only ' + paidDays + ' day(s) will be paid (max 3 at once). ' + unpaidDays + ' day(s) will be unpaid.';
+                }
+                
+                if (isHalfDay) {
+                    message += ' (Half day: 0.5 day deduction)';
+                }
+            }
+            
+            // Show preview
+            document.getElementById('leave-preview').style.display = 'block';
+            document.getElementById('preview-total').textContent = totalDays;
+            document.getElementById('preview-paid').textContent = paidDays;
+            document.getElementById('preview-unpaid').textContent = unpaidDays;
+            document.getElementById('preview-message').textContent = message;
+        }
+        
+        document.getElementById('startDate').addEventListener('change', updateLeavePreview);
+        document.getElementById('endDate').addEventListener('change', updateLeavePreview);
+        document.getElementById('isHalfDay').addEventListener('change', updateLeavePreview);
+        
+        document.getElementById('leave-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const start = new Date(document.getElementById('startDate').value);
+            const end = new Date(document.getElementById('endDate').value);
+            
+            if (end < start) {
+                return auth.showNotification('End date cannot be before start date', 'error');
+            }
+            
+            // Check if applying for more than available (with some buffer for unpaid)
+            const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+            if (!leaveBalance.inProbation && totalDays > 10) {
+                if (!confirm('You are applying for ' + totalDays + ' days. Excess days beyond your paid balance will be unpaid. Continue?')) {
+                    return;
+                }
+            }
+            
+            const form = e.target;
+            try {
+                const res = await auth.apiCall('/api/leaves/apply', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        employeeId: user.id,
+                        leaveType: document.getElementById('leaveType').value,
+                        startDate: document.getElementById('startDate').value,
+                        endDate: document.getElementById('endDate').value,
+                        reason: document.getElementById('reason').value,
+                        isHalfDay: document.getElementById('isHalfDay').checked,
+                        contactNumber: document.getElementById('contact').value
+                    })
+                });
+                if (res && res.ok) {
+                    const result = await res.json();
+                    let msg = 'Leave application submitted successfully';
+                    if (result.paidDays !== undefined && result.unpaidDays !== undefined) {
+                        msg += '. Paid: ' + result.paidDays + ' days, Unpaid: ' + result.unpaidDays + ' days';
+                    }
+                    auth.showNotification(msg, 'success');
+                    form.reset();
+                    document.getElementById('leave-preview').style.display = 'none';
+                    loadLeaveBalance(); // Refresh balance
+                }
+            } catch (e) { auth.showNotification(e.message, 'error'); }
+        });
+        
+        function logout() { auth.logout(); }
+    </script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Payslips - HRM System</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/pages.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="dashboard-header">
+                <h1>My Payslips</h1>
+            </header>
+
+            <div class="page-content">
+                <div id="payslips-grid" class="payslips-grid">
+                    <!-- Payslip cards -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script>
+        if (!auth.requireAuth()) throw new Error('Auth required');
+        
+        const user = auth.getCurrentUser();
+        
+        async function loadMyPayslips() {
+            try {
+                const res = await auth.apiCall('/api/payslips/my?t=' + Date.now());
+                const data = res && res.ok ? await res.json() : [];
+                
+                const grid = document.getElementById('payslips-grid');
+                if (!data || data.length === 0) {
+                    grid.innerHTML = '<div style="text-align: center; padding: 4rem; color: #6b7280;">No payslips found</div>';
+                    return;
+                }
+                
+                grid.innerHTML = data.map(p => `
+                    <div class="payslip-card">
+                        <div class="payslip-header">
+                            <div class="payslip-avatar">📄</div>
+                            <div>
+                                <h4>${p.monthYear || 'N/A'}</h4>
+                                <p style="font-size: 0.875rem; color: #6b7280;">Generated: ${auth.formatDate(p.generatedDate)}</p>
+                            </div>
+                        </div>
+                        <div class="payslip-body">
+                            <div class="payslip-row"><span>Basic Salary</span><span>${auth.formatCurrency(p.basicSalary || 0)}</span></div>
+                            <div class="payslip-row"><span>Allowances</span><span>${auth.formatCurrency((p.da || 0) + (p.hra || 0) + (p.otherAllowance || 0))}</span></div>
+                            <div class="payslip-row"><span>Deductions</span><span style="color: #dc2626;">-${auth.formatCurrency((p.pf || 0) + (p.tax || 0))}</span></div>
+                            <div class="payslip-row" style="border-top: 2px solid #e5e7eb; margin-top: 0.5rem; padding-top: 0.5rem;">
+                                <span><strong>Net Salary</strong></span>
+                                <strong style="color: #16a34a; font-size: 1.125rem;">${auth.formatCurrency(p.netSalary || 0)}</strong>
+                            </div>
+                        </div>
+                        <div class="payslip-footer">
+                            <button onclick="downloadPayslip(${p.id})" class="btn-small" style="flex: 1;">Download PDF</button>
+                            <button onclick="viewPayslip(${p.id})" class="btn-small" style="flex: 1;">View Details</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) { console.error(e); }
+        }
+        
+        function downloadPayslip(id) {
+            window.open(`/api/payslips/${id}/download`, '_blank');
+        }
+        
+        function viewPayslip(id) {
+            window.open(`/api/payslips/${id}`, '_blank');
+        }
+        
+        loadMyPayslips();
+    </script>
+    <style>
+        .payslips-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+        .payslip-card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .payslip-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+        .payslip-avatar { width: 48px; height: 48px; background: #4f46e5; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
+        .payslip-header h4 { font-size: 1.125rem; font-weight: 600; }
+        .payslip-body { margin-bottom: 1rem; }
+        .payslip-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f3f4f6; }
+        .payslip-row:last-child { border-bottom: none; }
+        .payslip-footer { display: flex; gap: 0.5rem; }
+    </style>
+</body>
+</html>

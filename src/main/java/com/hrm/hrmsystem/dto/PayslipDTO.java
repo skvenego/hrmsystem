@@ -32,6 +32,8 @@ public class PayslipDTO {
     private Integer presentDays;
     private Integer absentDays;
     private Integer leaveDays;
+    private Integer paidLeaveDays;
+    private Integer unpaidLeaveDays;
     private Integer halfDays;
     private Integer workingDays;
     private Integer totalDays;
@@ -69,6 +71,8 @@ public class PayslipDTO {
     public Integer getPresentDays() { return presentDays; }
     public Integer getAbsentDays() { return absentDays; }
     public Integer getLeaveDays() { return leaveDays; }
+    public Integer getPaidLeaveDays() { return paidLeaveDays; }
+    public Integer getUnpaidLeaveDays() { return unpaidLeaveDays; }
     public Integer getHalfDays() { return halfDays; }
     public Integer getWorkingDays() { return workingDays; }
     public Integer getTotalDays() { return totalDays; }
@@ -101,6 +105,8 @@ public class PayslipDTO {
     public void setPresentDays(Integer presentDays) { this.presentDays = presentDays; }
     public void setAbsentDays(Integer absentDays) { this.absentDays = absentDays; }
     public void setLeaveDays(Integer leaveDays) { this.leaveDays = leaveDays; }
+    public void setPaidLeaveDays(Integer paidLeaveDays) { this.paidLeaveDays = paidLeaveDays; }
+    public void setUnpaidLeaveDays(Integer unpaidLeaveDays) { this.unpaidLeaveDays = unpaidLeaveDays; }
     public void setHalfDays(Integer halfDays) { this.halfDays = halfDays; }
     public void setWorkingDays(Integer workingDays) { this.workingDays = workingDays; }
     public void setTotalDays(Integer totalDays) { this.totalDays = totalDays; }
@@ -136,6 +142,8 @@ public class PayslipDTO {
         private Integer presentDays;
         private Integer absentDays;
         private Integer leaveDays;
+        private Integer paidLeaveDays;
+        private Integer unpaidLeaveDays;
         private Integer workingDays;
         private Integer totalDays;
         private java.util.List<String> absentDates;
@@ -165,6 +173,8 @@ public class PayslipDTO {
         public Builder presentDays(Integer presentDays) { this.presentDays = presentDays; return this; }
         public Builder absentDays(Integer absentDays) { this.absentDays = absentDays; return this; }
         public Builder leaveDays(Integer leaveDays) { this.leaveDays = leaveDays; return this; }
+        public Builder paidLeaveDays(Integer paidLeaveDays) { this.paidLeaveDays = paidLeaveDays; return this; }
+        public Builder unpaidLeaveDays(Integer unpaidLeaveDays) { this.unpaidLeaveDays = unpaidLeaveDays; return this; }
         public Builder workingDays(Integer workingDays) { this.workingDays = workingDays; return this; }
         public Builder totalDays(Integer totalDays) { this.totalDays = totalDays; return this; }
         public Builder absentDates(java.util.List<String> absentDates) { this.absentDates = absentDates; return this; }
@@ -196,6 +206,8 @@ public class PayslipDTO {
             dto.presentDays = this.presentDays;
             dto.absentDays = this.absentDays;
             dto.leaveDays = this.leaveDays;
+            dto.paidLeaveDays = this.paidLeaveDays;
+            dto.unpaidLeaveDays = this.unpaidLeaveDays;
             dto.workingDays = this.workingDays;
             dto.totalDays = this.totalDays;
             dto.absentDates = this.absentDates;

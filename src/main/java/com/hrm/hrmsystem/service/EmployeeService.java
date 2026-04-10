@@ -29,18 +29,18 @@ public class EmployeeService {
 
     @Transactional(readOnly = true)
     public List<EmployeeDTO> getAllEmployees() {
-        // Clear cache to ensure fresh department data
-        entityManager.clear();
-        
-        return employeeRepository.findAll()
+        // Use findAllWithDepartment to eagerly load department and avoid lazy loading issues
+        return employeeRepository.findAllWithDepartment()
                 .stream()
                 .filter(emp -> emp.getStatus() != Employee.EmployeeStatus.TERMINATED)
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public EmployeeDTO getEmployeeById(Long id) {
-        Employee employee = employeeRepository.findById(id)
+        // Use findByIdWithDepartment to eagerly load department
+        Employee employee = employeeRepository.findByIdWithDepartment(id)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
         
         // Return null for terminated employees
@@ -49,6 +49,12 @@ public class EmployeeService {
         }
         
         return convertToDTO(employee);
+    }
+
+    @Transactional(readOnly = true)
+    public Employee getEmployeeByEmail(String email) {
+        return employeeRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Employee not found with email: " + email));
     }
 
     public EmployeeDTO createEmployee(EmployeeDTO dto) {
@@ -60,6 +66,7 @@ public class EmployeeService {
         return convertToDTO(employee);
     }
 
+    @Transactional
     public EmployeeDTO updateEmployee(Long id, EmployeeDTO dto) {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
@@ -72,6 +79,14 @@ public class EmployeeService {
         employee.setJoiningDate(dto.getJoiningDate());
         employee.setSalary(dto.getSalary());
         employee.setAddress(dto.getAddress());
+        employee.setGender(dto.getGender() != null ? Employee.Gender.valueOf(dto.getGender().toUpperCase()) : null);
+        employee.setProbationPeriodMonths(dto.getProbationPeriodMonths());
+        employee.setBasicSalary(dto.getBasicSalary());
+        employee.setDa(dto.getDa());
+        employee.setHra(dto.getHra());
+        employee.setOtherAllowance(dto.getOtherAllowance());
+        employee.setPf(dto.getPf());
+        employee.setTax(dto.getTax());
 
         if (dto.getDepartmentId() != null) {
             Department department = departmentRepository.findById(dto.getDepartmentId())
@@ -84,20 +99,25 @@ public class EmployeeService {
         }
 
         if (dto.getStatus() != null) {
-        employee.setStatus(Employee.EmployeeStatus.valueOf(dto.getStatus()));
-    }
+            try {
+                employee.setStatus(Employee.EmployeeStatus.valueOf(dto.getStatus().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                // Handle legacy status values or log warning
+                employee.setStatus(Employee.EmployeeStatus.ACTIVE);
+            }
+        }
 
         employee = employeeRepository.save(employee);
         return convertToDTO(employee);
     }
 
     @Transactional
-public void deleteEmployee(Long id) {
-    if (!employeeRepository.existsById(id)) {
-        throw new RuntimeException("Employee not found");
+    public void deleteEmployee(Long id) {
+        if (!employeeRepository.existsById(id)) {
+            throw new RuntimeException("Employee not found");
+        }
+        employeeRepository.deleteById(id);
     }
-    employeeRepository.deleteById(id);
-}
 
     private EmployeeDTO convertToDTO(Employee employee) {
         return EmployeeDTO.builder()
@@ -113,6 +133,15 @@ public void deleteEmployee(Long id) {
                 .salary(employee.getSalary())
                 .status(employee.getStatus() != null ? employee.getStatus().name() : null)
                 .address(employee.getAddress())
+                .gender(employee.getGender() != null ? employee.getGender().name() : null)
+                .shiftId(employee.getShift() != null ? employee.getShift().getId() : null)
+                .probationPeriodMonths(employee.getProbationPeriodMonths())
+                .basicSalary(employee.getBasicSalary())
+                .da(employee.getDa())
+                .hra(employee.getHra())
+                .otherAllowance(employee.getOtherAllowance())
+                .pf(employee.getPf())
+                .tax(employee.getTax())
                 .build();
     }
 
@@ -127,20 +156,25 @@ public void deleteEmployee(Long id) {
                 .salary(dto.getSalary())
                 .status(dto.getStatus() != null ? Employee.EmployeeStatus.valueOf(dto.getStatus()) : Employee.EmployeeStatus.ACTIVE)
                 .address(dto.getAddress())
+                .gender(dto.getGender() != null ? Employee.Gender.valueOf(dto.getGender().toUpperCase()) : null)
+                .probationPeriodMonths(dto.getProbationPeriodMonths())
+                .basicSalary(dto.getBasicSalary())
+                .da(dto.getDa())
+                .hra(dto.getHra())
+                .otherAllowance(dto.getOtherAllowance())
+                .pf(dto.getPf())
+                .tax(dto.getTax())
                 .build();
 
         if (dto.getDepartmentId() != null) {
-    Department department = departmentRepository.findById(dto.getDepartmentId())
-            .orElseThrow(() -> new RuntimeException("Department not found"));
-    employee.setDepartment(department);
-
-} else if (dto.getDepartmentName() != null && !dto.getDepartmentName().isEmpty()) {
-
-    Department department = departmentRepository.findByName(dto.getDepartmentName())
-            .orElseThrow(() -> new RuntimeException("Department not found"));
-
-    employee.setDepartment(department);
-}
+            Department department = departmentRepository.findById(dto.getDepartmentId())
+                    .orElseThrow(() -> new RuntimeException("Department not found"));
+            employee.setDepartment(department);
+        } else if (dto.getDepartmentName() != null && !dto.getDepartmentName().isEmpty()) {
+            Department department = departmentRepository.findByName(dto.getDepartmentName())
+                    .orElseThrow(() -> new RuntimeException("Department not found"));
+            employee.setDepartment(department);
+        }
 
         return employee;
     }

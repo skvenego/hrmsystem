@@ -5,6 +5,7 @@ import com.hrm.hrmsystem.entity.Payslip;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,6 +43,37 @@ public class Employee {
     private BigDecimal da;
     private BigDecimal hra;
     private BigDecimal otherAllowance;
+    
+    // Deductions
+    private BigDecimal pf;
+    private BigDecimal tax;
+    
+    // Gender
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
+    
+    // Probation period
+    private Integer probationPeriodMonths;
+    
+    // Shift assignment
+    @ManyToOne
+    @JoinColumn(name = "shift_id")
+    private Shift shift;
+    
+    // Audit timestamps
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+    
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 
     @Enumerated(EnumType.STRING)
     private EmployeeStatus status;
@@ -70,7 +102,11 @@ public class Employee {
     private List<Payslip> payslips = new ArrayList<>();
 
     public enum EmployeeStatus {
-        ACTIVE, INACTIVE, ON_LEAVE, TERMINATED
+        ACTIVE, INACTIVE, ON_LEAVE, TERMINATED, PROBATION
+    }
+    
+    public enum Gender {
+        MALE, FEMALE, OTHER
     }
 
     // Default Constructor
@@ -80,7 +116,8 @@ public class Employee {
     public Employee(Long id, String firstName, String lastName, String email, String phone,
                     Department department, String designation, LocalDate joiningDate, BigDecimal salary,
                     BigDecimal basicSalary, BigDecimal da, BigDecimal hra, BigDecimal otherAllowance,
-                    EmployeeStatus status, String address, List<Leave> leaves, List<Attendance> attendances,
+                    BigDecimal pf, BigDecimal tax, Gender gender, Integer probationPeriodMonths, Shift shift, EmployeeStatus status, 
+                    String address, List<Leave> leaves, List<Attendance> attendances,
                     List<Payroll> payrolls, List<LeaveBalance> leaveBalances, List<Payslip> payslips) {
         this.id = id;
         this.firstName = firstName;
@@ -95,6 +132,11 @@ public class Employee {
         this.da = da;
         this.hra = hra;
         this.otherAllowance = otherAllowance;
+        this.pf = pf;
+        this.tax = tax;
+        this.gender = gender;
+        this.probationPeriodMonths = probationPeriodMonths;
+        this.shift = shift;
         this.status = status;
         this.address = address;
         this.leaves = leaves;
@@ -118,6 +160,13 @@ public class Employee {
     public BigDecimal getDa() { return da; }
     public BigDecimal getHra() { return hra; }
     public BigDecimal getOtherAllowance() { return otherAllowance; }
+    public BigDecimal getPf() { return pf; }
+    public BigDecimal getTax() { return tax; }
+    public Gender getGender() { return gender; }
+    public Integer getProbationPeriodMonths() { return probationPeriodMonths; }
+    public Shift getShift() { return shift; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
     public EmployeeStatus getStatus() { return status; }
     public String getAddress() { return address; }
     public List<Leave> getLeaves() { return leaves; }
@@ -140,6 +189,13 @@ public class Employee {
     public void setDa(BigDecimal da) { this.da = da; }
     public void setHra(BigDecimal hra) { this.hra = hra; }
     public void setOtherAllowance(BigDecimal otherAllowance) { this.otherAllowance = otherAllowance; }
+    public void setPf(BigDecimal pf) { this.pf = pf; }
+    public void setTax(BigDecimal tax) { this.tax = tax; }
+    public void setGender(Gender gender) { this.gender = gender; }
+    public void setProbationPeriodMonths(Integer probationPeriodMonths) { this.probationPeriodMonths = probationPeriodMonths; }
+    public void setShift(Shift shift) { this.shift = shift; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     public void setStatus(EmployeeStatus status) { this.status = status; }
     public void setAddress(String address) { this.address = address; }
     public void setLeaves(List<Leave> leaves) { this.leaves = leaves; }
@@ -167,6 +223,13 @@ public class Employee {
         private BigDecimal da;
         private BigDecimal hra;
         private BigDecimal otherAllowance;
+        private BigDecimal pf;
+        private BigDecimal tax;
+        private Gender gender;
+        private Integer probationPeriodMonths;
+        private Shift shift;
+        private LocalDateTime createdAt;
+        private LocalDateTime updatedAt;
         private EmployeeStatus status;
         private String address;
         private List<Leave> leaves = new ArrayList<>();
@@ -188,6 +251,11 @@ public class Employee {
         public Builder da(BigDecimal da) { this.da = da; return this; }
         public Builder hra(BigDecimal hra) { this.hra = hra; return this; }
         public Builder otherAllowance(BigDecimal otherAllowance) { this.otherAllowance = otherAllowance; return this; }
+        public Builder pf(BigDecimal pf) { this.pf = pf; return this; }
+        public Builder tax(BigDecimal tax) { this.tax = tax; return this; }
+        public Builder gender(Gender gender) { this.gender = gender; return this; }
+        public Builder probationPeriodMonths(Integer probationPeriodMonths) { this.probationPeriodMonths = probationPeriodMonths; return this; }
+        public Builder shift(Shift shift) { this.shift = shift; return this; }
         public Builder status(EmployeeStatus status) { this.status = status; return this; }
         public Builder address(String address) { this.address = address; return this; }
         public Builder leaves(List<Leave> leaves) { this.leaves = leaves; return this; }
@@ -198,7 +266,7 @@ public class Employee {
 
         public Employee build() {
             return new Employee(id, firstName, lastName, email, phone, department, designation,
-                    joiningDate, salary, basicSalary, da, hra, otherAllowance, status, address, 
+                    joiningDate, salary, basicSalary, da, hra, otherAllowance, pf, tax, gender, probationPeriodMonths, shift, status, address, 
                     leaves, attendances, payrolls, leaveBalances, payslips);
         }
     }

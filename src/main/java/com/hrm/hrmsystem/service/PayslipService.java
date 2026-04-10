@@ -66,6 +66,9 @@ public class PayslipService {
 
     @Autowired
     private EntityManager entityManager;
+    
+    @Autowired
+    private LeaveService leaveService;
 
     /**
      * Generate payslip for a single employee (always regenerate with fresh data)
@@ -168,32 +171,50 @@ public class PayslipService {
                 .map(a -> a.getDate().toString())
                 .collect(Collectors.toList());
 
-        // Count approved leave days for this month
-        int approvedLeaveDays = countApprovedLeaveDays(payslip.getEmployee().getId(), month, year);
+        // Count approved leave days for this month - separate paid and unpaid
+        LeaveDaysSummary leaveSummary = countApprovedLeaveDaysWithPaidUnpaid(payslip.getEmployee().getId(), month, year);
+        int approvedLeaveDays = leaveSummary.totalDays;
+        int paidLeaveDays = leaveSummary.paidDays;
+        int unpaidLeaveDays = leaveSummary.unpaidDays;
+        int halfDayLeaves = leaveSummary.halfDays;
 
-        // Effective working days = Present + Approved Leave (both are paid)
+        // Effective working days = Present + Approved Leave (both paid and unpaid are shown but unpaid deducted)
         int effectiveWorkingDays = presentDays + approvedLeaveDays;
 
         payslip.setPresentDays(effectiveWorkingDays); // Show total paid days (present + leave)
         payslip.setAbsentDays(absentDays);
         payslip.setLeaveDays(approvedLeaveDays); // Show approved leave separately
-        payslip.setHalfDays(halfDays);
+        payslip.setPaidLeaveDays(paidLeaveDays); // Track paid leave days
+        payslip.setUnpaidLeaveDays(unpaidLeaveDays); // Track unpaid leave days
+        payslip.setHalfDays(halfDays + halfDayLeaves); // Combine half days from attendance and leave
         payslip.setWorkingDays(26); // Standard working days
         payslip.setTotalDays(30); // Standard total days
         payslip.setAbsentDates(absentDates); // Store absent dates
 
-        log.info("Attendance calculated - Present: {}, On Approved Leave: {}, Absent: {}, Total Paid Days: {}", 
-                 presentDays, approvedLeaveDays, absentDays, effectiveWorkingDays);
+        log.info("Attendance calculated - Present: {}, On Approved Leave: {} (Paid: {}, Unpaid: {}), Absent: {}, Total Paid Days: {}", 
+                 presentDays, approvedLeaveDays, paidLeaveDays, unpaidLeaveDays, absentDays, effectiveWorkingDays);
     }
 
     /**
-     * Count approved leave days in a given month
+     * Count approved leave days in a given month - returns total including paid and unpaid
      */
     private int countApprovedLeaveDays(Long employeeId, int month, int year) {
+        LeaveDaysSummary summary = countApprovedLeaveDaysWithPaidUnpaid(employeeId, month, year);
+        return summary.totalDays;
+    }
+    
+    /**
+     * Count approved leave days with paid/unpaid breakdown
+     */
+    private LeaveDaysSummary countApprovedLeaveDaysWithPaidUnpaid(Long employeeId, int month, int year) {
         // Fetch all leaves and filter for approved ones in the given month
         List<Leave> allLeaves = leaveRepository.findByEmployeeId(employeeId);
         
         int totalLeaveDays = 0;
+        int paidLeaveDays = 0;
+        int unpaidLeaveDays = 0;
+        int halfDays = 0;
+        
         for (Leave leave : allLeaves) {
             if (leave.getStatus() != Leave.LeaveStatus.APPROVED) {
                 continue; // Only count approved leaves
@@ -212,11 +233,51 @@ public class PayslipService {
             
             if (!overlapStart.isAfter(overlapEnd)) {
                 long days = java.time.temporal.ChronoUnit.DAYS.between(overlapStart, overlapEnd) + 1;
+                
+                // Handle half day
+                if (leave.getIsHalfDay() != null && leave.getIsHalfDay()) {
+                    halfDays++;
+                    days = 1; // Half day counts as 1 day for display, 0.5 for deduction
+                }
+                
                 totalLeaveDays += (int) days;
+                
+                // Track paid vs unpaid
+                int leavePaidDays = leave.getPaidDays() != null ? leave.getPaidDays() : 0;
+                int leaveUnpaidDays = leave.getUnpaidDays() != null ? leave.getUnpaidDays() : 0;
+                
+                // Pro-rate for partial month overlap
+                if (leavePaidDays > 0 || leaveUnpaidDays > 0) {
+                    int totalLeaveTotal = leavePaidDays + leaveUnpaidDays;
+                    if (totalLeaveTotal > 0) {
+                        // Scale paid/unpaid based on overlap proportion
+                        double overlapRatio = (double) days / (java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1);
+                        paidLeaveDays += (int) Math.round(leavePaidDays * overlapRatio);
+                        unpaidLeaveDays += (int) Math.round(leaveUnpaidDays * overlapRatio);
+                    }
+                } else {
+                    // Legacy: if no paid/unpaid set, assume all paid for backward compatibility
+                    paidLeaveDays += (int) days;
+                }
             }
         }
 
-        return totalLeaveDays;
+        return new LeaveDaysSummary(totalLeaveDays, paidLeaveDays, unpaidLeaveDays, halfDays);
+    }
+    
+    // Helper class for leave days summary
+    private static class LeaveDaysSummary {
+        int totalDays;
+        int paidDays;
+        int unpaidDays;
+        int halfDays;
+        
+        LeaveDaysSummary(int totalDays, int paidDays, int unpaidDays, int halfDays) {
+            this.totalDays = totalDays;
+            this.paidDays = paidDays;
+            this.unpaidDays = unpaidDays;
+            this.halfDays = halfDays;
+        }
     }
 
     /**
@@ -261,19 +322,32 @@ public class PayslipService {
         // Calculate net salary before absent/leave deduction
         BigDecimal netSalary = grossSalary.subtract(totalDeduction);
 
-        // Absent + Leave deduction: First 1.5 days free per month, then deduct
-        // Deductible days = max(0, absent + leave + halfDay*0.5 - 1.5)
-        int absentDays = payslip.getAbsentDays() != null ? payslip.getAbsentDays() : 0;
-        int leaveDays = payslip.getLeaveDays() != null ? payslip.getLeaveDays() : 0;
-        int halfDays = payslip.getHalfDays() != null ? payslip.getHalfDays() : 0;
-        double deductibleDays = getDeductibleDays(absentDays, leaveDays, halfDays);
-
+        // Calculate deduction using LeaveService for unpaid leaves
+        int unpaidLeaveDays = payslip.getUnpaidLeaveDays() != null ? payslip.getUnpaidLeaveDays() : 0;
+        int halfDaysCount = payslip.getHalfDays() != null ? payslip.getHalfDays() : 0;
+        int absentDaysCount = payslip.getAbsentDays() != null ? payslip.getAbsentDays() : 0;
+        
+        // Calculate leave deduction using the LeaveService logic
+        // Unpaid leave days + absent days are deducted, half days count as 0.5
+        double daysToDeduct = unpaidLeaveDays + absentDaysCount + (halfDaysCount * 0.5);
+        
+        // First 1.5 days free per month (as per existing policy)
+        double deductibleDays = Math.max(0, daysToDeduct - 1.5);
+        
         BigDecimal salaryPerDay = basicSalary.compareTo(BigDecimal.ZERO) > 0
                 ? basicSalary.divide(new BigDecimal(26), 2, java.math.RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
+        
+        // Calculate deduction for unpaid leaves and absences
         BigDecimal absentLeaveDeduction = salaryPerDay.multiply(BigDecimal.valueOf(deductibleDays))
                 .setScale(2, java.math.RoundingMode.HALF_UP);
-        payslip.setAbsentLeaveDeduction(absentLeaveDeduction);
+        
+        // Also calculate using LeaveService for consistency
+        BigDecimal leaveDeduction = leaveService.calculateLeaveDeduction(employee, unpaidLeaveDays, false);
+        
+        // Use the higher of the two calculations
+        BigDecimal finalDeduction = absentLeaveDeduction.max(leaveDeduction);
+        payslip.setAbsentLeaveDeduction(finalDeduction);
 
         // Apply absent/leave deduction and update total deduction
         BigDecimal adjustedNetSalary = netSalary.subtract(absentLeaveDeduction);
@@ -661,6 +735,8 @@ public class PayslipService {
         dto.setPresentDays(payslip.getPresentDays());
         dto.setAbsentDays(payslip.getAbsentDays());
         dto.setLeaveDays(payslip.getLeaveDays());
+        dto.setPaidLeaveDays(payslip.getPaidLeaveDays());
+        dto.setUnpaidLeaveDays(payslip.getUnpaidLeaveDays());
         dto.setHalfDays(payslip.getHalfDays());
         dto.setAbsentLeaveDeduction(payslip.getAbsentLeaveDeduction());
         dto.setStatus(payslip.getStatus().toString());

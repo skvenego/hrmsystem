@@ -2,14 +2,19 @@ package com.hrm.hrmsystem.config;
 
 import com.hrm.hrmsystem.model.Department;
 import com.hrm.hrmsystem.model.Employee;
+import com.hrm.hrmsystem.model.User;
 import com.hrm.hrmsystem.repository.DepartmentRepository;
 import com.hrm.hrmsystem.repository.EmployeeRepository;
+import com.hrm.hrmsystem.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -17,6 +22,7 @@ import java.util.List;
 public class DataInitializer {
 
     @Bean
+    @Order(1)
     CommandLineRunner initDepartments(DepartmentRepository departmentRepository, EmployeeRepository employeeRepository) {
         return args -> {
             // Initialize departments
@@ -150,6 +156,75 @@ public class DataInitializer {
                     System.out.println("✓ Fixed " + fixedCount + " employees with NULL salary components");
                 }
             }
+        };
+    }
+    
+    @Bean
+    @Order(2)
+    CommandLineRunner initUsers(UserRepository userRepository, EmployeeRepository employeeRepository, 
+                                PasswordEncoder passwordEncoder) {
+        return args -> {
+            String testPassword = "Sachin@123";
+            String encodedPassword = passwordEncoder.encode(testPassword);
+            
+            // Create or update admin user
+            User admin = userRepository.findByUsername("admin")
+                .orElse(User.builder()
+                    .username("admin")
+                    .email("admin@hrmsystem.com")
+                    .role(User.Role.ROLE_ADMIN)
+                    .createdAt(LocalDateTime.now())
+                    .build());
+            admin.setPassword(encodedPassword);
+            admin.setIsActive(true);
+            userRepository.save(admin);
+            System.out.println("✓ Created/updated admin user");
+            
+            // Create or update hradmin user
+            User hrAdmin = userRepository.findByUsername("hradmin")
+                .orElse(User.builder()
+                    .username("hradmin")
+                    .email("hradmin@hrmsystem.com")
+                    .role(User.Role.ROLE_HR)
+                    .createdAt(LocalDateTime.now())
+                    .build());
+            hrAdmin.setPassword(encodedPassword);
+            hrAdmin.setIsActive(true);
+            userRepository.save(hrAdmin);
+            System.out.println("✓ Created/updated hradmin user");
+            
+            // Create or update accountant user
+            User accountant = userRepository.findByUsername("accountant")
+                .orElse(User.builder()
+                    .username("accountant")
+                    .email("accountant@hrmsystem.com")
+                    .role(User.Role.ROLE_ACCOUNTANT)
+                    .createdAt(LocalDateTime.now())
+                    .build());
+            accountant.setPassword(encodedPassword);
+            accountant.setIsActive(true);
+            userRepository.save(accountant);
+            System.out.println("✓ Created/updated accountant user");
+            
+            // Create or update employee1 user
+            Employee employee = employeeRepository.findAll().stream().findFirst().orElse(null);
+            User employeeUser = userRepository.findByUsername("employee1")
+                .orElse(User.builder()
+                    .username("employee1")
+                    .email("employee1@hrmsystem.com")
+                    .role(User.Role.ROLE_EMPLOYEE)
+                    .employee(employee)
+                    .createdAt(LocalDateTime.now())
+                    .build());
+            employeeUser.setPassword(encodedPassword);
+            employeeUser.setIsActive(true);
+            if (employee != null && employeeUser.getEmployee() == null) {
+                employeeUser.setEmployee(employee);
+            }
+            userRepository.save(employeeUser);
+            System.out.println("✓ Created/updated employee1 user" + (employeeUser.getEmployee() != null ? " (linked to employee)" : ""));
+            
+            System.out.println("✓ User initialization complete! All test passwords set to: " + testPassword);
         };
     }
 }

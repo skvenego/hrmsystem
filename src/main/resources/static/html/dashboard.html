@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - HRM System</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar"></aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="dashboard-header">
+                <h1>Dashboard</h1>
+                <div class="user-info">
+                    <span id="user-name">Loading...</span>
+                    <div class="avatar">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Loading State -->
+            <div id="loading" class="loading-container">
+                <div class="spinner"></div>
+                <p>Loading dashboard...</p>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div id="dashboard-content" class="dashboard-content" style="display: none;">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="stat-employees">0</h3>
+                            <p>Total Employees</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" x2="16" y1="2" y2="6"></line>
+                                <line x1="8" x2="8" y1="2" y2="6"></line>
+                                <line x1="3" x2="21" y1="10" y2="10"></line>
+                                <path d="m9 16 2 2 4-4"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="stat-present">0</h3>
+                            <p>Present Today</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" x2="12" y1="2" y2="22"></line>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="stat-payroll">₹0</h3>
+                            <p>Monthly Payroll</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" x2="8" y1="13" y2="13"></line>
+                                <line x1="16" x2="8" y1="17" y2="17"></line>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="stat-leave">0</h3>
+                            <p>Leave Requests</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Grid -->
+                <div class="dashboard-grid">
+                    <!-- Recent Employees -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Recent Employees</h3>
+                            <a href="employees.html" class="view-all">View All</a>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Department</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="employees-table">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Quick Actions</h3>
+                        </div>
+                        <div class="quick-actions">
+                            <a href="employees.html" class="action-btn">
+                                <div class="action-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="8.5" cy="7" r="4"></circle>
+                                        <line x1="20" x2="20" y1="8" y2="14"></line>
+                                        <line x1="23" x2="17" y1="11" y2="11"></line>
+                                    </svg>
+                                </div>
+                                <span>Add Employee</span>
+                            </a>
+                            <a href="attendance.html" class="action-btn">
+                                <div class="action-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" x2="16" y1="2" y2="6"></line>
+                                        <line x1="8" x2="8" y1="2" y2="6"></line>
+                                        <line x1="3" x2="21" y1="10" y2="10"></line>
+                                    </svg>
+                                </div>
+                                <span>Mark Attendance</span>
+                            </a>
+                            <a href="payroll.html" class="action-btn">
+                                <div class="action-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" x2="12" y1="2" y2="22"></line>
+                                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                    </svg>
+                                </div>
+                                <span>Process Payroll</span>
+                            </a>
+                            <a href="leave.html" class="action-btn">
+                                <div class="action-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                </div>
+                                <span>Leave Request</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script>
+        if (!auth.requireAuth()) throw new Error('Auth required');
+        
+        // Initialize dashboard based on role
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = auth.getCurrentUser();
+            console.log('Dashboard - Current user:', user);
+            console.log('Dashboard - User role:', user?.role);
+            console.log('Dashboard - Is management:', auth.isManagement());
+            
+            if (user) {
+                document.getElementById('user-name').textContent = `${user.username || user.employeeName || 'User'} (${auth.getRoleDisplayName()})`;
+            }
+            
+            if (auth.isManagement()) {
+                console.log('Loading management dashboard');
+                loadManagementDashboard();
+            } else {
+                console.log('Loading employee dashboard');
+                loadEmployeeDashboard();
+            }
+        });
+        
+        // Employee Dashboard
+        async function loadEmployeeDashboard() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dashboard-content').style.display = 'block';
+            document.getElementById('dashboard-content').innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <path d="m9 16 2 2 4-4"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="my-present">0</h3>
+                            <p>Present This Month</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="my-leaves">0</h3>
+                            <p>Leave Balance</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" x2="12" y1="2" y2="22"></line>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="my-salary">₹0</h3>
+                            <p>Last Month Salary</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="my-hours">0</h3>
+                            <p>Hours Worked</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Quick Actions</h3>
+                        </div>
+                        <div class="quick-actions">
+                            <a href="leave-request.html" class="action-btn">
+                                <div class="action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="5" y2="19"></line><line x1="5" x2="19" y1="12" y2="12"></line></svg></div>
+                                <span>Apply Leave</span>
+                            </a>
+                            <a href="my-payslips.html" class="action-btn">
+                                <div class="action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg></div>
+                                <span>View Payslip</span>
+                            </a>
+                            <a href="my-attendance.html" class="action-btn">
+                                <div class="action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect></svg></div>
+                                <span>My Attendance</span>
+                            </a>
+                            <a href="profile.html" class="action-btn">
+                                <div class="action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path></svg></div>
+                                <span>My Profile</span>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Recent Activity</h3>
+                        </div>
+                        <div id="recent-activity" style="padding: 1rem;">
+                            <p style="color: #6b7280; text-align: center;">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Load employee stats
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const [attRes, leaveRes, payslipRes] = await Promise.all([
+                    auth.apiCall('/api/attendance/my/summary'),
+                    auth.apiCall('/api/leaves/balance'),
+                    auth.apiCall('/api/payslips/my/latest')
+                ]);
+                
+                if (attRes && attRes.ok) {
+                    const att = await attRes.json();
+                    document.getElementById('my-present').textContent = att.presentDays || 0;
+                    document.getElementById('my-hours').textContent = (att.totalHours || 0).toFixed(1);
+                }
+                
+                if (leaveRes && leaveRes.ok) {
+                    const leave = await leaveRes.json();
+                    const total = (leave.casual || 0) + (leave.sick || 0) + (leave.earned || 0);
+                    document.getElementById('my-leaves').textContent = total;
+                }
+                
+                if (payslipRes && payslipRes.ok) {
+                    const payslip = await payslipRes.json();
+                    document.getElementById('my-salary').textContent = auth.formatCurrency(payslip.netSalary || 0);
+                }
+            } catch (e) { console.error(e); }
+        }
+        
+        // Management Dashboard
+        async function loadManagementDashboard() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dashboard-content').style.display = 'block';
+            
+            try {
+                const [empRes, attRes, leaveRes, payrollRes] = await Promise.all([
+                    auth.apiCall('/api/employees'),
+                    auth.apiCall(`/api/attendance/date/${new Date().toISOString().split('T')[0]}`),
+                    auth.apiCall('/api/leaves/pending'),
+                    auth.apiCall('/api/payroll/list')
+                ]);
+                
+                let stats = { totalEmployees: 0, presentToday: 0, monthlyPayroll: 0, leaveRequests: 0 };
+                
+                if (empRes && empRes.ok) {
+                    const employees = await empRes.json();
+                    stats.totalEmployees = employees.length || 0;
+                    updateEmployeesTable(employees.slice(0, 5));
+                }
+                
+                if (attRes && attRes.ok) {
+                    const attendance = await attRes.json();
+                    stats.presentToday = attendance.filter(a => a.status === 'PRESENT').length;
+                }
+                
+                if (leaveRes && leaveRes.ok) {
+                    const leaves = await leaveRes.json();
+                    stats.leaveRequests = leaves.filter(l => l.status === 'PENDING').length;
+                }
+                
+                if (payrollRes && payrollRes.ok) {
+                    const payroll = await payrollRes.json();
+                    const currentMonth = new Date().getMonth() + 1;
+                    const currentYear = new Date().getFullYear();
+                    const currentMonthPayroll = payroll.filter(p => p.month === currentMonth && p.year === currentYear);
+                    stats.monthlyPayroll = currentMonthPayroll.reduce((sum, p) => sum + (p.netSalary || 0), 0);
+                }
+                
+                document.getElementById('stat-employees').textContent = stats.totalEmployees;
+                document.getElementById('stat-present').textContent = stats.presentToday;
+                document.getElementById('stat-payroll').textContent = auth.formatCurrency(stats.monthlyPayroll);
+                document.getElementById('stat-leave').textContent = stats.leaveRequests;
+            } catch (e) { console.error(e); }
+        }
+        
+        function updateEmployeesTable(employees) {
+            const tbody = document.getElementById('employees-table');
+            if (!employees || employees.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 2rem;">No employees found</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = employees.map(emp => `
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <div style="width: 32px; height: 32px; background: #4f46e5; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.875rem; font-weight: 600;">
+                                ${(emp.firstName || '')[0]}${(emp.lastName || '')[0]}
+                            </div>
+                            <div>
+                                <div style="font-weight: 500;">${emp.firstName || ''} ${emp.lastName || ''}</div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">${emp.designation || 'Employee'}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${emp.department?.name || emp.department || 'N/A'}</td>
+                    <td><span class="status-badge ${(emp.status || 'Active').toLowerCase()}">${emp.status || 'Active'}</span></td>
+                </tr>
+            `).join('');
+        }
+    </script>
+</body>
+</html>

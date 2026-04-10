@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Leaves - HRM System</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/pages.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="dashboard-header">
+                <h1>My Leave History</h1>
+                <a href="leave-request.html" class="btn-primary">+ Apply for Leave</a>
+            </header>
+
+            <div class="page-content">
+                <!-- Leave Balance Cards -->
+                <div class="stats-grid" style="margin-bottom: 1.5rem;">
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="available-balance">0</h3>
+                            <p>Available Leave Balance</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="earned-balance">0</h3>
+                            <p>Total Earned (This Cycle)</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="cycle-info">-</h3>
+                            <p>Leave Cycle</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Probation Status -->
+                <div id="probation-banner" class="card" style="margin-bottom: 1.5rem; display: none;">
+                    <div class="card-header" style="background: #fef3c7; border-left: 4px solid #f59e0b;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" x2="12" y1="8" y2="12"></line>
+                                <line x1="12" x2="12.01" y1="16" y2="16"></line>
+                            </svg>
+                            <h3 style="color: #92400e; margin: 0;">Probation Period Status</h3>
+                        </div>
+                        <p id="probation-text" style="color: #92400e; margin: 0.5rem 0 0 2rem; font-size: 0.9rem;"></p>
+                    </div>
+                </div>
+                
+                <!-- Leave Policy Info -->
+                <div class="card" style="margin-bottom: 1.5rem; background: #f0f9ff; border-left: 4px solid #0ea5e9;">
+                    <div style="padding: 1rem;">
+                        <h4 style="margin: 0 0 0.5rem 0; color: #0369a1;">Leave Policy</h4>
+                        <ul style="margin: 0; padding-left: 1.2rem; color: #0c4a6e; font-size: 0.9rem;">
+                            <li>You earn 1.5 leaves per month (9 leaves per 6-month cycle)</li>
+                            <li>Maximum 3 paid leaves can be taken at one time</li>
+                            <li>Excess days will be converted to unpaid leave</li>
+                            <li>Up to 10 leaves can be carried forward to next cycle</li>
+                            <li>During probation: All leaves are unpaid</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Leave Applications</h3>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Paid</th><th>Unpaid</th><th>Reason</th><th>Status</th></tr>
+                            </thead>
+                            <tbody id="leaves-table">
+                                <tr><td colspan="8" style="text-align: center; padding: 2rem;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script>
+        if (!auth.requireAuth()) throw new Error('Auth required');
+        
+        const user = auth.getCurrentUser();
+        
+        async function loadMyLeaves() {
+            try {
+                // Load leave balance
+                const balanceRes = await auth.apiCall('/api/leaves/balance');
+                if (balanceRes && balanceRes.ok) {
+                    const balance = await balanceRes.json();
+                    document.getElementById('available-balance').textContent = balance.availableLeaves || 0;
+                    document.getElementById('earned-balance').textContent = (balance.totalEarnedLeaves || 0) + (balance.carriedForwardLeaves ? ' + ' + balance.carriedForwardLeaves + ' carried' : '');
+                    document.getElementById('cycle-info').textContent = 'Cycle ' + (balance.cycle || 1) + ' - ' + (balance.year || new Date().getFullYear());
+                    
+                    // Show probation status if applicable
+                    if (balance.inProbation) {
+                        document.getElementById('probation-banner').style.display = 'block';
+                        document.getElementById('probation-text').textContent = balance.probationStatus || 'You are currently in probation period. All leaves will be unpaid.';
+                    }
+                }
+                
+                // Load my leaves
+                const res = await auth.apiCall('/api/leaves/my');
+                const data = res && res.ok ? await res.json() : [];
+                
+                const tbody = document.getElementById('leaves-table');
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;">No leave applications found</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = data.map(l => {
+                    const days = l.totalDays || (Math.ceil((new Date(l.endDate) - new Date(l.startDate)) / (1000 * 60 * 60 * 24)) + 1);
+                    const isHalfDay = l.isHalfDay ? '<span style="color: #0ea5e9;">(Half Day)</span>' : '';
+                    return `
+                        <tr>
+                            <td>${l.leaveType || 'CASUAL'}</td>
+                            <td>${auth.formatDate(l.startDate)}</td>
+                            <td>${auth.formatDate(l.endDate)}</td>
+                            <td>${days} ${isHalfDay}</td>
+                            <td style="color: #166534; font-weight: 500;">${l.paidDays || 0}</td>
+                            <td style="color: #991b1b; font-weight: 500;">${l.unpaidDays || 0}</td>
+                            <td>${l.reason || '-'}</td>
+                            <td><span class="status-badge ${(l.status || 'PENDING').toLowerCase()}">${l.status || 'PENDING'}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) { console.error(e); }
+        }
+        
+        loadMyLeaves();
+    </script>
+</body>
+</html>

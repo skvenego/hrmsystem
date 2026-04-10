@@ -58,13 +58,34 @@ public class EmployeeDTO {
     private Long departmentId;
     
     private String departmentName;
+    
+    private Long shiftId;
+    
+    private String gender;
+    
+    private Integer probationPeriodMonths;
+    
+    private BigDecimal basicSalary;
+    
+    private BigDecimal da;
+    
+    private BigDecimal hra;
+    
+    private BigDecimal otherAllowance;
+    
+    private BigDecimal pf;
+    
+    private BigDecimal tax;
 
     // Constructors
     public EmployeeDTO() {}
 
     public EmployeeDTO(Long id, String employeeId, String firstName, String lastName, 
                        String email, String phone, String designation, LocalDate joiningDate,
-                       BigDecimal salary, String status, String address, Long departmentId, String departmentName) {
+                       BigDecimal salary, String status, String address, Long departmentId, String departmentName,
+                       Long shiftId, String gender, Integer probationPeriodMonths,
+                       BigDecimal basicSalary, BigDecimal da, BigDecimal hra, BigDecimal otherAllowance,
+                       BigDecimal pf, BigDecimal tax) {
         this.id = id;
         this.employeeId = employeeId;
         this.firstName = firstName;
@@ -78,6 +99,15 @@ public class EmployeeDTO {
         this.address = address;
         this.departmentId = departmentId;
         this.departmentName = departmentName;
+        this.shiftId = shiftId;
+        this.gender = gender;
+        this.probationPeriodMonths = probationPeriodMonths;
+        this.basicSalary = basicSalary;
+        this.da = da;
+        this.hra = hra;
+        this.otherAllowance = otherAllowance;
+        this.pf = pf;
+        this.tax = tax;
     }
 
     // Getters
@@ -133,6 +163,42 @@ public class EmployeeDTO {
         return departmentName;
     }
 
+    public Long getShiftId() {
+        return shiftId;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public Integer getProbationPeriodMonths() {
+        return probationPeriodMonths;
+    }
+
+    public BigDecimal getBasicSalary() {
+        return basicSalary;
+    }
+
+    public BigDecimal getDa() {
+        return da;
+    }
+
+    public BigDecimal getHra() {
+        return hra;
+    }
+
+    public BigDecimal getOtherAllowance() {
+        return otherAllowance;
+    }
+
+    public BigDecimal getPf() {
+        return pf;
+    }
+
+    public BigDecimal getTax() {
+        return tax;
+    }
+
     // Setters
     public void setId(Long id) {
         this.id = id;
@@ -186,6 +252,42 @@ public class EmployeeDTO {
         this.departmentName = departmentName;
     }
 
+    public void setShiftId(Long shiftId) {
+        this.shiftId = shiftId;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public void setProbationPeriodMonths(Integer probationPeriodMonths) {
+        this.probationPeriodMonths = probationPeriodMonths;
+    }
+
+    public void setBasicSalary(BigDecimal basicSalary) {
+        this.basicSalary = basicSalary;
+    }
+
+    public void setDa(BigDecimal da) {
+        this.da = da;
+    }
+
+    public void setHra(BigDecimal hra) {
+        this.hra = hra;
+    }
+
+    public void setOtherAllowance(BigDecimal otherAllowance) {
+        this.otherAllowance = otherAllowance;
+    }
+
+    public void setPf(BigDecimal pf) {
+        this.pf = pf;
+    }
+
+    public void setTax(BigDecimal tax) {
+        this.tax = tax;
+    }
+
     @Override
     public String toString() {
         return "EmployeeDTO{" +
@@ -202,6 +304,15 @@ public class EmployeeDTO {
                 ", address='" + address + '\'' +
                 ", departmentId=" + departmentId +
                 ", departmentName='" + departmentName + '\'' +
+                ", shiftId=" + shiftId +
+                ", gender='" + gender + '\'' +
+                ", probationPeriodMonths=" + probationPeriodMonths +
+                ", basicSalary=" + basicSalary +
+                ", da=" + da +
+                ", hra=" + hra +
+                ", otherAllowance=" + otherAllowance +
+                ", pf=" + pf +
+                ", tax=" + tax +
                 '}';
     }
 
@@ -224,6 +335,15 @@ public class EmployeeDTO {
         private String address;
         private Long departmentId;
         private String departmentName;
+        private Long shiftId;
+        private String gender;
+        private Integer probationPeriodMonths;
+        private BigDecimal basicSalary;
+        private BigDecimal da;
+        private BigDecimal hra;
+        private BigDecimal otherAllowance;
+        private BigDecimal pf;
+        private BigDecimal tax;
 
         public Builder id(Long id) {
             this.id = id;
@@ -290,9 +410,55 @@ public class EmployeeDTO {
             return this;
         }
 
+        public Builder shiftId(Long shiftId) {
+            this.shiftId = shiftId;
+            return this;
+        }
+
+        public Builder gender(String gender) {
+            this.gender = gender;
+            return this;
+        }
+
+        public Builder probationPeriodMonths(Integer probationPeriodMonths) {
+            this.probationPeriodMonths = probationPeriodMonths;
+            return this;
+        }
+
+        public Builder basicSalary(BigDecimal basicSalary) {
+            this.basicSalary = basicSalary;
+            return this;
+        }
+
+        public Builder da(BigDecimal da) {
+            this.da = da;
+            return this;
+        }
+
+        public Builder hra(BigDecimal hra) {
+            this.hra = hra;
+            return this;
+        }
+
+        public Builder otherAllowance(BigDecimal otherAllowance) {
+            this.otherAllowance = otherAllowance;
+            return this;
+        }
+
+        public Builder pf(BigDecimal pf) {
+            this.pf = pf;
+            return this;
+        }
+
+        public Builder tax(BigDecimal tax) {
+            this.tax = tax;
+            return this;
+        }
+
         public EmployeeDTO build() {
             return new EmployeeDTO(id, employeeId, firstName, lastName, email, phone, designation,
-                    joiningDate, salary, status, address, departmentId, departmentName);
+                    joiningDate, salary, status, address, departmentId, departmentName,
+                    shiftId, gender, probationPeriodMonths, basicSalary, da, hra, otherAllowance, pf, tax);
         }
     }
 

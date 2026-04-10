@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employees - HRM System</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/pages.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar (auto-generated based on role) -->
+        <aside class="sidebar"></aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="dashboard-header">
+                <h1>Employees</h1>
+                <div class="header-actions">
+                    <input type="text" id="search-input" placeholder="Search employees..." class="search-input">
+                    <a href="employee-form.html" class="btn-primary">+ Add Employee</a>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <div class="card">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Department</th>
+                                    <th>Designation</th>
+                                    <th>Salary</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employees-table">
+                                <tr><td colspan="9" style="text-align: center; padding: 2rem;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script>
+        if (!auth.requireManagement()) throw new Error('Management access required');
+        
+        // Load employees
+        async function loadEmployees() {
+            try {
+                const res = await auth.apiCall('/api/employees');
+                if (!res || !res.ok) throw new Error('Failed to load');
+                const employees = await res.json();
+                
+                const tbody = document.getElementById('employees-table');
+                if (employees.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 2rem;">No employees found</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = employees.map(emp => `
+                    <tr>
+                        <td>${emp.id}</td>
+                        <td>${emp.firstName} ${emp.lastName}</td>
+                        <td>${emp.email || 'N/A'}</td>
+                        <td>${emp.phone || 'N/A'}</td>
+                        <td>${emp.departmentName || emp.department?.name || emp.department || 'N/A'}</td>
+                        <td>${emp.designation || 'N/A'}</td>
+                        <td>${auth.formatCurrency(emp.salary || 0)}</td>
+                        <td><span class="status-badge ${(emp.status || 'Active').toLowerCase()}">${emp.status || 'Active'}</span></td>
+                        <td>
+                            <a href="employee-form.html?edit=${emp.id}" class="btn-small">Edit</a>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                console.error(e);
+                document.getElementById('employees-table').innerHTML = '<tr><td colspan="9" style="text-align: center; color: red; padding: 2rem;">Error loading employees</td></tr>';
+            }
+        }
+        
+        // No need for logout function - handled by sidebar.js
+        
+        // Search functionality
+        document.getElementById('search-input')?.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            document.querySelectorAll('#employees-table tr').forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(term) ? '' : 'none';
+            });
+        });
+        
+        loadEmployees();
+    </script>
+</body>
+</html>

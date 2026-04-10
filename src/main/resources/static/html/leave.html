@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Management - HRM System</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/pages.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="dashboard-header">
+                <h1>Leave Management</h1>
+                <button onclick="openModal()" class="btn-primary">+ Apply Leave</button>
+            </header>
+
+            <div class="page-content">
+                <!-- Stats Row -->
+                <div class="stats-grid" style="margin-bottom: 1.5rem;">
+                    <div class="stat-card">
+                        <div class="stat-icon yellow">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="pending-count">0</h3>
+                            <p>Pending Approvals</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="approved-count">0</h3>
+                            <p>Approved This Month</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2v20M2 12h20"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-days">0</h3>
+                            <p>Total Leave Days</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>Leave Applications</h3>
+                        <div>
+                            <select id="status-filter" class="form-input" style="width: auto; display: inline-block; margin-right: 0.5rem;">
+                                <option value="ALL">All Status</option>
+                                <option value="PENDING">Pending</option>
+                                <option value="APPROVED">Approved</option>
+                                <option value="REJECTED">Rejected</option>
+                            </select>
+                            <button onclick="loadLeaves()" class="btn-small" style="background: #e0e7ff; color: #3730a3;">Refresh</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Type</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Days</th>
+                                    <th>Paid</th>
+                                    <th>Unpaid</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leave-table">
+                                <tr><td colspan="9" style="text-align: center; padding: 2rem;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="leave-modal" class="modal">
+        <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header" style="border-bottom: 2px solid #e5e7eb; padding-bottom: 1rem;">
+                <div>
+                    <h3 style="margin: 0; color: #1f2937;">Apply for Leave</h3>
+                    <p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.875rem;">Fill in the details to apply for employee leave</p>
+                </div>
+                <button onclick="closeModal()" class="modal-close" style="font-size: 1.5rem; color: #6b7280;">&times;</button>
+            </div>
+            
+            <form id="leave-form" style="padding: 1.5rem;">
+                <!-- Two Column Layout -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    
+                    <!-- LEFT COLUMN: Employee Info -->
+                    <div>
+                        <!-- Employee Selection -->
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" style="font-weight: 600; color: #374151;">
+                                <span style="color: #ef4444;">*</span> Select Employee
+                            </label>
+                            <div style="position: relative;">
+                                <input type="text" id="employee-search" class="form-input" placeholder="Search by name or ID..." autocomplete="off" style="padding-left: 2.5rem;">
+                                <svg style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #9ca3af;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <path d="m21 21-4.35-4.35"></path>
+                                </svg>
+                                <div id="employee-dropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 0.375rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); max-height: 200px; overflow-y: auto; z-index: 100;"></div>
+                            </div>
+                            <input type="hidden" id="selected-employee-id" name="employeeId" required>
+                        </div>
+                        
+                        <!-- Employee Info Card -->
+                        <div id="employee-info-card" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1rem; display: none;">
+                            <h4 style="margin: 0 0 0.75rem 0; color: #1e293b; font-size: 0.9rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;">Employee Details</h4>
+                            
+                            <!-- Basic Info -->
+                            <div style="margin-bottom: 0.75rem;">
+                                <p style="margin: 0; font-size: 0.85rem; color: #64748b;">Name</p>
+                                <p id="info-name" style="margin: 0.125rem 0 0 0; font-weight: 600; color: #1e293b;">-</p>
+                            </div>
+                            <div style="margin-bottom: 0.75rem;">
+                                <p style="margin: 0; font-size: 0.85rem; color: #64748b;">Department</p>
+                                <p id="info-dept" style="margin: 0.125rem 0 0 0; font-weight: 500; color: #1e293b;">-</p>
+                            </div>
+                            <div style="margin-bottom: 0.75rem;">
+                                <p style="margin: 0; font-size: 0.85rem; color: #64748b;">Designation</p>
+                                <p id="info-designation" style="margin: 0.125rem 0 0 0; font-weight: 500; color: #1e293b;">-</p>
+                            </div>
+                            
+                            <!-- Probation Status -->
+                            <div id="probation-section" style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e2e8f0;">
+                                <p style="margin: 0; font-size: 0.85rem; color: #64748b;">Probation Status</p>
+                                <div id="probation-badge-admin" style="display: inline-flex; align-items: center; gap: 0.375rem; margin-top: 0.25rem; padding: 0.25rem 0.625rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 500;">
+                                    <span id="probation-status">-</span>
+                                </div>
+                                <p id="probation-dates" style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: #64748b;">-</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Leave Summary Card -->
+                        <div id="leave-summary-card" style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 0.5rem; padding: 1rem; margin-top: 1rem; display: none;">
+                            <h4 style="margin: 0 0 0.75rem 0; color: #166534; font-size: 0.9rem; border-bottom: 1px solid #bbf7d0; padding-bottom: 0.5rem;">Leave Balance</h4>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                                <div>
+                                    <p style="margin: 0; font-size: 0.75rem; color: #15803d;">Total Earned</p>
+                                    <p id="leave-earned" style="margin: 0; font-weight: 600; color: #166534; font-size: 1rem;">0</p>
+                                </div>
+                                <div>
+                                    <p style="margin: 0; font-size: 0.75rem; color: #15803d;">Used</p>
+                                    <p id="leave-used" style="margin: 0; font-weight: 600; color: #166534; font-size: 1rem;">0</p>
+                                </div>
+                                <div>
+                                    <p style="margin: 0; font-size: 0.75rem; color: #15803d;">Remaining</p>
+                                    <p id="leave-remaining" style="margin: 0; font-weight: 600; color: #166534; font-size: 1rem;">0</p>
+                                </div>
+                                <div>
+                                    <p style="margin: 0; font-size: 0.75rem; color: #15803d;">Unpaid</p>
+                                    <p id="leave-unpaid" style="margin: 0; font-weight: 600; color: #dc2626; font-size: 1rem;">0</p>
+                                </div>
+                            </div>
+                            <p id="leave-cycle" style="margin: 0.5rem 0 0 0; font-size: 0.75rem; color: #15803d; text-align: center;">-</p>
+                        </div>
+                        
+                        <!-- Attendance Summary -->
+                        <div id="attendance-summary-card" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.5rem; padding: 1rem; margin-top: 1rem; display: none;">
+                            <h4 style="margin: 0 0 0.75rem 0; color: #1e40af; font-size: 0.9rem; border-bottom: 1px solid #bfdbfe; padding-bottom: 0.5rem;">Attendance (This Month)</h4>
+                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; text-align: center;">
+                                <div>
+                                    <p style="margin: 0; font-size: 0.75rem; color: #3b82f6;">Present</p>
+                                    <p id="att-present" style="margin: 0; font-weight: 600; color: #1d4ed8;">0</p>
+                                </div>
+                                <div>
+                                    <p style="margin: 0; font-size: 0.75rem; color: #3b82f6;">Absent</p>
+                                    <p id="att-absent" style="margin: 0; font-weight: 600; color: #dc2626;">0</p>
+                                </div>
+                                <div>
+                                    <p style="margin: 0; font-size: 0.75rem; color: #3b82f6;">Leave</p>
+                                    <p id="att-leave" style="margin: 0; font-weight: 600; color: #f59e0b;">0</p>
+                                </div>
+                                <div>
+                                    <p style="margin: 0; font-size: 0.75rem; color: #3b82f6;">Half Day</p>
+                                    <p id="att-half" style="margin: 0; font-weight: 600; color: #8b5cf6;">0</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- RIGHT COLUMN: Leave Form -->
+                    <div>
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" style="font-weight: 600; color: #374151;">
+                                <span style="color: #ef4444;">*</span> Leave Type
+                            </label>
+                            <select name="leaveType" id="leave-type" class="form-input" required>
+                                <option value="">Select Leave Type</option>
+                                <option value="CASUAL">Casual Leave</option>
+                                <option value="SICK">Sick Leave</option>
+                                <option value="ANNUAL">Annual Leave</option>
+                                <option value="MATERNITY">Maternity Leave</option>
+                                <option value="PATERNITY">Paternity Leave</option>
+                                <option value="HALF_DAY">Half Day Leave</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                            <div class="form-group" style="margin: 0;">
+                                <label class="form-label" style="font-weight: 600; color: #374151;">
+                                    <span style="color: #ef4444;">*</span> Start Date
+                                </label>
+                                <input type="date" name="startDate" id="start-date" class="form-input" required>
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label class="form-label" style="font-weight: 600; color: #374151;">
+                                    <span style="color: #ef4444;">*</span> End Date
+                                </label>
+                                <input type="date" name="endDate" id="end-date" class="form-input" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; background: #f3f4f6; border-radius: 0.375rem;">
+                                <input type="checkbox" id="is-half-day" name="isHalfDay" style="width: 18px; height: 18px; accent-color: #3b82f6;">
+                                <span style="color: #374151; font-size: 0.9rem;">Half Day Leave (0.5 day deduction)</span>
+                            </label>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" style="font-weight: 600; color: #374151;">
+                                <span style="color: #ef4444;">*</span> Reason
+                            </label>
+                            <textarea name="reason" id="reason" class="form-input" rows="3" required placeholder="Enter reason for leave..."></textarea>
+                        </div>
+                        
+                        <!-- Warning Section -->
+                        <div id="warning-section" style="display: none; margin-bottom: 1rem;">
+                            <div id="probation-warning" style="display: none; background: #fef3c7; border: 1px solid #fbbf24; border-radius: 0.375rem; padding: 0.75rem; margin-bottom: 0.5rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                    </svg>
+                                    <span style="color: #92400e; font-size: 0.85rem; font-weight: 500;">Employee is in probation. All leaves will be unpaid.</span>
+                                </div>
+                            </div>
+                            <div id="excess-warning" style="display: none; background: #fee2e2; border: 1px solid #f87171; border-radius: 0.375rem; padding: 0.75rem;">
+                                <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" style="flex-shrink: 0; margin-top: 0.125rem;">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                    <span id="excess-message" style="color: #991b1b; font-size: 0.85rem; font-weight: 500;">Only 3 paid leaves allowed. Extra will be unpaid.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- BOTTOM: Calculation Preview -->
+                <div id="calculation-preview" style="background: #f1f5f9; border: 2px solid #cbd5e1; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; display: none;">
+                    <h4 style="margin: 0 0 0.75rem 0; color: #1e293b; font-size: 0.95rem;">Leave Calculation Preview</h4>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; text-align: center;">
+                        <div style="background: white; padding: 0.75rem; border-radius: 0.375rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                            <p style="margin: 0; font-size: 0.75rem; color: #64748b;">Total Days</p>
+                            <p id="calc-total" style="margin: 0.25rem 0 0 0; font-weight: 700; color: #1e293b; font-size: 1.25rem;">0</p>
+                        </div>
+                        <div style="background: white; padding: 0.75rem; border-radius: 0.375rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                            <p style="margin: 0; font-size: 0.75rem; color: #64748b;">Paid Leaves</p>
+                            <p id="calc-paid" style="margin: 0.25rem 0 0 0; font-weight: 700; color: #16a34a; font-size: 1.25rem;">0</p>
+                        </div>
+                        <div style="background: white; padding: 0.75rem; border-radius: 0.375rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                            <p style="margin: 0; font-size: 0.75rem; color: #64748b;">Unpaid Leaves</p>
+                            <p id="calc-unpaid" style="margin: 0.25rem 0 0 0; font-weight: 700; color: #dc2626; font-size: 1.25rem;">0</p>
+                        </div>
+                        <div style="background: white; padding: 0.75rem; border-radius: 0.375rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                            <p style="margin: 0; font-size: 0.75rem; color: #64748b;">Salary Deduction</p>
+                            <p id="calc-deduction" style="margin: 0.25rem 0 0 0; font-weight: 700; color: #dc2626; font-size: 1.25rem;">₹0</p>
+                        </div>
+                    </div>
+                    <p id="calc-message" style="margin: 0.75rem 0 0 0; text-align: center; color: #0ea5e9; font-size: 0.875rem; font-weight: 500;"></p>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div style="display: flex; gap: 0.75rem; justify-content: flex-end; border-top: 1px solid #e5e7eb; padding-top: 1rem;">
+                    <button type="button" onclick="closeModal()" class="btn-small" style="background: #f3f4f6; color: #374151; padding: 0.5rem 1rem;">Cancel</button>
+                    <button type="submit" class="btn-auth" style="padding: 0.5rem 1.5rem;">Submit Leave Application</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script>
+        if (!auth.requireManagement()) throw new Error('Management access required');
+        
+        async function loadLeaves() {
+            try {
+                const res = await auth.apiCall('/api/leaves');
+                const data = res && res.ok ? await res.json() : [];
+                
+                // Filter by status if selected
+                const filterStatus = document.getElementById('status-filter').value;
+                let filteredData = data;
+                if (filterStatus !== 'ALL') {
+                    filteredData = data.filter(l => (l.status || 'PENDING') === filterStatus);
+                }
+                
+                // Update stats
+                document.getElementById('pending-count').textContent = data.filter(l => (l.status || 'PENDING') === 'PENDING').length;
+                document.getElementById('approved-count').textContent = data.filter(l => (l.status || 'PENDING') === 'APPROVED').length;
+                document.getElementById('total-days').textContent = data.reduce((sum, l) => sum + (l.totalDays || 1), 0);
+                
+                const tbody = document.getElementById('leave-table');
+                if (!filteredData || filteredData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 2rem;">No leave records</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = filteredData.map(l => {
+                    const days = l.totalDays || (Math.ceil((new Date(l.endDate) - new Date(l.startDate)) / (1000 * 60 * 60 * 24)) + 1);
+                    const isHalfDay = l.isHalfDay ? '<span style="color: #0ea5e9;">(H)</span>' : '';
+                    const paidDays = l.paidDays || 0;
+                    const unpaidDays = l.unpaidDays || 0;
+                    
+                    return `
+                        <tr>
+                            <td><strong>${l.employeeName || 'Unknown'}</strong><br><small style="color: #6b7280;">ID: ${l.employeeId || '-'}</small></td>
+                            <td>${l.leaveType || 'CASUAL'}</td>
+                            <td>${auth.formatDate(l.startDate)}</td>
+                            <td>${auth.formatDate(l.endDate)}</td>
+                            <td>${days} ${isHalfDay}</td>
+                            <td style="color: #166534; font-weight: 500;">${paidDays}</td>
+                            <td style="color: #991b1b; font-weight: 500;">${unpaidDays}</td>
+                            <td><span class="status-badge ${(l.status || 'PENDING').toLowerCase()}">${l.status || 'PENDING'}</span></td>
+                            <td>
+                                ${l.status === 'PENDING' ? `
+                                    <button onclick="approveLeave(${l.id})" class="btn-small" style="background: #dcfce7; color: #166534;">Approve</button>
+                                    <button onclick="rejectLeave(${l.id})" class="btn-small" style="background: #fee2e2; color: #991b1b;">Reject</button>
+                                ` : l.status === 'APPROVED' ? `
+                                    <button onclick="viewLeaveDetails(${l.id})" class="btn-small" style="background: #e0e7ff; color: #3730a3;">View</button>
+                                ` : '<span style="color: #9ca3af;">-</span>'}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) { console.error(e); }
+        }
+        
+        // Filter change handler
+        document.getElementById('status-filter').addEventListener('change', loadLeaves);
+        
+        function viewLeaveDetails(id) {
+            // Show leave details in a modal or alert for now
+            auth.showNotification('Leave ID: ' + id, 'info');
+        }
+        
+        // Employee data storage
+        let allEmployees = [];
+        let selectedEmployee = null;
+        let employeeLeaveBalance = null;
+        let employeeAttendance = null;
+        
+        // Initialize modal
+        function openModal() { 
+            document.getElementById('leave-modal').classList.add('active');
+            resetModal();
+            loadEmployeesForSearch();
+        }
+        
+        function closeModal() { 
+            document.getElementById('leave-modal').classList.remove('active');
+            resetModal();
+        }
+        
+        function resetModal() {
+            document.getElementById('leave-form').reset();
+            document.getElementById('selected-employee-id').value = '';
+            document.getElementById('employee-search').value = '';
+            document.getElementById('employee-dropdown').style.display = 'none';
+            document.getElementById('employee-info-card').style.display = 'none';
+            document.getElementById('leave-summary-card').style.display = 'none';
+            document.getElementById('attendance-summary-card').style.display = 'none';
+            document.getElementById('calculation-preview').style.display = 'none';
+            document.getElementById('warning-section').style.display = 'none';
+            selectedEmployee = null;
+            employeeLeaveBalance = null;
+            employeeAttendance = null;
+        }
+        
+        // Load all employees for search
+        async function loadEmployeesForSearch() {
+            try {
+                const res = await auth.apiCall('/api/employees');
+                if (res && res.ok) {
+                    allEmployees = await res.json();
+                }
+            } catch (e) { console.error('Failed to load employees', e); }
+        }
+        
+        // Employee search functionality
+        const employeeSearch = document.getElementById('employee-search');
+        const employeeDropdown = document.getElementById('employee-dropdown');
+        
+        employeeSearch.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            if (!query) {
+                employeeDropdown.style.display = 'none';
+                return;
+            }
+            
+            const filtered = allEmployees.filter(emp => 
+                (emp.firstName + ' ' + emp.lastName).toLowerCase().includes(query) ||
+                (emp.id && emp.id.toString().includes(query)) ||
+                (emp.departmentName && emp.departmentName.toLowerCase().includes(query))
+            ).slice(0, 10); // Limit to 10 results
+            
+            if (filtered.length > 0) {
+                employeeDropdown.innerHTML = filtered.map(emp => `
+                    <div class="employee-option" data-id="${emp.id}" style="padding: 0.75rem; cursor: pointer; border-bottom: 1px solid #e5e7eb; hover: background: #f3f4f6;">
+                        <div style="font-weight: 500; color: #1f2937;">${emp.firstName} ${emp.lastName}</div>
+                        <div style="font-size: 0.75rem; color: #6b7280;">ID: ${emp.id} - ${emp.departmentName || 'No Dept'}</div>
+                    </div>
+                `).join('');
+                employeeDropdown.style.display = 'block';
+                
+                // Add click handlers
+                document.querySelectorAll('.employee-option').forEach(opt => {
+                    opt.addEventListener('click', () => selectEmployee(opt.dataset.id));
+                });
+            } else {
+                employeeDropdown.innerHTML = '<div style="padding: 0.75rem; color: #6b7280; text-align: center;">No employees found</div>';
+                employeeDropdown.style.display = 'block';
+            }
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#employee-search') && !e.target.closest('#employee-dropdown')) {
+                employeeDropdown.style.display = 'none';
+            }
+        });
+        
+        // Select employee and load details
+        async function selectEmployee(employeeId) {
+            employeeDropdown.style.display = 'none';
+            const emp = allEmployees.find(e => e.id == employeeId);
+            if (!emp) return;
+            
+            selectedEmployee = emp;
+            document.getElementById('selected-employee-id').value = emp.id;
+            document.getElementById('employee-search').value = `${emp.firstName} ${emp.lastName} (ID: ${emp.id})`;
+            
+            // Show basic info
+            document.getElementById('employee-info-card').style.display = 'block';
+            document.getElementById('info-name').textContent = `${emp.firstName} ${emp.lastName}`;
+            document.getElementById('info-dept').textContent = emp.departmentName || 'Not Assigned';
+            document.getElementById('info-designation').textContent = emp.designation || 'Not Assigned';
+            
+            // Calculate and show probation status
+            await loadEmployeeProbationStatus(emp);
+            
+            // Load leave balance
+            await loadEmployeeLeaveBalance(emp.id);
+            
+            // Load attendance summary
+            await loadEmployeeAttendance(emp.id);
+            
+            // Update calculation if dates are already filled
+            updateLeaveCalculation();
+        }
+        
+        // Load probation status
+        async function loadEmployeeProbationStatus(emp) {
+            const joiningDate = emp.joiningDate ? new Date(emp.joiningDate) : null;
+            const probationMonths = emp.probationPeriodMonths || 3;
+            
+            if (joiningDate) {
+                const probationEnd = new Date(joiningDate);
+                probationEnd.setMonth(probationEnd.getMonth() + probationMonths);
+                const today = new Date();
+                const isInProbation = today < probationEnd;
+                
+                const badge = document.getElementById('probation-badge-admin');
+                const statusText = document.getElementById('probation-status');
+                const datesText = document.getElementById('probation-dates');
+                
+                if (isInProbation) {
+                    badge.style.background = '#fef3c7';
+                    badge.style.color = '#92400e';
+                    statusText.textContent = '⏳ In Probation';
+                    datesText.textContent = `Started: ${auth.formatDate(joiningDate)} | Ends: ${auth.formatDate(probationEnd)}`;
+                } else {
+                    badge.style.background = '#dcfce7';
+                    badge.style.color = '#166534';
+                    statusText.textContent = '✅ Completed';
+                    datesText.textContent = `Completed on: ${auth.formatDate(probationEnd)}`;
+                }
+            }
+        }
+        
+        // Load employee leave balance
+        async function loadEmployeeLeaveBalance(employeeId) {
+            try {
+                const res = await auth.apiCall(`/api/leaves/balance/${employeeId}`);
+                if (res && res.ok) {
+                    employeeLeaveBalance = await res.json();
+                    
+                    document.getElementById('leave-summary-card').style.display = 'block';
+                    document.getElementById('leave-earned').textContent = employeeLeaveBalance.totalEarnedLeaves || 0;
+                    document.getElementById('leave-used').textContent = employeeLeaveBalance.usedLeaves || 0;
+                    document.getElementById('leave-remaining').textContent = employeeLeaveBalance.availableLeaves || 0;
+                    document.getElementById('leave-unpaid').textContent = employeeLeaveBalance.unpaidLeaves || 0;
+                    document.getElementById('leave-cycle').textContent = `Cycle ${employeeLeaveBalance.cycle || 1} - ${employeeLeaveBalance.year || new Date().getFullYear()}`;
+                }
+            } catch (e) { console.error('Failed to load leave balance', e); }
+        }
+        
+        // Load employee attendance for current month
+        async function loadEmployeeAttendance(employeeId) {
+            try {
+                const today = new Date();
+                const res = await auth.apiCall(`/api/attendance/employee/${employeeId}?month=${today.getMonth() + 1}&year=${today.getFullYear()}`);
+                if (res && res.ok) {
+                    const attendance = await res.json();
+                    employeeAttendance = attendance;
+                    
+                    let present = 0, absent = 0, leave = 0, halfDay = 0;
+                    attendance.forEach(a => {
+                        if (a.status === 'PRESENT') present++;
+                        else if (a.status === 'ABSENT') absent++;
+                        else if (a.status === 'ON_LEAVE') leave++;
+                        else if (a.status === 'HALF_DAY') halfDay++;
+                    });
+                    
+                    document.getElementById('attendance-summary-card').style.display = 'block';
+                    document.getElementById('att-present').textContent = present;
+                    document.getElementById('att-absent').textContent = absent;
+                    document.getElementById('att-leave').textContent = leave;
+                    document.getElementById('att-half').textContent = halfDay;
+                }
+            } catch (e) { console.error('Failed to load attendance', e); }
+        }
+        
+        // Date and half-day change handlers for calculation
+        document.getElementById('start-date').addEventListener('change', updateLeaveCalculation);
+        document.getElementById('end-date').addEventListener('change', updateLeaveCalculation);
+        document.getElementById('is-half-day').addEventListener('change', updateLeaveCalculation);
+        
+        // Real-time leave calculation
+        function updateLeaveCalculation() {
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            const isHalfDay = document.getElementById('is-half-day').checked;
+            
+            if (!startDate || !endDate || !selectedEmployee) {
+                document.getElementById('calculation-preview').style.display = 'none';
+                document.getElementById('warning-section').style.display = 'none';
+                return;
+            }
+            
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            
+            if (end < start) return;
+            
+            // Calculate days
+            let totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+            if (isHalfDay) {
+                totalDays = 0.5;
+            }
+            
+            // Determine paid/unpaid
+            let paidDays = 0;
+            let unpaidDays = 0;
+            let message = '';
+            let showProbationWarning = false;
+            let showExcessWarning = false;
+            
+            const joiningDate = selectedEmployee.joiningDate ? new Date(selectedEmployee.joiningDate) : null;
+            const probationMonths = selectedEmployee.probationPeriodMonths || 3;
+            const probationEnd = joiningDate ? new Date(joiningDate.setMonth(joiningDate.getMonth() + probationMonths)) : null;
+            const isInProbation = probationEnd && new Date() < probationEnd;
+            
+            if (isInProbation) {
+                // All unpaid during probation
+                paidDays = 0;
+                unpaidDays = totalDays;
+                message = 'Employee is in probation. All leaves will be unpaid.';
+                showProbationWarning = true;
+            } else {
+                const availableBalance = employeeLeaveBalance ? (employeeLeaveBalance.availableLeaves || 0) : 0;
+                const maxPaidAtOnce = 3;
+                const maxPaid = Math.min(maxPaidAtOnce, availableBalance);
+                
+                if (isHalfDay) {
+                    paidDays = 0.5;
+                    unpaidDays = 0;
+                    message = 'Half day leave - 0.5 day will be deducted.';
+                } else if (totalDays <= maxPaid) {
+                    paidDays = totalDays;
+                    unpaidDays = 0;
+                    message = `All ${totalDays} day(s) will be paid leave.`;
+                } else {
+                    paidDays = maxPaid;
+                    unpaidDays = totalDays - maxPaid;
+                    message = `${paidDays} day(s) paid (max 3), ${unpaidDays} day(s) unpaid.`;
+                    showExcessWarning = true;
+                }
+            }
+            
+            // Calculate salary deduction
+            const salary = selectedEmployee.salary || 0;
+            const workingDays = 26;
+            const perDaySalary = salary / workingDays;
+            const deduction = unpaidDays * perDaySalary + (isHalfDay ? perDaySalary * 0.5 : 0);
+            
+            // Update calculation preview
+            document.getElementById('calculation-preview').style.display = 'block';
+            document.getElementById('calc-total').textContent = totalDays;
+            document.getElementById('calc-paid').textContent = paidDays;
+            document.getElementById('calc-unpaid').textContent = unpaidDays;
+            document.getElementById('calc-deduction').textContent = '₹' + deduction.toFixed(2);
+            document.getElementById('calc-message').textContent = message;
+            
+            // Update warnings
+            document.getElementById('warning-section').style.display = (showProbationWarning || showExcessWarning) ? 'block' : 'none';
+            document.getElementById('probation-warning').style.display = showProbationWarning ? 'block' : 'none';
+            document.getElementById('excess-warning').style.display = showExcessWarning ? 'block' : 'none';
+            
+            if (showExcessWarning) {
+                document.getElementById('excess-message').textContent = `Only ${paidDays} paid leave(s) allowed. ${unpaidDays} day(s) will be unpaid.`;
+            }
+        }
+        
+        // Form submission
+        document.getElementById('leave-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const employeeId = document.getElementById('selected-employee-id').value;
+            if (!employeeId) {
+                return auth.showNotification('Please select an employee', 'error');
+            }
+            
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            
+            if (new Date(endDate) < new Date(startDate)) {
+                return auth.showNotification('End date cannot be before start date', 'error');
+            }
+            
+            const totalDays = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) + 1;
+            if (totalDays > 10) {
+                if (!confirm(`You are applying for ${totalDays} days. Excess days will be unpaid. Continue?`)) {
+                    return;
+                }
+            }
+            
+            // Ensure dates are in YYYY-MM-DD format
+            const formattedStartDate = new Date(startDate).toISOString().split('T')[0];
+            const formattedEndDate = new Date(endDate).toISOString().split('T')[0];
+            
+            const requestBody = {
+                employeeId: parseInt(employeeId),
+                leaveType: document.getElementById('leave-type').value,
+                startDate: formattedStartDate,
+                endDate: formattedEndDate,
+                reason: document.getElementById('reason').value,
+                isHalfDay: document.getElementById('is-half-day').checked,
+                totalDays: document.getElementById('is-half-day').checked ? 1 : totalDays
+            };
+            
+            console.log('Submitting leave request:', requestBody);
+            
+            try {
+                const res = await auth.apiCall('/api/leaves/apply', {
+                    method: 'POST',
+                    body: JSON.stringify(requestBody)
+                });
+                
+                if (res && res.ok) {
+                    const result = await res.json();
+                    let msg = 'Leave applied successfully';
+                    if (result.paidDays !== undefined && result.unpaidDays !== undefined) {
+                        msg += `. Paid: ${result.paidDays} days, Unpaid: ${result.unpaidDays} days`;
+                    }
+                    auth.showNotification(msg, 'success');
+                    closeModal();
+                    loadLeaves();
+                } else {
+                    // Handle error response
+                    let errorMessage = 'Failed to apply leave';
+                    try {
+                        const errorData = await res.json();
+                        errorMessage = errorData.error || errorData.message || `Server error: ${res.status}`;
+                    } catch (parseError) {
+                        const errorText = await res.text();
+                        errorMessage = errorText || `Server error: ${res.status}`;
+                    }
+                    console.error('Leave application failed:', res.status, errorMessage);
+                    auth.showNotification(errorMessage, 'error');
+                }
+            } catch (e) { 
+                console.error('Exception during leave application:', e);
+                auth.showNotification(e.message || 'Failed to apply leave', 'error'); 
+            }
+        });
+        
+        async function approveLeave(id) {
+            try {
+                const res = await auth.apiCall(`/api/leaves/approve/${id}?approvedBy=Admin`, { method: 'POST' });
+                if (res && res.ok) {
+                    auth.showNotification('Leave approved', 'success');
+                    loadLeaves();
+                }
+            } catch (e) { auth.showNotification(e.message, 'error'); }
+        }
+        
+        async function rejectLeave(id) {
+            const reason = prompt('Enter rejection reason:');
+            if (!reason) return;
+            try {
+                const res = await auth.apiCall(`/api/leaves/reject/${id}?rejectionReason=${encodeURIComponent(reason)}`, { method: 'POST' });
+                if (res && res.ok) {
+                    auth.showNotification('Leave rejected', 'success');
+                    loadLeaves();
+                }
+            } catch (e) { auth.showNotification(e.message, 'error'); }
+        }
+        
+        loadLeaves();
+    </script>
+</body>
+</html>

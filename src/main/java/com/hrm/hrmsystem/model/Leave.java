@@ -26,6 +26,12 @@ public class Leave {
     private LocalDate endDate;
 
     private Integer totalDays;
+    
+    private Integer paidDays;
+    
+    private Integer unpaidDays;
+    
+    private Boolean isHalfDay = false;
 
     private String reason;
 
@@ -39,7 +45,7 @@ public class Leave {
     private LocalDate appliedDate;
 
     public enum LeaveType {
-        SICK, CASUAL, ANNUAL, MATERNITY, PATERNITY, UNPAID
+        SICK, CASUAL, ANNUAL, MATERNITY, PATERNITY, UNPAID, HALF_DAY
     }
 
     public enum LeaveStatus {
@@ -51,7 +57,8 @@ public class Leave {
 
     // All Args Constructor
     public Leave(Long id, Employee employee, LeaveType leaveType, LocalDate startDate,
-                 LocalDate endDate, Integer totalDays, String reason, LeaveStatus status,
+                 LocalDate endDate, Integer totalDays, Integer paidDays, Integer unpaidDays,
+                 Boolean isHalfDay, String reason, LeaveStatus status,
                  String approvedBy, String rejectionReason, LocalDate appliedDate) {
         this.id = id;
         this.employee = employee;
@@ -59,6 +66,9 @@ public class Leave {
         this.startDate = startDate;
         this.endDate = endDate;
         this.totalDays = totalDays;
+        this.paidDays = paidDays;
+        this.unpaidDays = unpaidDays;
+        this.isHalfDay = isHalfDay;
         this.reason = reason;
         this.status = status;
         this.approvedBy = approvedBy;
@@ -73,6 +83,9 @@ public class Leave {
     public LocalDate getStartDate() { return startDate; }
     public LocalDate getEndDate() { return endDate; }
     public Integer getTotalDays() { return totalDays; }
+    public Integer getPaidDays() { return paidDays; }
+    public Integer getUnpaidDays() { return unpaidDays; }
+    public Boolean getIsHalfDay() { return isHalfDay; }
     public String getReason() { return reason; }
     public LeaveStatus getStatus() { return status; }
     public String getApprovedBy() { return approvedBy; }
@@ -86,6 +99,9 @@ public class Leave {
     public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
     public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
     public void setTotalDays(Integer totalDays) { this.totalDays = totalDays; }
+    public void setPaidDays(Integer paidDays) { this.paidDays = paidDays; }
+    public void setUnpaidDays(Integer unpaidDays) { this.unpaidDays = unpaidDays; }
+    public void setIsHalfDay(Boolean isHalfDay) { this.isHalfDay = isHalfDay; }
     public void setReason(String reason) { this.reason = reason; }
     public void setStatus(LeaveStatus status) { this.status = status; }
     public void setApprovedBy(String approvedBy) { this.approvedBy = approvedBy; }
@@ -104,6 +120,9 @@ public class Leave {
         private LocalDate startDate;
         private LocalDate endDate;
         private Integer totalDays;
+        private Integer paidDays;
+        private Integer unpaidDays;
+        private Boolean isHalfDay = false;
         private String reason;
         private LeaveStatus status;
         private String approvedBy;
@@ -116,6 +135,9 @@ public class Leave {
         public Builder startDate(LocalDate startDate) { this.startDate = startDate; return this; }
         public Builder endDate(LocalDate endDate) { this.endDate = endDate; return this; }
         public Builder totalDays(Integer totalDays) { this.totalDays = totalDays; return this; }
+        public Builder paidDays(Integer paidDays) { this.paidDays = paidDays; return this; }
+        public Builder unpaidDays(Integer unpaidDays) { this.unpaidDays = unpaidDays; return this; }
+        public Builder isHalfDay(Boolean isHalfDay) { this.isHalfDay = isHalfDay; return this; }
         public Builder reason(String reason) { this.reason = reason; return this; }
         public Builder status(LeaveStatus status) { this.status = status; return this; }
         public Builder approvedBy(String approvedBy) { this.approvedBy = approvedBy; return this; }
@@ -123,7 +145,7 @@ public class Leave {
         public Builder appliedDate(LocalDate appliedDate) { this.appliedDate = appliedDate; return this; }
 
         public Leave build() {
-            return new Leave(id, employee, leaveType, startDate, endDate, totalDays, reason, status, approvedBy, rejectionReason, appliedDate);
+            return new Leave(id, employee, leaveType, startDate, endDate, totalDays, paidDays, unpaidDays, isHalfDay, reason, status, approvedBy, rejectionReason, appliedDate);
         }
     }
 }

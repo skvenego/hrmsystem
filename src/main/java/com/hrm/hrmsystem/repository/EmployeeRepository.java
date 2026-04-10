@@ -3,6 +3,7 @@ package com.hrm.hrmsystem.repository;
 import com.hrm.hrmsystem.model.Employee;
 import com.hrm.hrmsystem.model.Department;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -20,4 +21,12 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     List<Employee> findByStatus(Employee.EmployeeStatus status);
 
     boolean existsByEmail(String email);
+
+    // Eagerly load department to avoid N+1 and lazy loading issues
+    @Query("SELECT e FROM Employee e LEFT JOIN FETCH e.department")
+    List<Employee> findAllWithDepartment();
+
+    // Eagerly load department for single employee
+    @Query("SELECT e FROM Employee e LEFT JOIN FETCH e.department WHERE e.id = :id")
+    Optional<Employee> findByIdWithDepartment(Long id);
 }

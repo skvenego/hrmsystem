@@ -11,6 +11,9 @@ public class LeaveDTO {
     private LocalDate startDate;
     private LocalDate endDate;
     private Integer totalDays;
+    private Integer paidDays;
+    private Integer unpaidDays;
+    private Boolean isHalfDay;
     private String reason;
     private String status;
     private String approvedBy;
@@ -27,6 +30,9 @@ public class LeaveDTO {
     public LocalDate getStartDate() { return startDate; }
     public LocalDate getEndDate() { return endDate; }
     public Integer getTotalDays() { return totalDays; }
+    public Integer getPaidDays() { return paidDays; }
+    public Integer getUnpaidDays() { return unpaidDays; }
+    public Boolean getIsHalfDay() { return isHalfDay; }
     public String getReason() { return reason; }
     public String getStatus() { return status; }
     public String getApprovedBy() { return approvedBy; }
@@ -41,6 +47,9 @@ public class LeaveDTO {
     public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
     public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
     public void setTotalDays(Integer totalDays) { this.totalDays = totalDays; }
+    public void setPaidDays(Integer paidDays) { this.paidDays = paidDays; }
+    public void setUnpaidDays(Integer unpaidDays) { this.unpaidDays = unpaidDays; }
+    public void setIsHalfDay(Boolean isHalfDay) { this.isHalfDay = isHalfDay; }
     public void setReason(String reason) { this.reason = reason; }
     public void setStatus(String status) { this.status = status; }
     public void setApprovedBy(String approvedBy) { this.approvedBy = approvedBy; }
@@ -59,6 +68,9 @@ public class LeaveDTO {
         private LocalDate startDate;
         private LocalDate endDate;
         private Integer totalDays;
+        private Integer paidDays;
+        private Integer unpaidDays;
+        private Boolean isHalfDay;
         private String reason;
         private String status;
         private String approvedBy;
@@ -72,6 +84,9 @@ public class LeaveDTO {
         public Builder startDate(LocalDate startDate) { this.startDate = startDate; return this; }
         public Builder endDate(LocalDate endDate) { this.endDate = endDate; return this; }
         public Builder totalDays(Integer totalDays) { this.totalDays = totalDays; return this; }
+        public Builder paidDays(Integer paidDays) { this.paidDays = paidDays; return this; }
+        public Builder unpaidDays(Integer unpaidDays) { this.unpaidDays = unpaidDays; return this; }
+        public Builder isHalfDay(Boolean isHalfDay) { this.isHalfDay = isHalfDay; return this; }
         public Builder reason(String reason) { this.reason = reason; return this; }
         public Builder status(String status) { this.status = status; return this; }
         public Builder approvedBy(String approvedBy) { this.approvedBy = approvedBy; return this; }
@@ -87,6 +102,9 @@ public class LeaveDTO {
             dto.startDate = this.startDate;
             dto.endDate = this.endDate;
             dto.totalDays = this.totalDays;
+            dto.paidDays = this.paidDays;
+            dto.unpaidDays = this.unpaidDays;
+            dto.isHalfDay = this.isHalfDay;
             dto.reason = this.reason;
             dto.status = this.status;
             dto.approvedBy = this.approvedBy;

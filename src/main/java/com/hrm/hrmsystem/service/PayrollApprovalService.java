@@ -232,9 +232,11 @@ public class PayrollApprovalService {
     
     /**
      * Get pending approvals for a specific role
+     * Uses EntityGraph to eagerly fetch payroll and employee data
      */
+    @Transactional(readOnly = true)
     public List<PayrollApproval> getPendingApprovalsForRole(User.Role role) {
-        return approvalRepo.findByApproverRoleAndStatus(
+        return approvalRepo.findPendingApprovalsWithDetails(
             role, 
             PayrollApproval.ApprovalStatus.PENDING
         );
