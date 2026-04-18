@@ -6,6 +6,7 @@
     <title>Payroll - HRM System</title>
     <link rel="stylesheet" href="../css/dashboard.css">
     <link rel="stylesheet" href="../css/pages.css">
+    <link rel="stylesheet" href="../css/payroll.css">
 </head>
 <body>
     <div class="dashboard-layout">
@@ -26,7 +27,14 @@
 
         <main class="main-content">
             <header class="dashboard-header">
-                <h1>Payroll Management</h1>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <button onclick="history.back()" class="icon-btn" title="Go Back">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                    </button>
+                    <h1>Payroll Management</h1>
+                </div>
                 <div class="header-actions">
                     <select id="month-filter" class="search-input" style="width: auto;">
                         <option value="1">January</option><option value="2">February</option><option value="3">March</option>
@@ -35,7 +43,7 @@
                         <option value="10">October</option><option value="11">November</option><option value="12">December</option>
                     </select>
                     <select id="year-filter" class="search-input" style="width: auto;">
-                        <option value="2024">2024</option><option value="2025" selected>2025</option><option value="2026">2026</option>
+                        <option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option>
                     </select>
                     <button onclick="generatePayroll()" class="btn-primary">Generate Payroll</button>
                 </div>
@@ -58,85 +66,20 @@
         </main>
     </div>
 
+    <!-- Payslip Detail Modal -->
+    <div id="payslip-modal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 1rem;">
+        <div class="modal-content" style="background: white; border-radius: 12px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb;">
+                <h2 style="margin: 0; font-size: 1.25rem;">Payslip Details</h2>
+                <button onclick="closeModal()" class="close-btn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">&times;</button>
+            </div>
+            <div id="modal-content-body" style="padding: 1.5rem;">
+                <!-- Content loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
     <script src="../js/auth.js"></script>
-    <script>
-        if (!auth.requireAuth()) throw new Error('Auth required');
-        
-        const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-        
-        async function loadPayroll() {
-            try {
-                const res = await auth.apiCall('/api/payroll/list?t=' + Date.now());
-                const data = res && res.ok ? await res.json() : [];
-                
-                const tbody = document.getElementById('payroll-table');
-                if (!data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;">No payroll records</td></tr>';
-                    return;
-                }
-                
-                tbody.innerHTML = data.map(p => `
-                    <tr>
-                        <td>${p.employeeName || 'Unknown'}</td>
-                        <td>${monthNames[p.month-1]} ${p.year}</td>
-                        <td>${auth.formatCurrency(p.basicSalary || 0)}</td>
-                        <td>${auth.formatCurrency(p.grossSalary || 0)}</td>
-                        <td>${auth.formatCurrency(p.totalDeductions || 0)}</td>
-                        <td><strong>${auth.formatCurrency(p.netSalary || 0)}</strong></td>
-                        <td><span class="status-badge ${(p.status || 'PENDING').toLowerCase()}">${p.status || 'PENDING'}</span></td>
-                        <td>
-                            ${p.status === 'PENDING' ? `<button onclick="processPayroll(${p.id})" class="btn-small">Process</button>` : ''}
-                            ${p.status === 'PROCESSED' ? `<button onclick="payPayroll(${p.id})" class="btn-small" style="background: #dcfce7; color: #166534;">Pay</button>` : ''}
-                            <button onclick="viewPayslip(${p.id})" class="btn-small">View</button>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (e) { console.error(e); }
-        }
-        
-        async function generatePayroll() {
-            const month = document.getElementById('month-filter').value;
-            const year = document.getElementById('year-filter').value;
-            try {
-                const res = await auth.apiCall('/api/payroll/generate-all', {
-                    method: 'POST',
-                    body: JSON.stringify({ month: parseInt(month), year: parseInt(year) })
-                });
-                if (res && res.ok) {
-                    auth.showNotification('Payroll generated', 'success');
-                    loadPayroll();
-                }
-            } catch (e) { auth.showNotification(e.message, 'error'); }
-        }
-        
-        async function processPayroll(id) {
-            try {
-                const res = await auth.apiCall(`/api/payroll/process/${id}`, { method: 'POST' });
-                if (res && res.ok) {
-                    auth.showNotification('Payroll processed', 'success');
-                    loadPayroll();
-                }
-            } catch (e) { auth.showNotification(e.message, 'error'); }
-        }
-        
-        async function payPayroll(id) {
-            try {
-                const res = await auth.apiCall(`/api/payroll/pay/${id}`, { method: 'POST' });
-                if (res && res.ok) {
-                    auth.showNotification('Payroll paid', 'success');
-                    loadPayroll();
-                }
-            } catch (e) { auth.showNotification(e.message, 'error'); }
-        }
-        
-        function viewPayslip(id) {
-            window.open(`/api/payslips/${id}/download`, '_blank');
-        }
-        
-        function logout() { auth.logout(); }
-        
-        document.getElementById('month-filter').value = new Date().getMonth() + 1;
-        loadPayroll();
-    </script>
+    <script src="../js/payroll.js"></script>
 </body>
 </html>

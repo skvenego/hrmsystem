@@ -16,6 +16,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,12 +44,13 @@ public class LeaveService {
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
         // Calculate total days
-        int totalDays = (int) ChronoUnit.DAYS.between(dto.getStartDate(), dto.getEndDate()) + 1;
+        double totalDays = ChronoUnit.DAYS.between(dto.getStartDate(), dto.getEndDate()) + 1;
 
         // Handle half day
         boolean isHalfDay = dto.getIsHalfDay() != null && dto.getIsHalfDay();
-        if (isHalfDay) {
-            totalDays = 1;
+        if (isHalfDay || "HALF".equals(dto.getLeaveType())) {
+            totalDays = 0.5;
+            isHalfDay = true;
         }
 
         // Check probation status
@@ -63,10 +65,11 @@ public class LeaveService {
                 .startDate(dto.getStartDate())
                 .endDate(dto.getEndDate())
                 .totalDays(totalDays)
-                .paidDays(calcResult.paidDays)
-                .unpaidDays(calcResult.unpaidDays)
+                .paidDays((double) calcResult.paidDays)
+                .unpaidDays((double) calcResult.unpaidDays)
                 .isHalfDay(isHalfDay)
                 .reason(dto.getReason())
+                .contactNumber(dto.getContactNumber())
                 .status(Leave.LeaveStatus.PENDING)
                 .appliedDate(LocalDate.now())
                 .build();
@@ -74,8 +77,8 @@ public class LeaveService {
         leave = leaveRepository.save(leave);
 
         LeaveDTO result = convertToDTO(leave);
-        result.setPaidDays(calcResult.paidDays);
-        result.setUnpaidDays(calcResult.unpaidDays);
+        result.setPaidDays((double) calcResult.paidDays);
+        result.setUnpaidDays((double) calcResult.unpaidDays);
 
         return result;
     }
@@ -85,24 +88,60 @@ public class LeaveService {
         Leave leave = leaveRepository.findById(leaveId)
                 .orElseThrow(() -> new RuntimeException("Leave not found"));
 
+        // Validate state
         if (leave.getStatus() != Leave.LeaveStatus.PENDING) {
-            throw new RuntimeException("Leave is not in pending status");
+            throw new RuntimeException("Leave is not in pending state");
         }
 
+        // Recalculate paid/unpaid days to ensure correctness (especially for half-days)
+        ProbationInfo probationInfo = checkProbationStatus(leave.getEmployee());
+        LeaveBalance balance = getOrCreateCurrentBalance(leave.getEmployee());
+        double availableBalance = balance.getAvailableLeaves();
+
+        double totalDays = leave.getTotalDays();
+        double paidDays, unpaidDays;
+
+        if (probationInfo.inProbation) {
+            // During probation: all days are unpaid
+            paidDays = 0;
+            unpaidDays = totalDays;
+        } else if (availableBalance <= 0) {
+            // No balance - all unpaid
+            paidDays = 0;
+            unpaidDays = totalDays;
+        } else {
+            // Has balance - all days can be paid (max 3 at once)
+            double maxPaid = Math.min(MAX_PAID_LEAVES_AT_ONCE, availableBalance);
+            if (totalDays <= maxPaid) {
+                paidDays = totalDays;
+                unpaidDays = 0;
+            } else {
+                paidDays = maxPaid;
+                unpaidDays = totalDays - maxPaid;
+            }
+        }
+
+        // Update leave with recalculated values
+        leave.setPaidDays(paidDays);
+        leave.setUnpaidDays(unpaidDays);
         leave.setStatus(Leave.LeaveStatus.APPROVED);
         leave.setApprovedBy(approvedBy);
 
-        // Deduct from leave balance (only paid days)
-        if (leave.getPaidDays() != null && leave.getPaidDays() > 0) {
-            deductLeaveBalance(leave.getEmployee().getId(), leave.getPaidDays());
-        }
-
-        // Track unpaid days separately
-        if (leave.getUnpaidDays() != null && leave.getUnpaidDays() > 0) {
-            addUnpaidLeaveBalance(leave.getEmployee().getId(), leave.getUnpaidDays());
-        }
-
+        // Save the leave first
         leave = leaveRepository.save(leave);
+        leaveRepository.flush(); // Force flush to ensure data is persisted
+
+        // Deduct from leave balance based on paid/unpaid days
+        if (paidDays > 0) {
+            deductLeaveBalance(leave.getEmployee().getId(), paidDays);
+        }
+        if (unpaidDays > 0) {
+            addUnpaidLeaveBalance(leave.getEmployee().getId(), unpaidDays);
+        }
+
+        // Reload from database to get fresh data
+        leave = leaveRepository.findById(leave.getId())
+                .orElseThrow(() -> new RuntimeException("Leave not found after save"));
         return convertToDTO(leave);
     }
 
@@ -159,6 +198,11 @@ public class LeaveService {
                 .collect(Collectors.toList());
     }
 
+    public Optional<LeaveDTO> findById(Long id) {
+        return leaveRepository.findById(id)
+                .map(this::convertToDTO);
+    }
+
     public LeaveBalanceDTO getLeaveBalance(Long employeeId) {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
@@ -208,9 +252,9 @@ public class LeaveService {
         return new ProbationInfo(inProbation, status, employee.getJoiningDate(), probationEndDate);
     }
 
-    private LeaveCalculationResult calculateLeaveDays(Employee employee, int totalDays, boolean isHalfDay, ProbationInfo probationInfo) {
-        int paidDays = 0;
-        int unpaidDays = 0;
+    private LeaveCalculationResult calculateLeaveDays(Employee employee, double totalDays, boolean isHalfDay, ProbationInfo probationInfo) {
+        double paidDays = 0;
+        double unpaidDays = 0;
 
         // During probation: all leaves are unpaid
         if (probationInfo.inProbation) {
@@ -221,10 +265,10 @@ public class LeaveService {
 
         // After probation: Apply max 3 paid leaves rule
         LeaveBalance balance = getOrCreateCurrentBalance(employee);
-        int availableBalance = balance.getAvailableLeaves();
+        double availableBalance = balance.getAvailableLeaves();
 
         // Max 3 paid leaves at one time rule
-        int maxPaidForThisRequest = Math.min(MAX_PAID_LEAVES_AT_ONCE, availableBalance);
+        int maxPaidForThisRequest = Math.min(MAX_PAID_LEAVES_AT_ONCE, (int) availableBalance);
 
         if (totalDays <= maxPaidForThisRequest) {
             // All days can be paid
@@ -253,9 +297,8 @@ public class LeaveService {
     }
 
     private LeaveBalance createLeaveBalance(Employee employee, int year, int cycle) {
-        // Calculate earned leaves based on months in cycle
-        int monthsInCycle = 6; // Each cycle is 6 months
-        int earnedLeaves = (int) (monthsInCycle * LEAVES_PER_MONTH); // 1.5 per month = 9 per cycle
+        // Calculate earned leaves based on actual months since probation completion
+        int earnedLeaves = calculateEarnedLeaves(employee, year, cycle);
 
         // Check for carried forward from previous cycle
         int carriedForward = 0;
@@ -265,17 +308,17 @@ public class LeaveService {
                     .findByEmployeeIdAndYearAndCycle(employee.getId(), year, 1)
                     .orElse(null);
             if (prevCycle != null) {
-                int remaining = prevCycle.getAvailableLeaves();
+                double remaining = prevCycle.getAvailableLeaves();
                 // Max 10 leaves can be carried forward
-                carriedForward = Math.min(remaining, 10);
+                carriedForward = Math.min((int) remaining, 10);
             }
         }
 
         LeaveBalance balance = LeaveBalance.builder()
                 .employee(employee)
                 .totalEarnedLeaves(earnedLeaves)
-                .usedLeaves(0)
-                .unpaidLeaves(0)
+                .usedLeaves(0.0)
+                .unpaidLeaves(0.0)
                 .carriedForwardLeaves(carriedForward)
                 .cycle(cycle)
                 .year(year)
@@ -284,7 +327,59 @@ public class LeaveService {
         return leaveBalanceRepository.save(balance);
     }
 
-    private void deductLeaveBalance(Long employeeId, int days) {
+    /**
+     * Calculate earned leaves based on actual months worked since probation completion
+     * 1.5 leaves per month, calculated from probation end date to current date
+     * Only FULL completed months are counted (partial months don't count)
+     */
+    private int calculateEarnedLeaves(Employee employee, int year, int cycle) {
+        // If still in probation, no earned leaves available (they accrue but are frozen)
+        if (employee.getJoiningDate() == null || employee.getProbationPeriodMonths() == null) {
+            return 0;
+        }
+
+        LocalDate probationEndDate = employee.getJoiningDate().plusMonths(employee.getProbationPeriodMonths());
+        LocalDate today = LocalDate.now();
+
+        // If still in probation, earned leaves are 0 (frozen)
+        if (today.isBefore(probationEndDate)) {
+            return 0;
+        }
+
+        // Calculate months since probation completion
+        LocalDate effectiveStartDate = probationEndDate;
+        
+        // If probation completed before current cycle started, count from cycle start
+        LocalDate cycleStartDate;
+        if (cycle == 1) {
+            cycleStartDate = LocalDate.of(year, 1, 1);
+        } else {
+            cycleStartDate = LocalDate.of(year, 7, 1);
+        }
+        
+        // Start counting from whichever is later: probation completion or cycle start
+        LocalDate countingStartDate = effectiveStartDate.isAfter(cycleStartDate) ? effectiveStartDate : cycleStartDate;
+        
+        // Calculate months worked in this cycle
+        LocalDate cycleEndDate = cycle == 1 ? LocalDate.of(year, 6, 30) : LocalDate.of(year, 12, 31);
+        LocalDate countingEndDate = today.isBefore(cycleEndDate) ? today : cycleEndDate;
+        
+        if (countingStartDate.isAfter(countingEndDate)) {
+            return 0;
+        }
+
+        // Calculate completed full months only (partial months don't count)
+        long monthsWorked = ChronoUnit.MONTHS.between(countingStartDate, countingEndDate);
+
+        // Cap at 6 months per cycle
+        monthsWorked = Math.min(monthsWorked, 6);
+
+        // Calculate earned leaves (1.5 per month)
+        double earned = monthsWorked * LEAVES_PER_MONTH;
+        return (int) earned;
+    }
+
+    private void deductLeaveBalance(Long employeeId, double days) {
         int currentYear = LocalDate.now().getYear();
         int currentMonth = LocalDate.now().getMonthValue();
         int currentCycle = currentMonth <= 6 ? 1 : 2;
@@ -296,7 +391,7 @@ public class LeaveService {
         leaveBalanceRepository.save(balance);
     }
 
-    private void restoreLeaveBalance(Long employeeId, int days) {
+    private void restoreLeaveBalance(Long employeeId, double days) {
         int currentYear = LocalDate.now().getYear();
         int currentMonth = LocalDate.now().getMonthValue();
         int currentCycle = currentMonth <= 6 ? 1 : 2;
@@ -308,7 +403,7 @@ public class LeaveService {
         leaveBalanceRepository.save(balance);
     }
 
-    private void addUnpaidLeaveBalance(Long employeeId, int days) {
+    private void addUnpaidLeaveBalance(Long employeeId, double days) {
         int currentYear = LocalDate.now().getYear();
         int currentMonth = LocalDate.now().getMonthValue();
         int currentCycle = currentMonth <= 6 ? 1 : 2;
@@ -320,7 +415,7 @@ public class LeaveService {
         leaveBalanceRepository.save(balance);
     }
 
-    private void removeUnpaidLeaveBalance(Long employeeId, int days) {
+    private void removeUnpaidLeaveBalance(Long employeeId, double days) {
         int currentYear = LocalDate.now().getYear();
         int currentMonth = LocalDate.now().getMonthValue();
         int currentCycle = currentMonth <= 6 ? 1 : 2;
@@ -333,7 +428,7 @@ public class LeaveService {
     }
 
     // Payroll calculation method
-    public BigDecimal calculateLeaveDeduction(Employee employee, int unpaidDays, boolean isHalfDay) {
+    public BigDecimal calculateLeaveDeduction(Employee employee, double unpaidDays, boolean isHalfDay) {
         if (employee.getSalary() == null || employee.getSalary().compareTo(BigDecimal.ZERO) == 0) {
             return BigDecimal.ZERO;
         }
@@ -361,26 +456,36 @@ public class LeaveService {
                 .isHalfDay(leave.getIsHalfDay())
                 .reason(leave.getReason())
                 .status(leave.getStatus().name())
+                .appliedDate(leave.getAppliedDate())
                 .approvedBy(leave.getApprovedBy())
                 .rejectionReason(leave.getRejectionReason())
-                .appliedDate(leave.getAppliedDate())
+                .contactNumber(leave.getContactNumber())
                 .build();
     }
 
     private LeaveBalanceDTO convertToBalanceDTO(LeaveBalance balance, ProbationInfo probationInfo) {
+        // Recalculate earned leaves based on current date (monthly accrual)
+        int currentEarnedLeaves = calculateEarnedLeaves(balance.getEmployee(), balance.getYear(), balance.getCycle());
+
+        // Calculate available leaves: earned + carried forward - used
+        double availableLeaves = currentEarnedLeaves + balance.getCarriedForwardLeaves() - balance.getUsedLeaves();
+        if (availableLeaves < 0) availableLeaves = 0.0;
+
         return LeaveBalanceDTO.builder()
                 .id(balance.getId())
                 .employeeId(balance.getEmployee().getId())
                 .employeeName(balance.getEmployee().getFirstName() + " " + balance.getEmployee().getLastName())
-                .totalEarnedLeaves(balance.getTotalEarnedLeaves())
+                .totalEarnedLeaves(currentEarnedLeaves)
                 .usedLeaves(balance.getUsedLeaves())
                 .unpaidLeaves(balance.getUnpaidLeaves())
                 .carriedForwardLeaves(balance.getCarriedForwardLeaves())
-                .availableLeaves(balance.getAvailableLeaves())
+                .availableLeaves(availableLeaves)
                 .cycle(balance.getCycle())
                 .year(balance.getYear())
                 .inProbation(probationInfo.inProbation)
                 .probationStatus(probationInfo.status)
+                .joiningDate(probationInfo.startDate != null ? probationInfo.startDate.toString() : null)
+                .probationEndDate(probationInfo.endDate != null ? probationInfo.endDate.toString() : null)
                 .build();
     }
 
@@ -400,11 +505,11 @@ public class LeaveService {
     }
 
     private static class LeaveCalculationResult {
-        int paidDays;
-        int unpaidDays;
+        double paidDays;
+        double unpaidDays;
         String message;
 
-        LeaveCalculationResult(int paidDays, int unpaidDays, String message) {
+        LeaveCalculationResult(double paidDays, double unpaidDays, String message) {
             this.paidDays = paidDays;
             this.unpaidDays = unpaidDays;
             this.message = message;

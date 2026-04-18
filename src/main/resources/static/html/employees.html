@@ -4,23 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employees - HRM System</title>
-    <link rel="stylesheet" href="../css/dashboard.css">
-    <link rel="stylesheet" href="../css/pages.css">
+    <link rel="stylesheet" href="../css/employee-theme.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="dashboard-layout">
-        <!-- Sidebar (auto-generated based on role) -->
+    <div class="app-layout">
+        <!-- Sidebar -->
         <aside class="sidebar"></aside>
 
         <!-- Main Content -->
         <main class="main-content">
-            <header class="dashboard-header">
-                <h1>Employees</h1>
+            <!-- Header -->
+            <header class="top-header">
+                <div class="page-title">
+                    <div class="page-title-icon">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                    </div>
+                    <h1>Employees</h1>
+                </div>
                 <div class="header-actions">
-                    <input type="text" id="search-input" placeholder="Search employees..." class="search-input">
+                    <input type="text" id="search-input" placeholder="Search employees..." class="search-input" style="margin-right: 0.75rem;">
                     <a href="employee-form.html" class="btn-primary">+ Add Employee</a>
+                    <button class="icon-btn" onclick="auth.logout()" title="Logout">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                    </button>
                 </div>
             </header>
+
+            <!-- Content Area -->
+            <div class="content-area">
 
             <div class="page-content">
                 <div class="card">

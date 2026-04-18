@@ -76,10 +76,12 @@ public class EmployeeDTO {
     private BigDecimal pf;
     
     private BigDecimal tax;
+    
+    private String insuranceName;
+    
+    private Double insurancePercentage;
 
     // Constructors
-    public EmployeeDTO() {}
-
     public EmployeeDTO(Long id, String employeeId, String firstName, String lastName, 
                        String email, String phone, String designation, LocalDate joiningDate,
                        BigDecimal salary, String status, String address, Long departmentId, String departmentName,
@@ -199,6 +201,14 @@ public class EmployeeDTO {
         return tax;
     }
 
+    public String getInsuranceName() {
+        return insuranceName;
+    }
+
+    public Double getInsurancePercentage() {
+        return insurancePercentage;
+    }
+
     // Setters
     public void setId(Long id) {
         this.id = id;
@@ -288,6 +298,14 @@ public class EmployeeDTO {
         this.tax = tax;
     }
 
+    public void setInsuranceName(String insuranceName) {
+        this.insuranceName = insuranceName;
+    }
+
+    public void setInsurancePercentage(Double insurancePercentage) {
+        this.insurancePercentage = insurancePercentage;
+    }
+
     @Override
     public String toString() {
         return "EmployeeDTO{" +
@@ -344,6 +362,8 @@ public class EmployeeDTO {
         private BigDecimal otherAllowance;
         private BigDecimal pf;
         private BigDecimal tax;
+        private String insuranceName;
+        private Double insurancePercentage;
 
         public Builder id(Long id) {
             this.id = id;
@@ -455,11 +475,25 @@ public class EmployeeDTO {
             return this;
         }
 
+        public Builder insuranceName(String insuranceName) {
+            this.insuranceName = insuranceName;
+            return this;
+        }
+
+        public Builder insurancePercentage(Double insurancePercentage) {
+            this.insurancePercentage = insurancePercentage;
+            return this;
+        }
+
         public EmployeeDTO build() {
-            return new EmployeeDTO(id, employeeId, firstName, lastName, email, phone, designation,
+            EmployeeDTO dto = new EmployeeDTO(id, employeeId, firstName, lastName, email, phone, designation,
                     joiningDate, salary, status, address, departmentId, departmentName,
                     shiftId, gender, probationPeriodMonths, basicSalary, da, hra, otherAllowance, pf, tax);
+            dto.setInsuranceName(insuranceName);
+            dto.setInsurancePercentage(insurancePercentage);
+            return dto;
         }
+
     }
 
     // Custom deserializers to handle string inputs from frontend

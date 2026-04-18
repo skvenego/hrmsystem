@@ -1,6 +1,7 @@
 package com.hrm.hrmsystem.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hrm.hrmsystem.entity.Payslip;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -47,6 +48,12 @@ public class Employee {
     // Deductions
     private BigDecimal pf;
     private BigDecimal tax;
+    @Column(name = "insurance_name")
+    @JsonProperty("insuranceName")
+    private String insuranceName;
+    @Column(name = "insurance_percentage")
+    @JsonProperty("insurancePercentage")
+    private Double insurancePercentage; // Store as percentage (e.g., 0.4 for 0.4%)
     
     // Gender
     @Enumerated(EnumType.STRING)
@@ -162,6 +169,8 @@ public class Employee {
     public BigDecimal getOtherAllowance() { return otherAllowance; }
     public BigDecimal getPf() { return pf; }
     public BigDecimal getTax() { return tax; }
+    public String getInsuranceName() { return insuranceName; }
+    public Double getInsurancePercentage() { return insurancePercentage; }
     public Gender getGender() { return gender; }
     public Integer getProbationPeriodMonths() { return probationPeriodMonths; }
     public Shift getShift() { return shift; }
@@ -191,6 +200,8 @@ public class Employee {
     public void setOtherAllowance(BigDecimal otherAllowance) { this.otherAllowance = otherAllowance; }
     public void setPf(BigDecimal pf) { this.pf = pf; }
     public void setTax(BigDecimal tax) { this.tax = tax; }
+    public void setInsuranceName(String insuranceName) { this.insuranceName = insuranceName; }
+    public void setInsurancePercentage(Double insurancePercentage) { this.insurancePercentage = insurancePercentage; }
     public void setGender(Gender gender) { this.gender = gender; }
     public void setProbationPeriodMonths(Integer probationPeriodMonths) { this.probationPeriodMonths = probationPeriodMonths; }
     public void setShift(Shift shift) { this.shift = shift; }
@@ -225,6 +236,8 @@ public class Employee {
         private BigDecimal otherAllowance;
         private BigDecimal pf;
         private BigDecimal tax;
+        private String insuranceName;
+        private Double insurancePercentage;
         private Gender gender;
         private Integer probationPeriodMonths;
         private Shift shift;
@@ -253,6 +266,8 @@ public class Employee {
         public Builder otherAllowance(BigDecimal otherAllowance) { this.otherAllowance = otherAllowance; return this; }
         public Builder pf(BigDecimal pf) { this.pf = pf; return this; }
         public Builder tax(BigDecimal tax) { this.tax = tax; return this; }
+        public Builder insuranceName(String insuranceName) { this.insuranceName = insuranceName; return this; }
+        public Builder insurancePercentage(Double insurancePercentage) { this.insurancePercentage = insurancePercentage; return this; }
         public Builder gender(Gender gender) { this.gender = gender; return this; }
         public Builder probationPeriodMonths(Integer probationPeriodMonths) { this.probationPeriodMonths = probationPeriodMonths; return this; }
         public Builder shift(Shift shift) { this.shift = shift; return this; }
@@ -265,9 +280,12 @@ public class Employee {
         public Builder payslips(List<Payslip> payslips) { this.payslips = payslips; return this; }
 
         public Employee build() {
-            return new Employee(id, firstName, lastName, email, phone, department, designation,
-                    joiningDate, salary, basicSalary, da, hra, otherAllowance, pf, tax, gender, probationPeriodMonths, shift, status, address, 
+            Employee employee = new Employee(id, firstName, lastName, email, phone, department, designation,
+                    joiningDate, salary, basicSalary, da, hra, otherAllowance, pf, tax, gender, probationPeriodMonths, shift, status, address,
                     leaves, attendances, payrolls, leaveBalances, payslips);
+            employee.setInsuranceName(insuranceName);
+            employee.setInsurancePercentage(insurancePercentage);
+            return employee;
         }
     }
 }

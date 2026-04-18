@@ -42,7 +42,9 @@ body {
     padding: 1rem 0;
 }
 
-.nav-item {
+/* Support both flat and nested nav structures */
+.nav-item,
+.nav-list .nav-item a {
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -52,14 +54,103 @@ body {
     transition: all 0.2s;
 }
 
-.nav-item:hover {
+.nav-item:hover,
+.nav-list .nav-item:hover a {
     background: #374151;
     color: white;
 }
 
-.nav-item.active {
+.nav-item.active,
+.nav-list .nav-item.active a {
     background: #4f46e5;
     color: white;
+}
+
+/* Sidebar sections from sidebar.js */
+.nav-section {
+    padding: 1rem 0;
+}
+
+.nav-title {
+    padding: 0.5rem 1.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-list .nav-item {
+    padding: 0;
+}
+
+/* Brand styles from sidebar.js */
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.brand-icon {
+    width: 40px;
+    height: 40px;
+    background: #4f46e5;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.brand-text {
+    font-weight: 600;
+    font-size: 1.125rem;
+}
+
+.brand-tagline {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+/* User profile styles from sidebar.js */
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #374151;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background: #4f46e5;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.user-info-sidebar {
+    flex: 1;
+}
+
+.user-name {
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.role-badge {
+    font-size: 0.75rem;
+    color: #9ca3af;
 }
 
 .sidebar-footer {

@@ -33,13 +33,14 @@ public class NotificationService {
             String toEmail = employee.getEmail();
             String subject = "Salary Payment Notification - " + getMonthYear(payroll.getMonth(), payroll.getYear());
             
-            // Safe null handling for Double values
-            double basicSalary = payroll.getBasicSalary() != null ? payroll.getBasicSalary() : 0.0;
-            double allowances = (payroll.getHra() != null ? payroll.getHra() : 0.0) + 
-                               (payroll.getDa() != null ? payroll.getDa() : 0.0) + 
-                               (payroll.getTa() != null ? payroll.getTa() : 0.0);
-            double deductions = payroll.getTotalDeductions() != null ? payroll.getTotalDeductions() : 0.0;
-            double netSalary = payroll.getNetSalary() != null ? payroll.getNetSalary() : 0.0;
+            // Safe null handling for BigDecimal values
+            double basicSalary = payroll.getBasicSalary() != null ? payroll.getBasicSalary().doubleValue() : 0.0;
+            double hra = payroll.getHra() != null ? payroll.getHra().doubleValue() : 0.0;
+            double da = payroll.getDa() != null ? payroll.getDa().doubleValue() : 0.0;
+            double ta = payroll.getTa() != null ? payroll.getTa().doubleValue() : 0.0;
+            double allowances = hra + da + ta;
+            double deductions = payroll.getTotalDeductions() != null ? payroll.getTotalDeductions().doubleValue() : 0.0;
+            double netSalary = payroll.getNetSalary() != null ? payroll.getNetSalary().doubleValue() : 0.0;
             
             String htmlBody = String.format(
                 "<html><body>" +

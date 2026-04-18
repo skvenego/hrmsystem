@@ -161,10 +161,10 @@ function hasRole(role) {
     return userRole === role;
 }
 
-// Check if user is HR/Admin/Manager (Management roles)
+// Check if user is HR/Admin (Management roles) - matches sidebar logic
 function isManagement() {
     const role = getUserRole();
-    return role === ROLES.ADMIN || role === ROLES.HR || role === ROLES.MANAGER || role === ROLES.ACCOUNTANT || role === ROLES.DIRECTOR;
+    return role === ROLES.ADMIN || role === ROLES.HR;
 }
 
 // Check if user is Employee only

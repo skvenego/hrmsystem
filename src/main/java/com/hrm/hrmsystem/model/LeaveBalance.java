@@ -16,8 +16,8 @@ public class LeaveBalance {
 
     // Simplified paid leave balance system (1.5 leaves per month)
     private Integer totalEarnedLeaves;
-    private Integer usedLeaves;
-    private Integer unpaidLeaves;
+    private Double usedLeaves;
+    private Double unpaidLeaves;
     private Integer carriedForwardLeaves;
     
     // Cycle tracking (Jan-Jun, Jul-Dec)
@@ -28,8 +28,8 @@ public class LeaveBalance {
     public LeaveBalance() {}
 
     // All Args Constructor
-    public LeaveBalance(Long id, Employee employee, Integer totalEarnedLeaves, Integer usedLeaves,
-                        Integer unpaidLeaves, Integer carriedForwardLeaves, Integer cycle, Integer year) {
+    public LeaveBalance(Long id, Employee employee, Integer totalEarnedLeaves, Double usedLeaves,
+                        Double unpaidLeaves, Integer carriedForwardLeaves, Integer cycle, Integer year) {
         this.id = id;
         this.employee = employee;
         this.totalEarnedLeaves = totalEarnedLeaves;
@@ -44,25 +44,25 @@ public class LeaveBalance {
     public Long getId() { return id; }
     public Employee getEmployee() { return employee; }
     public Integer getTotalEarnedLeaves() { return totalEarnedLeaves; }
-    public Integer getUsedLeaves() { return usedLeaves; }
-    public Integer getUnpaidLeaves() { return unpaidLeaves; }
+    public Double getUsedLeaves() { return usedLeaves; }
+    public Double getUnpaidLeaves() { return unpaidLeaves; }
     public Integer getCarriedForwardLeaves() { return carriedForwardLeaves; }
     public Integer getCycle() { return cycle; }
     public Integer getYear() { return year; }
     
     // Helper methods
-    public Integer getAvailableLeaves() {
-        return (totalEarnedLeaves != null ? totalEarnedLeaves : 0) + 
-               (carriedForwardLeaves != null ? carriedForwardLeaves : 0) - 
-               (usedLeaves != null ? usedLeaves : 0);
+    public Double getAvailableLeaves() {
+        return (totalEarnedLeaves != null ? totalEarnedLeaves.doubleValue() : 0.0) + 
+               (carriedForwardLeaves != null ? carriedForwardLeaves.doubleValue() : 0.0) - 
+               (usedLeaves != null ? usedLeaves : 0.0);
     }
 
     // Setters
     public void setId(Long id) { this.id = id; }
     public void setEmployee(Employee employee) { this.employee = employee; }
     public void setTotalEarnedLeaves(Integer totalEarnedLeaves) { this.totalEarnedLeaves = totalEarnedLeaves; }
-    public void setUsedLeaves(Integer usedLeaves) { this.usedLeaves = usedLeaves; }
-    public void setUnpaidLeaves(Integer unpaidLeaves) { this.unpaidLeaves = unpaidLeaves; }
+    public void setUsedLeaves(Double usedLeaves) { this.usedLeaves = usedLeaves; }
+    public void setUnpaidLeaves(Double unpaidLeaves) { this.unpaidLeaves = unpaidLeaves; }
     public void setCarriedForwardLeaves(Integer carriedForwardLeaves) { this.carriedForwardLeaves = carriedForwardLeaves; }
     public void setCycle(Integer cycle) { this.cycle = cycle; }
     public void setYear(Integer year) { this.year = year; }
@@ -76,8 +76,8 @@ public class LeaveBalance {
         private Long id;
         private Employee employee;
         private Integer totalEarnedLeaves;
-        private Integer usedLeaves;
-        private Integer unpaidLeaves;
+        private Double usedLeaves;
+        private Double unpaidLeaves;
         private Integer carriedForwardLeaves;
         private Integer cycle;
         private Integer year;
@@ -85,8 +85,8 @@ public class LeaveBalance {
         public Builder id(Long id) { this.id = id; return this; }
         public Builder employee(Employee employee) { this.employee = employee; return this; }
         public Builder totalEarnedLeaves(Integer totalEarnedLeaves) { this.totalEarnedLeaves = totalEarnedLeaves; return this; }
-        public Builder usedLeaves(Integer usedLeaves) { this.usedLeaves = usedLeaves; return this; }
-        public Builder unpaidLeaves(Integer unpaidLeaves) { this.unpaidLeaves = unpaidLeaves; return this; }
+        public Builder usedLeaves(Double usedLeaves) { this.usedLeaves = usedLeaves; return this; }
+        public Builder unpaidLeaves(Double unpaidLeaves) { this.unpaidLeaves = unpaidLeaves; return this; }
         public Builder carriedForwardLeaves(Integer carriedForwardLeaves) { this.carriedForwardLeaves = carriedForwardLeaves; return this; }
         public Builder cycle(Integer cycle) { this.cycle = cycle; return this; }
         public Builder year(Integer year) { this.year = year; return this; }

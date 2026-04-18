@@ -4,18 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Attendance - HRM System</title>
-    <link rel="stylesheet" href="../css/dashboard.css">
-    <link rel="stylesheet" href="../css/pages.css">
+    <link rel="stylesheet" href="../css/employee-theme.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="dashboard-layout">
+    <div class="app-layout">
+        <!-- Sidebar -->
         <aside class="sidebar"></aside>
 
+        <!-- Main Content -->
         <main class="main-content">
-            <header class="dashboard-header">
-                <h1>My Attendance</h1>
+            <!-- Header -->
+            <header class="top-header">
+                <div class="page-title">
+                    <div class="page-title-icon" style="background: linear-gradient(135deg, #dbeafe 0%, #3b82f6 100%);">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <h1>My Attendance</h1>
+                </div>
                 <div class="header-actions">
-                    <select id="month-filter" class="search-input">
+                    <button class="icon-btn" onclick="history.back()" title="Go Back">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                    </button>
+                    <button class="icon-btn" onclick="loadMyAttendance()" title="Refresh Data">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                    </button>
+                    <select id="month-filter" class="form-control" style="width: auto; min-width: 150px;">
                         <option value="0">January</option>
                         <option value="1">February</option>
                         <option value="2">March</option>
@@ -29,14 +49,25 @@
                         <option value="10">November</option>
                         <option value="11">December</option>
                     </select>
-                    <select id="year-filter" class="search-input">
+                    <select id="year-filter" class="form-control" style="width: auto; min-width: 100px;">
                         <option value="2024">2024</option>
-                        <option value="2025" selected>2025</option>
+                        <option value="2025">2025</option>
+                        <option value="2026" selected>2026</option>
                     </select>
                 </div>
             </header>
 
             <div class="page-content">
+                <!-- Info Banner -->
+                <div class="card" style="margin-bottom: 1rem; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-left: 4px solid #3b82f6;">
+                    <div class="card-body" style="padding: 0.75rem 1rem;">
+                        <p style="margin: 0; color: #1e40af; font-size: 0.9rem;">
+                            <strong>ℹ️ Note:</strong> Approved leaves are automatically shown as "LEAVE" status. 
+                            Select month/year to view your records. Contact HR for discrepancies.
+                        </p>
+                    </div>
+                </div>
+                
                 <!-- Summary Cards -->
                 <div class="stats-grid" style="margin-bottom: 1.5rem;">
                     <div class="stat-card">
@@ -91,15 +122,21 @@
 
                 <div class="card">
                     <div class="card-header">
-                        <h3>Attendance Records</h3>
+                        <h3 class="card-title">Attendance Records</h3>
                     </div>
                     <div class="table-container">
-                        <table class="data-table">
+                        <table class="table">
                             <thead>
-                                <tr><th>Date</th><th>Status</th><th>Check In</th><th>Check Out</th><th>Working Hours</th></tr>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Check In</th>
+                                    <th>Check Out</th>
+                                    <th>Working Hours</th>
+                                </tr>
                             </thead>
                             <tbody id="attendance-table">
-                                <tr><td colspan="5" style="text-align: center; padding: 2rem;">Loading...</td></tr>
+                                <tr><td colspan="5" style="text-align: center; padding: 2rem; color: var(--gray-500);">Loading...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -113,51 +150,157 @@
     <script>
         if (!auth.requireAuth()) throw new Error('Auth required');
         
+        // Render sidebar explicitly
+        renderSidebar();
+        
         const user = auth.getCurrentUser();
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         
-        // Set current month
-        document.getElementById('month-filter').value = new Date().getMonth();
+        // Set current month and year
+        const now = new Date();
+        document.getElementById('month-filter').value = now.getMonth();
+        document.getElementById('year-filter').value = now.getFullYear();
         
         async function loadMyAttendance() {
             const month = parseInt(document.getElementById('month-filter').value) + 1;
             const year = parseInt(document.getElementById('year-filter').value);
             
             try {
-                const res = await auth.apiCall(`/api/attendance/my?month=${month}&year=${year}`);
-                const data = res && res.ok ? await res.json() : [];
+                console.log(`Fetching attendance and leaves for month=${month}, year=${year}`);
+                
+                // Fetch both attendance and leaves in parallel
+                const [attRes, leavesRes] = await Promise.all([
+                    auth.apiCall(`/api/attendance/my?month=${month}&year=${year}`),
+                    auth.apiCall('/api/leaves/my')
+                ]);
+                
+                if (!attRes || !attRes.ok) {
+                    console.error('Attendance API response not OK:', attRes?.status);
+                    auth.showNotification('Failed to fetch attendance data', 'error');
+                    return;
+                }
+                
+                const attendanceData = await attRes.json();
+                const leavesData = leavesRes && leavesRes.ok ? await leavesRes.json() : [];
+                
+                console.log('Attendance data:', attendanceData.length, 'records');
+                console.log('Leaves data:', leavesData.length, 'records');
+                
+                // Create a map of existing attendance by date
+                const attendanceMap = new Map();
+                attendanceData.forEach(a => {
+                    attendanceMap.set(a.date, a);
+                });
+                
+                // Add approved leaves as LEAVE status in attendance
+                let approvedLeaveDays = 0;
+                leavesData.forEach(leave => {
+                    if (leave.status === 'APPROVED') {
+                        // Generate all dates in the leave range
+                        const start = new Date(leave.startDate);
+                        const end = new Date(leave.endDate);
+                        
+                        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                            const dateStr = d.toISOString().split('T')[0];
+                            
+                            // Check if this date is in the selected month/year
+                            if (d.getMonth() + 1 === month && d.getFullYear() === year) {
+                                approvedLeaveDays++;
+                                
+                                // Only add if not already marked as attendance
+                                if (!attendanceMap.has(dateStr)) {
+                                    attendanceMap.set(dateStr, {
+                                        date: dateStr,
+                                        status: 'LEAVE',
+                                        checkInTime: null,
+                                        checkOutTime: null,
+                                        workingHours: 0,
+                                        leaveReason: leave.reason,
+                                        leaveType: leave.leaveType
+                                    });
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                // Convert map back to array
+                const mergedData = Array.from(attendanceMap.values());
+                console.log('Merged data:', mergedData.length, 'records (including', approvedLeaveDays, 'approved leave days)');
                 
                 // Calculate summary
-                let present = 0, absent = 0, leave = 0, hours = 0;
-                data.forEach(a => {
+                let present = 0, absent = 0, leave = 0, halfDays = 0, hours = 0;
+                mergedData.forEach(a => {
                     if (a.status === 'PRESENT') present++;
                     else if (a.status === 'ABSENT') absent++;
                     else if (a.status === 'LEAVE') leave++;
+                    else if (a.status === 'HALF_DAY') halfDays++;
                     hours += a.workingHours || 0;
                 });
                 
-                document.getElementById('present-days').textContent = present;
+                // Present includes half days (0.5 each)
+                const totalPresent = present + (halfDays * 0.5);
+                
+                document.getElementById('present-days').textContent = totalPresent % 1 === 0 ? totalPresent : totalPresent.toFixed(1);
                 document.getElementById('absent-days').textContent = absent;
                 document.getElementById('leave-days').textContent = leave;
                 document.getElementById('working-hours').textContent = hours.toFixed(1);
                 
                 // Render table
                 const tbody = document.getElementById('attendance-table');
-                if (!data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">No attendance records found</td></tr>';
+                if (!mergedData || mergedData.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 3rem; color: var(--gray-500);">
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--gray-400);">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" x2="16" y1="2" y2="6"></line>
+                                        <line x1="8" x2="8" y1="2" y2="6"></line>
+                                        <line x1="3" x2="21" y1="10" y2="10"></line>
+                                    </svg>
+                                    <p style="margin: 0; font-size: 1rem; font-weight: 500;">No attendance records found</p>
+                                    <p style="margin: 0; font-size: 0.875rem;">for ${monthNames[month-1]} ${year}</p>
+                                    <p style="margin: 0.5rem 0 0 0; font-size: 0.8rem; color: var(--gray-400);">
+                                        HR marks attendance daily. Please check another month or contact HR.
+                                    </p>
+                                </div>
+                            </td>
+                        </tr>`;
                     return;
                 }
                 
-                tbody.innerHTML = data.map(a => `
+                // Sort by date descending (newest first)
+                mergedData.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                tbody.innerHTML = mergedData.map(a => {
+                    const statusClass = a.status?.toLowerCase() || 'na';
+                    const statusDisplay = a.status === 'HALF_DAY' ? 'HALF DAY' : (a.status || 'N/A');
+                    
+                    // For leave days, show the leave type and reason
+                    let checkInDisplay = a.checkInTime || '-';
+                    let checkOutDisplay = a.checkOutTime || '-';
+                    let hoursDisplay = a.workingHours ? a.workingHours.toFixed(2) + ' hrs' : '-';
+                    
+                    if (a.status === 'LEAVE' && a.leaveType) {
+                        checkInDisplay = `<span style="color: #6b7280; font-size: 0.85rem;">${a.leaveType}</span>`;
+                        checkOutDisplay = a.leaveReason ? `<span style="color: #6b7280; font-size: 0.85rem;">${a.leaveReason.substring(0, 20)}${a.leaveReason.length > 20 ? '...' : ''}</span>` : '-';
+                        hoursDisplay = '<span style="color: #6b7280;">On Leave</span>';
+                    }
+                    
+                    return `
                     <tr>
                         <td>${auth.formatDate(a.date)}</td>
-                        <td><span class="status-badge ${a.status?.toLowerCase()}">${a.status || 'N/A'}</span></td>
-                        <td>${a.checkInTime || '-'}</td>
-                        <td>${a.checkOutTime || '-'}</td>
-                        <td>${a.workingHours ? a.workingHours.toFixed(2) : '-'} hrs</td>
+                        <td><span class="status-badge ${statusClass}">${statusDisplay}</span></td>
+                        <td>${checkInDisplay}</td>
+                        <td>${checkOutDisplay}</td>
+                        <td>${hoursDisplay}</td>
                     </tr>
-                `).join('');
-            } catch (e) { console.error(e); }
+                `}).join('');
+            } catch (e) { 
+                console.error(e);
+                auth.showNotification('Failed to load attendance', 'error');
+            }
         }
         
         document.getElementById('month-filter').addEventListener('change', loadMyAttendance);

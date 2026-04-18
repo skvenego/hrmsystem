@@ -1,15 +1,21 @@
 server:
-  port: ${SERVER_PORT:8081}
+  port: ${SERVER_PORT:8080}
   error:
     include-message: always
     include-binding-errors: always
 
 spring:
   datasource:
-    url: ${MYSQL_URL:jdbc:mysql://localhost:3306/hrm_db?useSSL=true&serverTimezone=UTC&allowPublicKeyRetrieval=true}
-    username: ${MYSQL_USERNAME:root}
-    password: ${MYSQL_PASSWORD:Sachin@123}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    # Database URL - supports MySQL (dev) and PostgreSQL (prod)
+    # MySQL: jdbc:mysql://localhost:3306/hrm_db?useSSL=true&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    # PostgreSQL: jdbc:postgresql://localhost:5432/hrm_db?sslmode=require
+    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/hrm_db?useSSL=true&serverTimezone=UTC&allowPublicKeyRetrieval=true}
+    username: ${DATABASE_USERNAME:root}
+    password: ${DATABASE_PASSWORD:Sachin@123}
+    # Driver class auto-detected from URL, but can be explicit:
+    # MySQL: com.mysql.cj.jdbc.Driver
+    # PostgreSQL: org.postgresql.Driver
+    driver-class-name: ${DATABASE_DRIVER:com.mysql.cj.jdbc.Driver}
     hikari:
       minimum-idle: 5
       maximum-pool-size: 20
@@ -25,7 +31,10 @@ spring:
     properties:
       hibernate:
         format_sql: false
-        dialect: org.hibernate.dialect.MySQLDialect
+        # Dialect auto-detected, but can be explicit:
+        # MySQL: org.hibernate.dialect.MySQLDialect
+        # PostgreSQL: org.hibernate.dialect.PostgreSQLDialect
+        dialect: ${HIBERNATE_DIALECT:org.hibernate.dialect.MySQLDialect}
     open-in-view: false
   
   flyway:

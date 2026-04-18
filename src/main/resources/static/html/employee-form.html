@@ -150,6 +150,15 @@
                                     <input type="number" name="tax" id="tax" class="form-input" step="0.01" min="0" value="0" onchange="calculateTotal()">
                                 </div>
                                 <div class="form-group">
+                                    <label class="form-label">Insurance Name</label>
+                                    <input type="text" name="insuranceName" id="insuranceName" class="form-input" placeholder="e.g., Health Insurance, Life Insurance">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Insurance (% of Salary)</label>
+                                    <input type="number" name="insurancePercentage" id="insurancePercentage" class="form-input" step="0.01" min="0" max="100" value="0" placeholder="e.g., 0.4 for 0.4%">
+                                    <small style="color: #6b7280; font-size: 0.75rem;">Enter percentage like 0.4 for 0.4% of total salary</small>
+                                </div>
+                                <div class="form-group">
                                     <label class="form-label">Total Salary (Auto)</label>
                                     <input type="number" name="salary" id="salary" class="form-input" readonly style="background: #f3f4f6; font-weight: 600;">
                                 </div>
@@ -207,18 +216,16 @@
             } catch (e) { console.error('Error loading dropdowns:', e); }
         }
         
-        // Calculate total salary
+        // Calculate total salary (GROSS only - basic + da + hra + other)
         function calculateTotal() {
             const basic = parseFloat(document.getElementById('basicSalary').value) || 0;
             const da = parseFloat(document.getElementById('da').value) || 0;
             const hra = parseFloat(document.getElementById('hra').value) || 0;
             const other = parseFloat(document.getElementById('otherAllowance').value) || 0;
-            const pf = parseFloat(document.getElementById('pf').value) || 0;
-            const tax = parseFloat(document.getElementById('tax').value) || 0;
-            
+
+            // Calculate GROSS salary only (NO deductions: PF, Tax, Insurance)
             const gross = basic + da + hra + other;
-            const total = gross - pf - tax;
-            document.getElementById('salary').value = total.toFixed(2);
+            document.getElementById('salary').value = gross.toFixed(2);
         }
         
         // Check if editing
@@ -253,6 +260,12 @@
         function setEmployeeFormValues(emp) {
             if (!emp) return;
             console.log('Setting form values, departmentId:', emp.departmentId);
+            console.log('Full employee object:', emp);
+            console.log('Insurance fields:', { 
+                insuranceName: emp.insuranceName, 
+                insurance_percentage: emp.insurance_percentage,
+                insurancePercentage: emp.insurancePercentage 
+            });
             
             document.getElementById('firstName').value = emp.firstName || '';
             document.getElementById('lastName').value = emp.lastName || '';
@@ -272,6 +285,8 @@
             document.getElementById('otherAllowance').value = emp.otherAllowance || 0;
             document.getElementById('pf').value = emp.pf || 0;
             document.getElementById('tax').value = emp.tax || 0;
+            document.getElementById('insuranceName').value = emp.insuranceName || '';
+            document.getElementById('insurancePercentage').value = emp.insurancePercentage || 0;
             
             // Set dropdown values - these need options to exist first
             if (emp.departmentId) {
@@ -317,6 +332,8 @@
                 otherAllowance: parseFloat(document.getElementById('otherAllowance').value) || 0,
                 pf: parseFloat(document.getElementById('pf').value) || 0,
                 tax: parseFloat(document.getElementById('tax').value) || 0,
+                insuranceName: document.getElementById('insuranceName').value || '',
+                insurancePercentage: parseFloat(document.getElementById('insurancePercentage').value) || 0,
                 salary: parseFloat(document.getElementById('salary').value) || 0
             };
             

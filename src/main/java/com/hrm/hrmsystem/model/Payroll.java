@@ -1,6 +1,7 @@
 package com.hrm.hrmsystem.model;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
@@ -21,24 +22,46 @@ public class Payroll {
     private Integer month;
     private Integer year;
 
-    private Double basicSalary;
-    private Double hra;
-    private Double da;
-    private Double ta;
-    private Double otherAllowances;
+    @Column(precision = 12, scale = 2)
+    private BigDecimal basicSalary;
 
-    private Double providentFund;
-    private Double tax;
-    private Double insurance;
-    private Double otherDeductions;
+    @Column(precision = 12, scale = 2)
+    private BigDecimal hra;
 
-    private Double grossSalary;
-    private Double totalDeductions;
-    private Double netSalary;
+    @Column(precision = 12, scale = 2)
+    private BigDecimal da;
+
+    @Column(precision = 12, scale = 2)
+    private BigDecimal ta;
+
+    @Column(precision = 12, scale = 2)
+    private BigDecimal otherAllowances;
+
+    @Column(precision = 12, scale = 2)
+    private BigDecimal providentFund;
+
+    @Column(precision = 12, scale = 2)
+    private BigDecimal tax;
+
+    @Column(precision = 12, scale = 2)
+    private BigDecimal insurance;
+
+    @Column(precision = 12, scale = 2)
+    private BigDecimal otherDeductions;
+
+    @Column(precision = 12, scale = 2)
+    private BigDecimal grossSalary;
+
+    @Column(precision = 12, scale = 2)
+    private BigDecimal totalDeductions;
+
+    @Column(precision = 12, scale = 2)
+    private BigDecimal netSalary;
 
     private LocalDate paymentDate;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 30)
     private PayrollStatus status;
 
     // Dual approval fields
@@ -48,7 +71,12 @@ public class Payroll {
     private LocalDate finalApprovalDate;
 
     public enum PayrollStatus {
-        PENDING, PROCESSED, PENDING_APPROVAL, PAID
+        PENDING,           // Initial state when HR generates payroll
+        PENDING_APPROVAL,  // After HR clicks "Send for Approval"
+        APPROVED,          // After Accountant approves
+        PAID,              // After payment is processed
+        @Deprecated
+        PROCESSED          // Legacy status - treated as PENDING_APPROVAL
     }
 
     // Default Constructor
@@ -56,9 +84,9 @@ public class Payroll {
 
     // All Args Constructor
     public Payroll(Long id, Employee employee, Integer month, Integer year,
-                   Double basicSalary, Double hra, Double da, Double ta, Double otherAllowances,
-                   Double providentFund, Double tax, Double insurance, Double otherDeductions,
-                   Double grossSalary, Double totalDeductions, Double netSalary,
+                   BigDecimal basicSalary, BigDecimal hra, BigDecimal da, BigDecimal ta, BigDecimal otherAllowances,
+                   BigDecimal providentFund, BigDecimal tax, BigDecimal insurance, BigDecimal otherDeductions,
+                   BigDecimal grossSalary, BigDecimal totalDeductions, BigDecimal netSalary,
                    LocalDate paymentDate, PayrollStatus status) {
         this.id = id;
         this.employee = employee;
@@ -85,18 +113,18 @@ public class Payroll {
     public Employee getEmployee() { return employee; }
     public Integer getMonth() { return month; }
     public Integer getYear() { return year; }
-    public Double getBasicSalary() { return basicSalary; }
-    public Double getHra() { return hra; }
-    public Double getDa() { return da; }
-    public Double getTa() { return ta; }
-    public Double getOtherAllowances() { return otherAllowances; }
-    public Double getProvidentFund() { return providentFund; }
-    public Double getTax() { return tax; }
-    public Double getInsurance() { return insurance; }
-    public Double getOtherDeductions() { return otherDeductions; }
-    public Double getGrossSalary() { return grossSalary; }
-    public Double getTotalDeductions() { return totalDeductions; }
-    public Double getNetSalary() { return netSalary; }
+    public BigDecimal getBasicSalary() { return basicSalary; }
+    public BigDecimal getHra() { return hra; }
+    public BigDecimal getDa() { return da; }
+    public BigDecimal getTa() { return ta; }
+    public BigDecimal getOtherAllowances() { return otherAllowances; }
+    public BigDecimal getProvidentFund() { return providentFund; }
+    public BigDecimal getTax() { return tax; }
+    public BigDecimal getInsurance() { return insurance; }
+    public BigDecimal getOtherDeductions() { return otherDeductions; }
+    public BigDecimal getGrossSalary() { return grossSalary; }
+    public BigDecimal getTotalDeductions() { return totalDeductions; }
+    public BigDecimal getNetSalary() { return netSalary; }
     public LocalDate getPaymentDate() { return paymentDate; }
     public PayrollStatus getStatus() { return status; }
     public Boolean getAccountantApproved() { return accountantApproved; }
@@ -109,18 +137,18 @@ public class Payroll {
     public void setEmployee(Employee employee) { this.employee = employee; }
     public void setMonth(Integer month) { this.month = month; }
     public void setYear(Integer year) { this.year = year; }
-    public void setBasicSalary(Double basicSalary) { this.basicSalary = basicSalary; }
-    public void setHra(Double hra) { this.hra = hra; }
-    public void setDa(Double da) { this.da = da; }
-    public void setTa(Double ta) { this.ta = ta; }
-    public void setOtherAllowances(Double otherAllowances) { this.otherAllowances = otherAllowances; }
-    public void setProvidentFund(Double providentFund) { this.providentFund = providentFund; }
-    public void setTax(Double tax) { this.tax = tax; }
-    public void setInsurance(Double insurance) { this.insurance = insurance; }
-    public void setOtherDeductions(Double otherDeductions) { this.otherDeductions = otherDeductions; }
-    public void setGrossSalary(Double grossSalary) { this.grossSalary = grossSalary; }
-    public void setTotalDeductions(Double totalDeductions) { this.totalDeductions = totalDeductions; }
-    public void setNetSalary(Double netSalary) { this.netSalary = netSalary; }
+    public void setBasicSalary(BigDecimal basicSalary) { this.basicSalary = basicSalary; }
+    public void setHra(BigDecimal hra) { this.hra = hra; }
+    public void setDa(BigDecimal da) { this.da = da; }
+    public void setTa(BigDecimal ta) { this.ta = ta; }
+    public void setOtherAllowances(BigDecimal otherAllowances) { this.otherAllowances = otherAllowances; }
+    public void setProvidentFund(BigDecimal providentFund) { this.providentFund = providentFund; }
+    public void setTax(BigDecimal tax) { this.tax = tax; }
+    public void setInsurance(BigDecimal insurance) { this.insurance = insurance; }
+    public void setOtherDeductions(BigDecimal otherDeductions) { this.otherDeductions = otherDeductions; }
+    public void setGrossSalary(BigDecimal grossSalary) { this.grossSalary = grossSalary; }
+    public void setTotalDeductions(BigDecimal totalDeductions) { this.totalDeductions = totalDeductions; }
+    public void setNetSalary(BigDecimal netSalary) { this.netSalary = netSalary; }
     public void setPaymentDate(LocalDate paymentDate) { this.paymentDate = paymentDate; }
     public void setStatus(PayrollStatus status) { this.status = status; }
     public void setAccountantApproved(Boolean accountantApproved) { this.accountantApproved = accountantApproved; }
@@ -138,18 +166,18 @@ public class Payroll {
         private Employee employee;
         private Integer month;
         private Integer year;
-        private Double basicSalary;
-        private Double hra;
-        private Double da;
-        private Double ta;
-        private Double otherAllowances;
-        private Double providentFund;
-        private Double tax;
-        private Double insurance;
-        private Double otherDeductions;
-        private Double grossSalary;
-        private Double totalDeductions;
-        private Double netSalary;
+        private BigDecimal basicSalary;
+        private BigDecimal hra;
+        private BigDecimal da;
+        private BigDecimal ta;
+        private BigDecimal otherAllowances;
+        private BigDecimal providentFund;
+        private BigDecimal tax;
+        private BigDecimal insurance;
+        private BigDecimal otherDeductions;
+        private BigDecimal grossSalary;
+        private BigDecimal totalDeductions;
+        private BigDecimal netSalary;
         private LocalDate paymentDate;
         private PayrollStatus status;
 
@@ -157,18 +185,18 @@ public class Payroll {
         public Builder employee(Employee employee) { this.employee = employee; return this; }
         public Builder month(Integer month) { this.month = month; return this; }
         public Builder year(Integer year) { this.year = year; return this; }
-        public Builder basicSalary(Double basicSalary) { this.basicSalary = basicSalary; return this; }
-        public Builder hra(Double hra) { this.hra = hra; return this; }
-        public Builder da(Double da) { this.da = da; return this; }
-        public Builder ta(Double ta) { this.ta = ta; return this; }
-        public Builder otherAllowances(Double otherAllowances) { this.otherAllowances = otherAllowances; return this; }
-        public Builder providentFund(Double providentFund) { this.providentFund = providentFund; return this; }
-        public Builder tax(Double tax) { this.tax = tax; return this; }
-        public Builder insurance(Double insurance) { this.insurance = insurance; return this; }
-        public Builder otherDeductions(Double otherDeductions) { this.otherDeductions = otherDeductions; return this; }
-        public Builder grossSalary(Double grossSalary) { this.grossSalary = grossSalary; return this; }
-        public Builder totalDeductions(Double totalDeductions) { this.totalDeductions = totalDeductions; return this; }
-        public Builder netSalary(Double netSalary) { this.netSalary = netSalary; return this; }
+        public Builder basicSalary(BigDecimal basicSalary) { this.basicSalary = basicSalary; return this; }
+        public Builder hra(BigDecimal hra) { this.hra = hra; return this; }
+        public Builder da(BigDecimal da) { this.da = da; return this; }
+        public Builder ta(BigDecimal ta) { this.ta = ta; return this; }
+        public Builder otherAllowances(BigDecimal otherAllowances) { this.otherAllowances = otherAllowances; return this; }
+        public Builder providentFund(BigDecimal providentFund) { this.providentFund = providentFund; return this; }
+        public Builder tax(BigDecimal tax) { this.tax = tax; return this; }
+        public Builder insurance(BigDecimal insurance) { this.insurance = insurance; return this; }
+        public Builder otherDeductions(BigDecimal otherDeductions) { this.otherDeductions = otherDeductions; return this; }
+        public Builder grossSalary(BigDecimal grossSalary) { this.grossSalary = grossSalary; return this; }
+        public Builder totalDeductions(BigDecimal totalDeductions) { this.totalDeductions = totalDeductions; return this; }
+        public Builder netSalary(BigDecimal netSalary) { this.netSalary = netSalary; return this; }
         public Builder paymentDate(LocalDate paymentDate) { this.paymentDate = paymentDate; return this; }
         public Builder status(PayrollStatus status) { this.status = status; return this; }
 

@@ -16,7 +16,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Configuration
 public class DataInitializer {
@@ -164,8 +166,8 @@ public class DataInitializer {
     CommandLineRunner initUsers(UserRepository userRepository, EmployeeRepository employeeRepository, 
                                 PasswordEncoder passwordEncoder) {
         return args -> {
-            String testPassword = "Sachin@123";
-            String encodedPassword = passwordEncoder.encode(testPassword);
+            String defaultPassword = "Sachin@123";
+            String encodedPassword = passwordEncoder.encode(defaultPassword);
             
             // Create or update admin user
             User admin = userRepository.findByUsername("admin")
@@ -178,7 +180,7 @@ public class DataInitializer {
             admin.setPassword(encodedPassword);
             admin.setIsActive(true);
             userRepository.save(admin);
-            System.out.println("✓ Created/updated admin user");
+            System.out.println("✓ Created/updated admin user (admin / " + defaultPassword + ")");
             
             // Create or update hradmin user
             User hrAdmin = userRepository.findByUsername("hradmin")
@@ -191,7 +193,7 @@ public class DataInitializer {
             hrAdmin.setPassword(encodedPassword);
             hrAdmin.setIsActive(true);
             userRepository.save(hrAdmin);
-            System.out.println("✓ Created/updated hradmin user");
+            System.out.println("✓ Created/updated hradmin user (hradmin / " + defaultPassword + ")");
             
             // Create or update accountant user
             User accountant = userRepository.findByUsername("accountant")
@@ -204,27 +206,69 @@ public class DataInitializer {
             accountant.setPassword(encodedPassword);
             accountant.setIsActive(true);
             userRepository.save(accountant);
-            System.out.println("✓ Created/updated accountant user");
+            System.out.println("✓ Created/updated accountant user (accountant / " + defaultPassword + ")");
             
-            // Create or update employee1 user
-            Employee employee = employeeRepository.findAll().stream().findFirst().orElse(null);
-            User employeeUser = userRepository.findByUsername("employee1")
-                .orElse(User.builder()
-                    .username("employee1")
-                    .email("employee1@hrmsystem.com")
-                    .role(User.Role.ROLE_EMPLOYEE)
-                    .employee(employee)
-                    .createdAt(LocalDateTime.now())
-                    .build());
-            employeeUser.setPassword(encodedPassword);
-            employeeUser.setIsActive(true);
-            if (employee != null && employeeUser.getEmployee() == null) {
-                employeeUser.setEmployee(employee);
+            // Create users for ALL employees - using email as username
+            List<Employee> allEmployees = employeeRepository.findAll();
+            int employeeUsersCreated = 0;
+            int employeeUsersUpdated = 0;
+            Set<String> processedEmails = new HashSet<>();
+            
+            for (Employee emp : allEmployees) {
+                String email = emp.getEmail();
+                if (email == null || email.isEmpty()) {
+                    System.out.println("⚠ Skipping employee " + emp.getFirstName() + " " + emp.getLastName() + " - no email");
+                    continue;
+                }
+                
+                String emailLower = email.toLowerCase();
+                
+                // Skip if we already processed this email (duplicate email in employee table)
+                if (processedEmails.contains(emailLower)) {
+                    System.out.println("⚠ Skipping employee " + emp.getFirstName() + " " + emp.getLastName() + " - duplicate email in employee table: " + email);
+                    continue;
+                }
+                
+                // Check if user already exists for this employee_id first
+                User user = userRepository.findByEmployeeId(emp.getId()).orElse(null);
+                
+                if (user == null) {
+                    // No user linked to this employee - check if a user with this email already exists
+                    user = userRepository.findByUsername(email).orElse(null);
+                }
+                
+                if (user == null) {
+                    // Create new user with email as username
+                    user = User.builder()
+                        .username(email)  // Email is the username
+                        .email(email)
+                        .password(encodedPassword)  // Default password
+                        .role(User.Role.ROLE_EMPLOYEE)
+                        .employee(emp)
+                        .isActive(true)
+                        .createdAt(LocalDateTime.now())
+                        .build();
+                    employeeUsersCreated++;
+                    System.out.println("✓ Created user for employee: " + email + " / " + defaultPassword);
+                } else {
+                    // Update existing user
+                    user.setPassword(encodedPassword);
+                    user.setIsActive(true);
+                    user.setEmployee(emp);
+                    employeeUsersUpdated++;
+                    System.out.println("✓ Updated user for employee: " + email + " / " + defaultPassword);
+                }
+                
+                userRepository.save(user);
+                processedEmails.add(emailLower);
             }
-            userRepository.save(employeeUser);
-            System.out.println("✓ Created/updated employee1 user" + (employeeUser.getEmployee() != null ? " (linked to employee)" : ""));
             
-            System.out.println("✓ User initialization complete! All test passwords set to: " + testPassword);
+            System.out.println("✓ User initialization complete!");
+            System.out.println("  - Admin: admin / " + defaultPassword);
+            System.out.println("  - HR Admin: hradmin / " + defaultPassword);
+            System.out.println("  - Accountant: accountant / " + defaultPassword);
+            System.out.println("  - Employees: " + employeeUsersCreated + " created, " + employeeUsersUpdated + " updated (email / " + defaultPassword + ")");
+            System.out.println("  NOTE: Employees can change their password after first login");
         };
     }
 }

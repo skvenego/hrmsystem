@@ -3,104 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leave Request - HRM System</title>
-    <link rel="stylesheet" href="../css/dashboard.css">
-    <link rel="stylesheet" href="../css/pages.css">
+    <title>Apply Leave - HRM System</title>
+    <link rel="stylesheet" href="../css/employee-theme.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="dashboard-layout">
-        <aside class="sidebar">
-            <div class="sidebar-header"><h2>HRM System</h2></div>
-            <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>Dashboard</a>
-                <a href="attendance.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" x2="16" y1="2" y2="6"></line><line x1="8" x2="8" y1="2" y2="6"></line><line x1="3" x2="21" y1="10" y2="10"></line></svg>Attendance</a>
-                <a href="leave.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" x2="8" y1="13" y2="13"></line><line x1="16" x2="8" y1="17" y2="17"></line></svg>Leave</a>
-                <a href="leave-request.html" class="nav-item active"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="5" y2="19"></line><line x1="5" x2="19" y1="12" y2="12"></line></svg>Apply Leave</a>
-                <a href="payslips.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" x2="8" y1="13" y2="13"></line><line x1="16" x2="8" y1="17" y2="17"></line></svg>Payslips</a>
-                <a href="profile.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>Profile</a>
-                <a href="settings.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Settings</a>
-            </nav>
-            <div class="sidebar-footer"><button onclick="logout()" class="logout-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>Logout</button></div>
-        </aside>
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar"></aside>
 
+        <!-- Main Content -->
         <main class="main-content">
-            <header class="dashboard-header">
-                <h1>Apply for Leave</h1>
+            <!-- Header -->
+            <header class="top-header">
+                <div class="page-title">
+                    <div class="page-title-icon" style="background: linear-gradient(135deg, #fed7aa 0%, #f97316 100%);">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                    </div>
+                    <h1>Apply for Leave</h1>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn" onclick="history.back()" title="Go Back">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                    </button>
+                    <button class="icon-btn" onclick="auth.logout()" title="Logout">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                    </button>
+                </div>
             </header>
 
             <div class="page-content">
                 <!-- Leave Balance Preview -->
-                <div class="card" style="margin-bottom: 1.5rem; background: #f0fdf4; border-left: 4px solid #22c55e;">
-                    <div style="padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                <div id="balance-card" class="card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left: 4px solid #22c55e;">
+                    <div class="card-body" style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <h4 style="margin: 0 0 0.5rem 0; color: #166534;">Your Leave Balance</h4>
-                            <p style="margin: 0; color: #15803d; font-size: 0.9rem;">
+                            <h4 id="balance-title" style="margin: 0 0 0.5rem 0; color: #166534; font-size: 1rem;">Your Leave Balance</h4>
+                            <p id="balance-subtitle" style="margin: 0; color: #15803d; font-size: 0.9rem;">
                                 Available: <strong id="balance-preview">-</strong> | 
                                 Cycle: <span id="cycle-preview">-</span>
                             </p>
                         </div>
-                        <div id="probation-badge" style="display: none; background: #fef3c7; color: #92400e; padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.85rem;">
-                            In Probation - Unpaid Only
+                        <div id="probation-badge" class="role-badge" style="display: none; background: #fef3c7; color: #92400e; padding: 0.5rem 1rem; font-size: 0.85rem;">
+                            In Probation - Leave Balance ZERO
                         </div>
                     </div>
                 </div>
                 
                 <div class="card" style="max-width: 600px;">
-                    <form id="leave-form" class="profile-form">
-                        <div class="form-group">
-                            <label class="form-label">Leave Type</label>
-                            <select name="leaveType" id="leaveType" class="form-input" required>
-                                <option value="CASUAL">Casual Leave</option>
-                                <option value="SICK">Sick Leave</option>
-                                <option value="ANNUAL">Annual Leave</option>
-                                <option value="MATERNITY">Maternity Leave</option>
-                                <option value="PATERNITY">Paternity Leave</option>
-                                <option value="HALF_DAY">Half Day Leave</option>
-                                <option value="OTHER">Other</option>
-                            </select>
-                        </div>
-                        <div class="form-row">
+                    <div class="card-header">
+                        <h3 class="card-title">Leave Application Form</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="leave-form">
                             <div class="form-group">
-                                <label class="form-label">Start Date</label>
-                                <input type="date" name="startDate" id="startDate" class="form-input" required>
+                                <label class="form-label">Leave Type</label>
+                                <select name="leaveType" id="leaveType" class="form-control" required>
+                                    <option value="">Select leave type</option>
+                                    <option value="CASUAL">Casual Leave</option>
+                                    <option value="SICK">Sick Leave</option>
+                                    <option value="ANNUAL">Annual Leave</option>
+                                    <option value="MATERNITY">Maternity Leave</option>
+                                    <option value="PATERNITY">Paternity Leave</option>
+                                    <option value="HALF">Half Day Leave</option>
+                                    <option value="OTHER">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div class="form-group">
+                                    <label class="form-label">Start Date</label>
+                                    <input type="date" name="startDate" id="startDate" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">End Date</label>
+                                    <input type="date" name="endDate" id="endDate" class="form-control" required>
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">End Date</label>
-                                <input type="date" name="endDate" id="endDate" class="form-input" required>
+                                <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                    <input type="checkbox" id="isHalfDay" style="width: 18px; height: 18px; accent-color: var(--primary);">
+                                    <span>Half Day Leave (only 0.5 day will be deducted)</span>
+                                </label>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                <input type="checkbox" id="isHalfDay" style="width: 18px; height: 18px;">
-                                <span>Half Day Leave (only 0.5 day will be deducted)</span>
-                            </label>
-                        </div>
-                        <div id="leave-preview" class="form-group" style="background: #f8fafc; padding: 1rem; border-radius: 0.375rem; display: none;">
-                            <h4 style="margin: 0 0 0.5rem 0; color: #1e293b;">Leave Preview</h4>
-                            <p style="margin: 0.25rem 0; color: #475569; font-size: 0.9rem;">Total Days: <strong id="preview-total">0</strong></p>
-                            <p style="margin: 0.25rem 0; color: #166534; font-size: 0.9rem;">Paid Days: <strong id="preview-paid">0</strong></p>
-                            <p style="margin: 0.25rem 0; color: #991b1b; font-size: 0.9rem;">Unpaid Days: <strong id="preview-unpaid">0</strong></p>
-                            <p id="preview-message" style="margin: 0.5rem 0 0 0; color: #0ea5e9; font-size: 0.85rem;"></p>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Reason</label>
-                            <textarea name="reason" id="reason" class="form-input" rows="4" required placeholder="Please provide a reason for your leave..."></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Contact Number (during leave)</label>
-                            <input type="tel" name="contact" id="contact" class="form-input" placeholder="Optional">
-                        </div>
-                        <button type="submit" class="btn-auth">Submit Leave Application</button>
-                        <a href="my-leaves.html" style="display: block; text-align: center; margin-top: 1rem; color: #6b7280;">View my leave history</a>
-                    </form>
+                            <div id="leave-preview" class="form-group" style="background: var(--gray-50); padding: 1rem; border-radius: var(--radius-md); display: none;">
+                                <h4 style="margin: 0 0 0.75rem 0; color: var(--gray-800); font-size: 0.95rem;">Leave Preview</h4>
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+                                    <div style="text-align: center; padding: 0.75rem; background: white; border-radius: var(--radius-md);">
+                                        <p style="margin: 0; font-size: 0.75rem; color: var(--gray-500);">Total Days</p>
+                                        <p id="preview-total" style="margin: 0.25rem 0 0 0; font-size: 1.25rem; font-weight: 700; color: var(--gray-800);">0</p>
+                                    </div>
+                                    <div style="text-align: center; padding: 0.75rem; background: white; border-radius: var(--radius-md);">
+                                        <p style="margin: 0; font-size: 0.75rem; color: var(--success);">Paid Days</p>
+                                        <p id="preview-paid" style="margin: 0.25rem 0 0 0; font-size: 1.25rem; font-weight: 700; color: var(--success);">0</p>
+                                    </div>
+                                    <div style="text-align: center; padding: 0.75rem; background: white; border-radius: var(--radius-md);">
+                                        <p style="margin: 0; font-size: 0.75rem; color: var(--danger);">Unpaid Days</p>
+                                        <p id="preview-unpaid" style="margin: 0.25rem 0 0 0; font-size: 1.25rem; font-weight: 700; color: var(--danger);">0</p>
+                                    </div>
+                                </div>
+                                <p id="preview-message" style="margin: 0.75rem 0 0 0; padding: 0.5rem; background: #dbeafe; color: #1e40af; font-size: 0.85rem; border-radius: var(--radius-md); text-align: center;"></p>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label form-label-required">Reason</label>
+                                <textarea name="reason" id="reason" class="form-control" rows="4" required placeholder="Please provide a reason for your leave..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Contact Number (during leave)</label>
+                                <input type="tel" name="contact" id="contact" class="form-control" placeholder="Optional contact number">
+                            </div>
+                            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 0.5rem;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                    Submit Application
+                                </button>
+                                <a href="my-leaves.html" class="btn btn-secondary" style="flex: 1; text-align: center; text-decoration: none;">
+                                    View History
+                                </a>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
     <script src="../js/auth.js"></script>
+    <script src="../js/sidebar.js"></script>
     <script>
         if (!auth.requireAuth()) throw new Error('Auth required');
+        
+        // Render sidebar explicitly
+        renderSidebar();
         
         const user = auth.getCurrentUser();
         let leaveBalance = {};
@@ -111,12 +151,40 @@
                 const res = await auth.apiCall('/api/leaves/balance');
                 if (res && res.ok) {
                     leaveBalance = await res.json();
-                    document.getElementById('balance-preview').textContent = (leaveBalance.availableLeaves || 0) + ' days';
-                    document.getElementById('cycle-preview').textContent = 'Cycle ' + (leaveBalance.cycle || 1) + ' - ' + (leaveBalance.year || new Date().getFullYear());
                     
-                    // Show probation badge if applicable
-                    if (leaveBalance.inProbation) {
-                        document.getElementById('probation-badge').style.display = 'block';
+                    // Check if employee is in probation
+                    const isInProbation = leaveBalance.inProbation;
+                    const earnedLeaves = leaveBalance.totalEarnedLeaves || 0;
+                    const availableLeaves = leaveBalance.availableLeaves || 0;
+                    
+                    if (isInProbation) {
+                        // During probation: Available is 0, but show earned leaves as frozen
+                        document.getElementById('balance-preview').innerHTML = `<span style="color: #dc2626; font-weight: bold;">0</span> <span style="font-size: 0.8rem; color: #6b7280;">(frozen)</span>`;
+                        document.getElementById('cycle-preview').textContent = 'Earning ' + earnedLeaves + ' leaves (frozen until probation ends)';
+                    } else {
+                        // After probation: Show actual balance
+                        document.getElementById('balance-preview').textContent = availableLeaves + ' days';
+                        document.getElementById('cycle-preview').textContent = 'Cycle ' + (leaveBalance.cycle || 1) + ' - ' + (leaveBalance.year || new Date().getFullYear());
+                    }
+                    
+                    // Show probation badge and update card styling if applicable
+                    if (isInProbation) {
+                        const badge = document.getElementById('probation-badge');
+                        badge.style.display = 'block';
+                        badge.textContent = '⚠️ In Probation - Available: 0';
+                        badge.style.background = '#fee2e2';
+                        badge.style.color = '#991b1b';
+                        badge.style.fontWeight = 'bold';
+                        
+                        // Update card to red styling
+                        const card = document.getElementById('balance-card');
+                        card.style.background = 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)';
+                        card.style.borderLeftColor = '#dc2626';
+                        
+                        document.getElementById('balance-title').innerHTML = 'Leave Balance: <span style="color: #dc2626; font-weight: bold;">0</span> <span style="font-size: 0.8rem; color: #6b7280;">(frozen)</span>';
+                        document.getElementById('balance-title').style.color = '#991b1b';
+                        document.getElementById('balance-subtitle').innerHTML = 'Available: <strong>0</strong> (Earning: ' + earnedLeaves + ' leaves) | Cycle: ' + (leaveBalance.cycle || 1);
+                        document.getElementById('balance-subtitle').style.color = '#991b1b';
                     }
                 }
             } catch (e) { console.error('Failed to load balance', e); }
@@ -143,7 +211,7 @@
             
             // Calculate total days
             let totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-            if (isHalfDay) totalDays = 1;
+            if (isHalfDay) totalDays = 0.5;
             
             // Calculate paid/unpaid based on policy
             let paidDays = 0;
@@ -154,7 +222,9 @@
                 // During probation - all unpaid
                 paidDays = 0;
                 unpaidDays = totalDays;
-                message = 'During probation period, all leaves are unpaid.';
+                const dailyRate = user.salary ? (user.salary / 26).toFixed(2) : '0.00';
+                const deduction = (totalDays * (user.salary ? user.salary / 26 : 0)).toFixed(2);
+                message = `⚠️ During probation: All ${totalDays} day(s) are UNPAID. Salary will be deducted ₹${deduction} (Daily rate: ₹${dailyRate} based on 26 days).`;
             } else {
                 const availableBalance = leaveBalance.availableLeaves || 0;
                 // Max 3 paid at once
@@ -190,15 +260,28 @@
         document.getElementById('leave-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const start = new Date(document.getElementById('startDate').value);
-            const end = new Date(document.getElementById('endDate').value);
+            // Validate all required fields
+            const leaveType = document.getElementById('leaveType').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const reason = document.getElementById('reason').value;
+            
+            if (!leaveType || !startDate || !endDate || !reason || reason.trim() === '') {
+                return auth.showNotification('All fields are required: Leave Type, Start Date, End Date, and Reason', 'error');
+            }
+            
+            const start = new Date(startDate);
+            const end = new Date(endDate);
             
             if (end < start) {
                 return auth.showNotification('End date cannot be before start date', 'error');
             }
             
-            // Check if applying for more than available (with some buffer for unpaid)
-            const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+            // Calculate total days correctly including half day
+            let totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+            const isHalfDay = document.getElementById('isHalfDay').checked;
+            if (isHalfDay) totalDays = 0.5;
+            
             if (!leaveBalance.inProbation && totalDays > 10) {
                 if (!confirm('You are applying for ' + totalDays + ' days. Excess days beyond your paid balance will be unpaid. Continue?')) {
                     return;
@@ -214,8 +297,9 @@
                         leaveType: document.getElementById('leaveType').value,
                         startDate: document.getElementById('startDate').value,
                         endDate: document.getElementById('endDate').value,
+                        totalDays: totalDays,
                         reason: document.getElementById('reason').value,
-                        isHalfDay: document.getElementById('isHalfDay').checked,
+                        isHalfDay: isHalfDay,
                         contactNumber: document.getElementById('contact').value
                     })
                 });

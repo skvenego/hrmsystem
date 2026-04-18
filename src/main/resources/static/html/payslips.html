@@ -28,8 +28,12 @@
             <header class="dashboard-header">
                 <h1>Payslips</h1>
                 <div class="header-actions">
+                    <select id="monthFilter" onchange="filterByMonth()" class="filter-select" style="padding: 0.5rem; border-radius: 6px; border: 1px solid #d1f5db;">
+                        <option value="">All Months</option>
+                    </select>
                     <input type="text" id="search-input" placeholder="Search by employee..." class="search-input">
                     <button onclick="loadPayslips()" class="btn-primary">Refresh</button>
+                    <button onclick="showGeneratePayslipModal()" class="btn-success" style="background: #10b981; color: white; padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer;">Generate Payslip</button>
                 </div>
             </header>
 
@@ -41,58 +45,590 @@
         </main>
     </div>
 
+    <!-- Payslip Detail Modal -->
+    <div id="payslipModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: white; border-radius: 12px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+            <div class="modal-header" style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="margin: 0;">Payslip Details</h2>
+                <button class="close-btn" onclick="closePayslipModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+            <div class="modal-body" id="payslipDetails" style="padding: 1.5rem;">
+                <!-- Payslip details loaded dynamically -->
+            </div>
+            <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; display: flex; gap: 1rem; justify-content: flex-end;">
+                <button onclick="downloadPayslipPdf()" id="downloadPayslipBtn" style="display: none; padding: 0.5rem 1rem; background: #16a34a; color: white; border: none; border-radius: 6px; cursor: pointer;">Download PDF</button>
+                <button onclick="closePayslipModal()" style="padding: 0.5rem 1rem; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer;">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script src="../js/auth.js"></script>
     <script>
         if (!auth.requireAuth()) throw new Error('Auth required');
+                const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
         
-        const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        let allPayslips = []; // Store all payslips for filtering
         
-        async function loadPayslips() {
-            try {
-                const res = await auth.apiCall('/api/payslips?t=' + Date.now());
-                const data = res && res.ok ? await res.json() : [];
-                
-                const grid = document.getElementById('payslips-grid');
-                if (!data || data.length === 0) {
-                    grid.innerHTML = '<div style="text-align: center; padding: 4rem; color: #6b7280;">No payslips found</div>';
-                    return;
+        function getCurrentMonthYear() {
+            const now = new Date();
+            return `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+        }
+        
+        function populateMonthFilter(payslips) {
+            const monthFilter = document.getElementById('monthFilter');
+            const months = [...new Set(payslips.map(p => p.monthYear).filter(m => m))].sort().reverse();
+            
+            // Keep current selection
+            const currentSelection = monthFilter.value;
+            
+            monthFilter.innerHTML = '<option value="">All Months</option>';
+            months.forEach(month => {
+                monthFilter.innerHTML += `<option value="${month}">${month}</option>`;
+            });
+            
+            // Restore selection if still valid
+            if (currentSelection && months.includes(currentSelection)) {
+                monthFilter.value = currentSelection;
+            }
+        }
+        
+        function filterByMonth() {
+            displayPayslips(allPayslips);
+        }
+        
+        function displayPayslips(data) {
+            const grid = document.getElementById('payslips-grid');
+            const selectedMonth = document.getElementById('monthFilter').value;
+            
+            // Filter by selected month if specified
+            let filteredData = data;
+            if (selectedMonth) {
+                filteredData = data.filter(p => p.monthYear === selectedMonth);
+            }
+            
+            // Deduplicate - keep only one payslip per employee (latest by ID)
+            const uniqueEmployees = {};
+            filteredData.forEach(p => {
+                const empId = p.employeeId || p.employee?.id;
+                if (!uniqueEmployees[empId] || p.id > uniqueEmployees[empId].id) {
+                    uniqueEmployees[empId] = p;
                 }
-                
-                grid.innerHTML = data.map(p => {
-                    const empName = p.employee ? `${p.employee.firstName || ''} ${p.employee.lastName || ''}`.trim() : 'Unknown';
-                    return `
-                        <div class="payslip-card">
+            });
+            filteredData = Object.values(uniqueEmployees);
+            
+            if (!filteredData || filteredData.length === 0) {
+                const message = selectedMonth 
+                    ? `<h3>No Payslips for ${selectedMonth}</h3><p>No payslips found for the selected month.</p>`
+                    : '<h3>No Payslips Found</h3><p>Generate payroll first to see payslips here.</p>';
+                grid.innerHTML = `<div style="text-align: center; padding: 4rem; color: #6b7280;">${message}</div>`;
+                return;
+            }
+
+                // Group by status for better organization
+                const grouped = filteredData.reduce((acc, p) => {
+                    const status = p.status || 'DRAFT';
+                    if (!acc[status]) acc[status] = [];
+                    acc[status].push(p);
+                    return acc;
+                }, {});
+
+                let html = '';
+
+                // Render each status group
+                Object.keys(grouped).sort().forEach(status => {
+                    const statusLabel = {
+                        'DRAFT': 'Draft (Needs Generation)',
+                        'GENERATED': 'Generated (Ready for Approval)',
+                        'APPROVED': 'Approved (Ready to Send)',
+                        'SENT': 'Sent to Employee',
+                        'REJECTED': 'Rejected'
+                    }[status] || status;
+
+                    const statusColor = {
+                        'DRAFT': '#9ca3af',
+                        'GENERATED': '#3b82f6',
+                        'APPROVED': '#8b5cf6',
+                        'SENT': '#16a34a',
+                        'REJECTED': '#dc2626'
+                    }[status] || '#6b7280';
+
+                    html += `<h3 style="margin: 1.5rem 0 1rem 0; color: ${statusColor}; font-size: 1rem; border-bottom: 2px solid ${statusColor}20; padding-bottom: 0.5rem;">${statusLabel} (${grouped[status].length})</h3>`;
+
+                    html += grouped[status].map(p => {
+                        const empName = p.employeeName || 'Unknown';
+                        const canEdit = status === 'DRAFT' || status === 'GENERATED';
+                        const isSent = status === 'SENT' || status === 'APPROVED';
+
+                        return `
+                        <div class="payslip-card" style="border: 2px solid ${statusColor}40; margin-bottom: 1rem;">
                             <div class="payslip-header">
-                                <div class="payslip-avatar">${empName[0] || '?'}</div>
+                                <div class="payslip-avatar" style="background: linear-gradient(135deg, ${statusColor} 0%, ${statusColor}80 100%);">${empName[0] || '?'}</div>
                                 <div>
                                     <h4>${empName}</h4>
                                     <p>${p.monthYear || 'N/A'}</p>
+                                    <span style="background: ${statusColor}20; color: ${statusColor}; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">${statusLabel}</span>
                                 </div>
                             </div>
                             <div class="payslip-body">
                                 <div class="payslip-row"><span>Net Salary</span><strong>${auth.formatCurrency(p.netSalary || 0)}</strong></div>
                                 <div class="payslip-row"><span>Gross</span><span>${auth.formatCurrency(p.grossSalary || 0)}</span></div>
-                                <div class="payslip-row"><span>Deductions</span><span>${auth.formatCurrency(p.totalDeductions || 0)}</span></div>
+                                <div class="payslip-row"><span>Total Deduction</span><span>${auth.formatCurrency(p.totalDeduction || 0)}</span></div>
+                                <div class="payslip-row"><span>Basic</span><span>${auth.formatCurrency(p.basicSalary || 0)}</span></div>
+                                <div class="payslip-row"><span>HRA</span><span>${auth.formatCurrency(p.hra || 0)}</span></div>
+                                <div class="payslip-row"><span>DA</span><span>${auth.formatCurrency(p.da || 0)}</span></div>
+                                <div class="payslip-row"><span>Other Allowance</span><span>${auth.formatCurrency(p.otherAllowance || 0)}</span></div>
+                                ${p.leaveDays > 0 || p.halfDays > 0 ? `<div class="payslip-row" style="background: #f0f9ff; margin: 0.5rem -0.5rem; padding: 0.5rem; border-radius: 4px;"><span style="color: #0284c7;">Leaves: ${((p.leaveDays || 0) + (p.halfDays || 0) * 0.5).toFixed(1)} days (Paid: ${(p.paidLeaveDays || 0).toFixed(1)}, Unpaid: ${(p.unpaidLeaveDays || 0).toFixed(1)})</span></div>` : ''}
                             </div>
                             <div class="payslip-footer">
-                                <button onclick="downloadPayslip(${p.id})" class="btn-small">Download</button>
-                                <button onclick="viewPayslip(${p.id})" class="btn-small">View</button>
+                                <button onclick="previewPayslip(${p.id})" class="btn-small">👁️ Preview</button>
+                                <button onclick="downloadPayslipPDF(${p.id})" class="btn-small" style="background: #16a34a; color: white;">📥 Download PDF</button>
+                                <button onclick="deletePayslip(${p.id})" class="btn-small" style="background: #dc2626; color: white;">🗑️ Delete</button>
                             </div>
                         </div>
                     `;
-                }).join('');
-            } catch (e) { console.error(e); }
+                    }).join('');
+                });
+
+                grid.innerHTML = html || '<div style="text-align: center; padding: 4rem; color: #6b7280;">No payslips found</div>';
+        }
+
+        async function editPayslip(id) {
+            try {
+                const res = await auth.apiCall(`/api/payslips/${id}`);
+                if (!res || !res.ok) throw new Error('Failed to load payslip');
+                const p = await res.json();
+
+                const empName = p.employeeName || 'Unknown';
+
+                const modal = document.createElement('div');
+                modal.id = 'edit-modal';
+                modal.className = 'modal';
+                modal.style.cssText = 'display: flex; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;';
+                modal.innerHTML = `
+                    <div style="background: white; border-radius: 12px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb;">
+                            <h3 style="margin: 0;">Edit Payslip - ${empName}</h3>
+                            <button onclick="closeEditModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+                        </div>
+                        <form id="edit-form" style="padding: 1.5rem;">
+                            <input type="hidden" name="id" value="${p.id}">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                                <div>
+                                    <label style="display: block; font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Basic Salary</label>
+                                    <input type="number" name="basicSalary" value="${p.basicSalary || 0}" style="width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 0.375rem;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">HRA</label>
+                                    <input type="number" name="hra" value="${p.hra || 0}" style="width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 0.375rem;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">DA</label>
+                                    <input type="number" name="da" value="${p.da || 0}" style="width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 0.375rem;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">PF</label>
+                                    <input type="number" name="pf" value="${p.pf || 0}" style="width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 0.375rem;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">ESI</label>
+                                    <input type="number" name="esi" value="${p.esi || 0}" style="width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 0.375rem;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Income Tax</label>
+                                    <input type="number" name="incomeTax" value="${p.incomeTax || 0}" style="width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 0.375rem;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Other Deduction</label>
+                                    <input type="number" name="otherDeduction" value="${p.otherDeduction || 0}" style="width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 0.375rem;">
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                <button type="button" onclick="closeEditModal()" style="padding: 0.5rem 1rem; border: 1px solid #e5e7eb; background: white; border-radius: 0.375rem; cursor: pointer;">Cancel</button>
+                                <button type="submit" style="padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 0.375rem; cursor: pointer;">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                document.getElementById('edit-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target);
+                    const data = Object.fromEntries(formData);
+
+                    // Convert to numbers
+                    ['basicSalary', 'hra', 'da', 'pf', 'esi', 'incomeTax', 'otherAllowance', 'otherDeduction'].forEach(key => {
+                        data[key] = parseFloat(data[key]) || 0;
+                    });
+
+                    try {
+                        const res = await auth.apiCall(`/api/payslips/${id}/update`, {
+                            method: 'PUT',
+                            body: JSON.stringify(data)
+                        });
+                        if (res && res.ok) {
+                            auth.showNotification('Payslip updated successfully', 'success');
+                            closeEditModal();
+                            loadPayslips();
+                        } else {
+                            const err = await res.text();
+                            auth.showNotification('Error: ' + err, 'error');
+                        }
+                    } catch (e) {
+                        auth.showNotification('Error: ' + e.message, 'error');
+                    }
+                });
+            } catch (e) {
+                auth.showNotification('Error: ' + e.message, 'error');
+            }
+        }
+
+        function closeEditModal() {
+            const modal = document.getElementById('edit-modal');
+            if (modal) modal.remove();
+        }
+
+        async function previewPayslip(id) {
+            try {
+                const res = await auth.apiCall(`/api/payslips/${id}`);
+                if (!res || !res.ok) throw new Error('Failed to load payslip');
+                const p = await res.json();
+
+                const modal = document.getElementById('payslipModal');
+                const details = document.getElementById('payslipDetails');
+                const downloadBtn = document.getElementById('downloadPayslipBtn');
+
+                // Calculate leave deductions based on 26 working days (NOT 30)
+                const dailyRate = (p.basicSalary || 0) / 26;
+                const halfDayDeduction = dailyRate / 2;
+                const fullDayDeduction = dailyRate;
+                const absentDays = p.absentDays || 0;
+                const halfDays = p.halfDays || 0;
+                const leaveDays = p.leaveDays || 0;
+                const paidLeaveDays = p.paidLeaveDays || 0;
+                const unpaidLeaveDays = p.unpaidLeaveDays || 0;
+                
+                // Use backend-calculated deduction if available
+                const totalAttendanceDeduction = p.absentLeaveDeduction || 0;
+
+                details.innerHTML = `
+                    <div style="padding: 1rem;">
+                        <div style="text-align: center; margin-bottom: 1.5rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 1rem;">
+                            <h3 style="margin: 0; color: #1f2937;">Payslip - ${p.monthYear || 'N/A'}</h3>
+                            <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 1.1rem;">${p.employeeName || 'Unknown'}</p>
+                            <span class="status-badge ${(p.status || 'draft').toLowerCase()}" style="margin-top: 0.5rem; display: inline-block;">${p.status || 'Draft'}</span>
+                        </div>
+
+                        <!-- Attendance & Leave Section -->
+                        <div style="margin-bottom: 2rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <h4 style="color: #3b82f6; margin-bottom: 1rem; border-bottom: 1px solid #d1d5db; padding-bottom: 0.5rem;">📊 Attendance & Leave Summary</h4>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                                <div style="text-align: center; padding: 0.75rem; background: white; border-radius: 6px;">
+                                    <div style="font-size: 1.5rem; font-weight: bold; color: #059669;">${p.presentDays || 0}</div>
+                                    <div style="font-size: 0.75rem; color: #6b7280;">Present Days</div>
+                                </div>
+                                <div style="text-align: center; padding: 0.75rem; background: white; border-radius: 6px;">
+                                    <div style="font-size: 1.5rem; font-weight: bold; color: #dc2626;">${absentDays}</div>
+                                    <div style="font-size: 0.75rem; color: #6b7280;">Absent Days</div>
+                                </div>
+                                <div style="text-align: center; padding: 0.75rem; background: white; border-radius: 6px;">
+                                    <div style="font-size: 1.5rem; font-weight: bold; color: #f59e0b;">${halfDays}</div>
+                                    <div style="font-size: 0.75rem; color: #6b7280;">Half Days</div>
+                                </div>
+                            </div>
+                            
+                            <div style="background: white; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+                                <h5 style="margin: 0 0 0.5rem 0; color: #4b5563;">Leave Details</h5>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-bottom: 0.5rem;">
+                                    <div style="text-align: center; padding: 0.5rem; background: #f0f9ff; border-radius: 6px;">
+                                        <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Total Days</p>
+                                        <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #0284c7;">${(leaveDays + halfDays * 0.5).toFixed(1)}</p>
+                                    </div>
+                                    <div style="text-align: center; padding: 0.5rem; background: #f0fdf4; border-radius: 6px;">
+                                        <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Paid Days</p>
+                                        <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #16a34a;">${paidLeaveDays.toFixed(1)}</p>
+                                    </div>
+                                    <div style="text-align: center; padding: 0.5rem; background: #fef2f2; border-radius: 6px;">
+                                        <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Unpaid Days</p>
+                                        <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #dc2626;">${unpaidLeaveDays.toFixed(1)}</p>
+                                    </div>
+                                    <div style="text-align: center; padding: 0.5rem; background: #fffbeb; border-radius: 6px;">
+                                        <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Half Days</p>
+                                        <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #f59e0b;">${halfDays}</p>
+                                    </div>
+                                </div>
+                                ${p.probationStatus === 'In Progress' || p.inProbation ? `<div style="margin-top: 0.5rem; padding: 0.5rem; background: #fef3c7; border-radius: 4px; font-size: 0.75rem; color: #92400e;">⚠️ During probation: No paid leave allowed. All leaves are unpaid.</div>` : ''}
+                                ${unpaidLeaveDays > 0 && !p.inProbation ? `<div style="margin-top: 0.5rem; padding: 0.5rem; background: #fee2e2; border-radius: 4px; font-size: 0.75rem; color: #991b1b;">⚠️ Max 3 paid leaves allowed at a time. ${unpaidLeaveDays} extra ${unpaidLeaveDays === 1 ? 'day is' : 'days are'} unpaid and deducted from salary.</div>` : ''}
+                            </div>
+
+                            <div style="background: white; padding: 1rem; border-radius: 6px;">
+                                <h5 style="margin: 0 0 0.5rem 0; color: #4b5563;">Attendance Deductions (Daily Rate: ${auth.formatCurrency(dailyRate)} based on 26 days)</h5>
+                                ${absentDays > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;"><span>Absent (${absentDays} days):</span><span style="color: #dc2626;">-${auth.formatCurrency(absentDays * dailyRate)}</span></div>` : ''}
+                                ${halfDays > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;"><span>Half Days (${halfDays} × 0.5):</span><span style="color: #dc2626;">-${auth.formatCurrency(halfDays * dailyRate * 0.5)}</span></div>` : ''}
+                                ${unpaidLeaveDays > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;"><span>Unpaid Leaves (${unpaidLeaveDays} days):</span><span style="color: #dc2626;">-${auth.formatCurrency(unpaidLeaveDays * dailyRate)}</span></div>` : ''}
+                                ${totalAttendanceDeduction > 0 ? `<div style="display: flex; justify-content: space-between; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #e5e7eb; color: #dc2626;"><span><strong>Total Attendance Deduction:</strong></span><strong>-${auth.formatCurrency(totalAttendanceDeduction)}</strong></div>` : '<div style="color: #059669; text-align: center;">✓ No attendance deductions</div>'}
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                            <div>
+                                <h4 style="color: #059669; margin-bottom: 1rem; border-bottom: 1px solid #d1d5db; padding-bottom: 0.5rem;">Earnings</h4>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span>Basic Salary:</span><strong>${auth.formatCurrency(p.basicSalary || 0)}</strong></div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span>HRA:</span><span>${auth.formatCurrency(p.hra || 0)}</span></div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span>DA:</span><span>${auth.formatCurrency(p.da || 0)}</span></div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span>Other Allowances:</span><span>${auth.formatCurrency(p.otherAllowance || 0)}</span></div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 1rem; padding-top: 0.5rem; border-top: 2px solid #059669; color: #059669;"><span><strong>Gross Salary:</strong></span><strong>${auth.formatCurrency(p.grossSalary || 0)}</strong></div>
+                            </div>
+
+                            <div>
+                                <h4 style="color: #dc2626; margin-bottom: 1rem; border-bottom: 1px solid #d1d5db; padding-bottom: 0.5rem;">Deductions</h4>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span>Provident Fund:</span><span style="color: #dc2626;">-${auth.formatCurrency(p.pf || 0)}</span></div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span>Tax:</span><span style="color: #dc2626;">-${auth.formatCurrency(p.incomeTax || 0)}</span></div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span>${p.insuranceName || 'Insurance'}:</span><span style="color: #dc2626;">-${auth.formatCurrency(p.otherDeduction || 0)}</span></div>
+                                ${totalAttendanceDeduction > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span>Absent/Leave Deduction:</span><span style="color: #dc2626;">-${auth.formatCurrency(totalAttendanceDeduction)}</span></div>` : ''}
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span>Other Deductions:</span><span style="color: #dc2626;">-${auth.formatCurrency(p.otherDeduction || 0)}</span></div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 1rem; padding-top: 0.5rem; border-top: 2px solid #dc2626; color: #dc2626;"><span><strong>Total Deductions:</strong></span><strong>-${auth.formatCurrency(p.totalDeduction || 0)}</strong></div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 2rem; padding: 1rem; background: #f3f4f6; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">Net Salary</div>
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #16a34a;">${auth.formatCurrency(p.netSalary || 0)}</div>
+                            <div style="font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem;">Calculation based on 26 working days</div>
+                        </div>
+
+                        ${p.remarks ? `<div style="margin-top: 1rem; padding: 0.75rem; background: #e0f2fe; border-radius: 6px; font-size: 0.875rem; border-left: 4px solid #0ea5e9;"><strong style="color: #0369a1;">📋 Calculation Details:</strong><br><span style="color: #1e293b;">${p.remarks}</span></div>` : ''}
+                        
+                        <div style="margin-top: 1rem; padding: 0.75rem; background: #f0fdf4; border-radius: 6px; font-size: 0.75rem; color: #166534; border: 1px solid #86efac;">
+                            <strong>💡 Leave Policy:</strong> During probation, no paid leave is allowed. After probation, you get 1.5 paid leaves per month (max 3 at once). Unused leaves carry forward to next month within the cycle (Jan-Jun, Jul-Dec). At cycle end, remaining leaves expire.
+                        </div>
+                    </div>
+                `;
+
+                // Show download button only if status is SENT or APPROVED
+                const canDownload = ['SENT', 'APPROVED', 'PAID'].includes((p.status || '').toUpperCase());
+                downloadBtn.style.display = canDownload ? 'inline-block' : 'none';
+                if (canDownload) {
+                    downloadBtn.onclick = () => downloadPayslip(id);
+                }
+
+                modal.style.display = 'flex';
+            } catch (e) {
+                console.error(e);
+                auth.showNotification('Failed to load payslip preview', 'error');
+            }
+        }
+
+        function closePayslipModal() {
+            const modal = document.getElementById('payslipModal');
+            if (modal) modal.style.display = 'none';
         }
         
         function downloadPayslip(id) {
-            window.open(`/api/payslips/${id}/download`, '_blank');
+            window.open(`/api/payslips/${id}/download-pdf`, '_blank');
         }
         
-        function viewPayslip(id) {
-            window.open(`/api/payslips/${id}`, '_blank');
+        async function downloadPayslipPDF(id) {
+            try {
+                const res = await auth.apiCall(`/api/payslips/${id}`);
+                if (!res || !res.ok) throw new Error('Failed to load payslip');
+                const p = await res.json();
+                
+                // Create professional PDF content
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(`
+                    <html>
+                    <head>
+                        <title>Payslip - ${p.employeeName || 'Employee'} - ${p.monthYear || 'N/A'}</title>
+                        <style>
+                            @media print {
+                                body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+                                .header { text-align: center; border-bottom: 3px solid #1e40af; padding-bottom: 20px; margin-bottom: 30px; }
+                                .header h1 { margin: 0; color: #1e40af; font-size: 24px; }
+                                .header h2 { margin: 10px 0 0 0; color: #6b7280; font-size: 16px; }
+                                .section { margin-bottom: 25px; }
+                                .section-title { background: #1e40af; color: white; padding: 8px 15px; font-weight: bold; font-size: 14px; margin-bottom: 15px; }
+                                .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dotted #d1d5db; }
+                                .row:last-child { border-bottom: none; }
+                                .label { color: #374151; }
+                                .value { font-weight: bold; color: #111827; }
+                                .deduction { color: #dc2626; }
+                                .earning { color: #16a34a; }
+                                .total-row { background: #f3f4f6; padding: 12px 15px; font-weight: bold; font-size: 16px; }
+                                .net-salary { background: #1e40af; color: white; text-align: center; padding: 20px; font-size: 20px; font-weight: bold; margin-top: 30px; }
+                                .footer { text-align: center; margin-top: 40px; font-size: 12px; color: #6b7280; border-top: 1px solid #d1d5db; padding-top: 20px; }
+                                .company-info { text-align: center; margin-bottom: 20px; }
+                                .company-name { font-size: 28px; font-weight: bold; color: #1e40af; margin-bottom: 5px; }
+                                .company-address { color: #6b7280; font-size: 12px; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="company-info">
+                            <div class="company-name">HRM SYSTEM</div>
+                            <div class="company-address">Payroll Management Solutions</div>
+                        </div>
+                        
+                        <div class="header">
+                            <h1>PAYSLIP</h1>
+                            <h2>${p.monthYear || 'N/A'}</h2>
+                            <p style="margin: 15px 0 0 0; font-size: 18px; font-weight: bold;">${p.employeeName || 'Employee'}</p>
+                            <p style="margin: 5px 0 0 0; color: #6b7280;">Employee ID: ${p.employeeId || 'N/A'}</p>
+                            <p style="margin: 5px 0 0 0; color: #6b7280; font-size: 12px;">Status: ${p.status || 'Generated'}</p>
+                        </div>
+                        
+                        <div class="section">
+                            <div class="section-title">EARNINGS</div>
+                            <div class="row">
+                                <span class="label">Basic Salary</span>
+                                <span class="value earning">₹${(p.basicSalary || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                            </div>
+                            <div class="row">
+                                <span class="label">House Rent Allowance (HRA)</span>
+                                <span class="value earning">₹${(p.hra || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                            </div>
+                            <div class="row">
+                                <span class="label">Dearness Allowance (DA)</span>
+                                <span class="value earning">₹${(p.da || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                            </div>
+                            <div class="row">
+                                <span class="label">Other Allowances</span>
+                                <span class="value earning">₹${(p.otherAllowance || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                            </div>
+                            <div class="row total-row">
+                                <span class="label">GROSS SALARY</span>
+                                <span class="value" style="color: #16a34a;">₹${(p.grossSalary || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="section">
+                            <div class="section-title">DEDUCTIONS</div>
+                            <div class="row">
+                                <span class="label">Provident Fund (PF)</span>
+                                <span class="value deduction">-₹${(p.pf || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                            </div>
+                            <div class="row">
+                                <span class="label">Income Tax</span>
+                                <span class="value deduction">-₹${(p.incomeTax || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                            </div>
+                            <div class="row">
+                                <span class="label">Insurance</span>
+                                <span class="value deduction">-₹${(p.insurance || p.otherDeduction || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                            </div>
+                            <div class="row">
+                                <span class="label">Other Deductions</span>
+                                <span class="value deduction">-₹${(p.otherDeduction || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                            </div>
+                            ${p.absentLeaveDeduction > 0 ? `
+                            <div class="row">
+                                <span class="label">Absent/Leave Deduction</span>
+                                <span class="value deduction">-₹${(p.absentLeaveDeduction || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                            </div>
+                            ` : ''}
+                            <div class="row total-row">
+                                <span class="label">TOTAL DEDUCTIONS</span>
+                                <span class="value" style="color: #dc2626;">-₹${(p.totalDeduction || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="net-salary">
+                            NET SALARY: ₹${(p.netSalary || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}
+                        </div>
+                        
+                        <div class="footer">
+                            <p>This is a computer-generated payslip and does not require a signature.</p>
+                            <p>For any queries, please contact the HR department.</p>
+                            <p style="margin-top: 20px; font-size: 10px;">Generated on: ${new Date().toLocaleDateString('en-IN')} | HRM System</p>
+                        </div>
+                        
+                        <script>
+                            window.onload = function() {
+                                setTimeout(function() {
+                                    window.print();
+                                }, 500);
+                            };
+                        <\/script>
+                    </body>
+                    </html>
+                `);
+                printWindow.document.close();
+            } catch (e) {
+                console.error('Error generating PDF:', e);
+                alert('Error generating PDF: ' + e.message);
+            }
         }
         
         function logout() { auth.logout(); }
+        
+        async function deletePayslip(id) {
+            if (!confirm('Are you sure you want to delete this payslip?')) return;
+            
+            try {
+                const res = await auth.apiCall(`/api/payslips/${id}`, { method: 'DELETE' });
+                if (res && (res.ok || res.status === 200 || res.status === 204)) {
+                    alert('Payslip deleted successfully!');
+                    // Force full page reload to clear cache and refresh data
+                    window.location.reload();
+                } else {
+                    const error = await res.text();
+                    alert('Error deleting payslip: ' + error);
+                }
+            } catch (err) {
+                alert('Error deleting payslip: ' + err.message);
+            }
+        }
+        
+        function showGeneratePayslipModal() {
+            const modalHtml = `
+                <div id="generate-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                    <div style="background: white; padding: 2rem; border-radius: 12px; width: 400px; max-width: 90%;">
+                        <h2 style="margin-bottom: 1.5rem;">Generate Payslip</h2>
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Employee ID:</label>
+                            <input type="number" id="gen-employee-id" placeholder="Enter employee ID" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;">
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Month-Year (YYYY-MM):</label>
+                            <input type="text" id="gen-month-year" placeholder="2026-04" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;">
+                        </div>
+                        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                            <button onclick="closeGenerateModal()" style="padding: 0.5rem 1rem; border: 1px solid #d1d5db; border-radius: 6px; background: white; cursor: pointer;">Cancel</button>
+                            <button onclick="generatePayslip()" style="padding: 0.5rem 1rem; border: none; border-radius: 6px; background: #10b981; color: white; cursor: pointer;">Generate</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+        
+        function closeGenerateModal() {
+            const modal = document.getElementById('generate-modal');
+            if (modal) modal.remove();
+        }
+        
+        async function generatePayslip() {
+            const employeeId = document.getElementById('gen-employee-id').value;
+            const monthYear = document.getElementById('gen-month-year').value;
+            
+            if (!employeeId || !monthYear) {
+                alert('Please enter both Employee ID and Month-Year');
+                return;
+            }
+            
+            try {
+                const res = await auth.apiCall(`/api/payslips/generate-for-employee?employeeId=${employeeId}&monthYear=${monthYear}`, { method: 'POST' });
+                if (res && res.ok) {
+                    alert('Payslip generated successfully!');
+                    closeGenerateModal();
+                    loadPayslips();
+                } else {
+                    const error = await res.text();
+                    alert('Error: ' + error);
+                }
+            } catch (err) {
+                alert('Error generating payslip: ' + err.message);
+            }
+        }
         
         document.getElementById('search-input')?.addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
@@ -100,6 +636,25 @@
                 card.style.display = card.textContent.toLowerCase().includes(term) ? '' : 'none';
             });
         });
+        
+        async function loadPayslips() {
+            try {
+                const res = await auth.apiCall('/api/payslips?t=' + Date.now());
+                const data = res && res.ok ? await res.json() : [];
+                
+                allPayslips = data || [];
+                
+                // Populate month filter
+                populateMonthFilter(allPayslips);
+                
+                // Display payslips
+                displayPayslips(allPayslips);
+                
+            } catch (e) {
+                console.error(e);
+                auth.showNotification('Failed to load payslips', 'error');
+            }
+        }
         
         loadPayslips();
     </script>

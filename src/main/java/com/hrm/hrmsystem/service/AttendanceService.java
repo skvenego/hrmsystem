@@ -160,6 +160,10 @@ if (!records.isEmpty() && records.get(0).getCheckInTime() != null) {
     public AttendanceDTO markPresent(Long employeeId, LocalDate date) {
         return markPresentWithOptions(employeeId, date, "PRESENT", 8.0);
     }
+
+    public AttendanceDTO markHalfDay(Long employeeId, LocalDate date) {
+        return markPresentWithOptions(employeeId, date, "HALF_DAY", 4.0);
+    }
     
     public AttendanceDTO markPresentWithOptions(Long employeeId, LocalDate date, String status, Double workingHours) {
         // Validate: Cannot mark attendance for future dates

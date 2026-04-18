@@ -77,4 +77,44 @@ public class AuthController {
     public ResponseEntity<UserDTO> activateUser(@PathVariable Long id) {
         return ResponseEntity.ok(authService.activateUser(id));
     }
+
+    /**
+     * Change password for currently logged-in user
+     * Employees can only change their own password
+     */
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
+        try {
+            authService.changePassword(request);
+            Map<String, String> success = new HashMap<>();
+            success.put("message", "Password changed successfully");
+            return ResponseEntity.ok(success);
+        } catch (RuntimeException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Password change failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    /**
+     * Get current user profile
+     */
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser() {
+        try {
+            return ResponseEntity.ok(authService.getCurrentUser());
+        } catch (RuntimeException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Failed to get user: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
 }

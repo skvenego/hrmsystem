@@ -26,10 +26,14 @@
 
         <main class="main-content">
             <header class="dashboard-header">
-                <h1>Attendance</h1>
-                <div class="header-actions">
-                    <input type="date" id="date-input" class="search-input">
-                    <button onclick="markAllPresent()" class="btn-primary">Mark All Present</button>
+                <h1>Attendance Management</h1>
+                <div class="header-actions" style="display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end;">
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="date" id="date-input" class="search-input" style="padding: 0.5rem; border-radius: 6px; border: 1px solid #d1d5db;">
+                        <button onclick="markAllPresent()" class="btn-primary" style="background: #16a34a; color: white; padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer;">✓ All Present</button>
+                        <button onclick="markAllAbsent()" class="btn-secondary" style="background: #dc2626; color: white; padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer;">✗ All Absent</button>
+                    </div>
+                    <input type="text" id="search-input" placeholder="🔍 Search employee by name..." style="padding: 0.5rem; border-radius: 6px; border: 1px solid #d1d5db; width: 300px;" onkeyup="filterEmployees()">
                 </div>
             </header>
 
@@ -71,6 +75,21 @@
             return selected > today;
         }
         
+        let allEmployees = [];
+        let attendanceData = [];
+        let filteredEmployees = [];
+        
+        async function loadAllEmployees() {
+            try {
+                const res = await auth.apiCall('/api/employees');
+                if (res && res.ok) {
+                    allEmployees = await res.json();
+                }
+            } catch (e) {
+                console.error('Failed to load employees:', e);
+            }
+        }
+        
         async function loadAttendance() {
             if (isFutureDate(selectedDate)) {
                 showPopup('Cannot view attendance for future dates');
@@ -78,64 +97,267 @@
             }
             
             try {
+                // First ensure we have all employees
+                if (allEmployees.length === 0) {
+                    await loadAllEmployees();
+                }
+                
+                // Load attendance for selected date
                 const res = await auth.apiCall(`/api/attendance/date/${selectedDate}`);
-                const data = res && res.ok ? await res.json() : [];
+                attendanceData = res && res.ok ? await res.json() : [];
                 
                 const tbody = document.getElementById('attendance-table');
-                if (!data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No attendance records</td></tr>';
+                
+                // Merge all employees with attendance data
+                const mergedData = allEmployees.map(emp => {
+                    const attendance = attendanceData.find(a => a.employeeId === emp.id);
+                    
+                    // Extract department name from department object
+                    let deptName = '-';
+                    if (emp.department) {
+                        deptName = typeof emp.department === 'object' ? (emp.department.name || emp.department.departmentName || '-') : emp.department;
+                    }
+                    
+                    return {
+                        employeeId: emp.id,
+                        employeeName: `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || 'Unknown',
+                        department: deptName,
+                        date: selectedDate,
+                        status: attendance?.status || 'NOT_MARKED',
+                        checkInTime: attendance?.checkInTime || '-',
+                        checkOutTime: attendance?.checkOutTime || '-',
+                        isFuture: isFutureDate(selectedDate)
+                    };
+                });
+                
+                if (mergedData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No employees found</td></tr>';
                     return;
                 }
                 
-                tbody.innerHTML = data.map(a => `
-                    <tr>
-                        <td>${a.employeeName || 'Unknown'}</td>
-                        <td>${a.date}</td>
-                        <td><span class="status-badge ${(a.status || 'PENDING').toLowerCase()}">${a.status || 'PENDING'}</span></td>
-                        <td>${a.checkInTime || '-'}</td>
-                        <td>${a.checkOutTime || '-'}</td>
-                        <td>
-                            ${!isFutureDate(selectedDate) ? `
-                                <button onclick="markPresent(${a.employeeId})" class="btn-small" ${a.status === 'PRESENT' ? 'disabled' : ''}>Present</button>
-                                <button onclick="markAbsent(${a.employeeId})" class="btn-small" ${a.status === 'ABSENT' ? 'disabled' : ''}>Absent</button>
-                            ` : '<span style="color: #9ca3af;">Future date</span>'}
-                        </td>
-                    </tr>
-                `).join('');
+                // Store for filtering
+                filteredEmployees = mergedData;
+                renderAttendanceTable(mergedData);
             } catch (e) {
                 console.error(e);
+                const tbody = document.getElementById('attendance-table');
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #dc2626;">Error loading attendance data</td></tr>';
+            }
+        }
+
+        function renderAttendanceTable(data) {
+            const tbody = document.getElementById('attendance-table');
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No employees found matching your search</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = data.map(a => {
+                const status = a.status || 'NOT_MARKED';
+                const statusClass = status.toLowerCase();
+                const isPresent = status === 'PRESENT';
+                const isAbsent = status === 'ABSENT';
+                const isHalfDay = status === 'HALF_DAY';
+                const isNotMarked = status === 'NOT_MARKED' || status === 'PENDING';
+                
+                return `
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div style="width: 36px; height: 36px; background: #4f46e5; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.875rem;">${a.employeeName.charAt(0) || '?'}</div>
+                                <div>
+                                    <div style="font-weight: 600;">${a.employeeName}</div>
+                                    <div style="font-size: 0.75rem; color: #6b7280;">${a.department}</div>
+                                    <button onclick="viewEmployeeDetails(${a.employeeId})" class="btn-view" style="margin-top: 4px; padding: 2px 8px; font-size: 0.7rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">👁 View Details</button>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${a.date}</td>
+                        <td>
+                            <span class="status-badge ${statusClass}" style="
+                                background: ${isPresent ? '#dcfce7' : isAbsent ? '#fee2e2' : isHalfDay ? '#fef3c7' : '#f3f4f6'};
+                                color: ${isPresent ? '#166534' : isAbsent ? '#991b1b' : isHalfDay ? '#92400e' : '#6b7280'};
+                                border: 1px solid ${isPresent ? '#86efac' : isAbsent ? '#fca5a5' : isHalfDay ? '#fcd34d' : '#d1d5db'};
+                            ">${status.replace(/_/g, ' ')}</span>
+                        </td>
+                        <td>${a.checkInTime}</td>
+                        <td>${a.checkOutTime}</td>
+                        <td>
+                            ${!a.isFuture ? `
+                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    <button onclick="setAttendance(${a.employeeId}, 'PRESENT')" class="btn-toggle ${isPresent ? 'active' : ''}" data-status="present" title="Mark Present">
+                                        <span style="width: 10px; height: 10px; background: #22c55e; border-radius: 50%; display: inline-block; margin-right: 4px;"></span>P
+                                    </button>
+                                    <button onclick="setAttendance(${a.employeeId}, 'HALF_DAY')" class="btn-toggle ${isHalfDay ? 'active' : ''}" data-status="half" title="Mark Half Day">
+                                        <span style="width: 10px; height: 10px; background: #f59e0b; border-radius: 50%; display: inline-block; margin-right: 4px;"></span>H
+                                    </button>
+                                    <button onclick="setAttendance(${a.employeeId}, 'ABSENT')" class="btn-toggle ${isAbsent ? 'active' : ''}" data-status="absent" title="Mark Absent">
+                                        <span style="width: 10px; height: 10px; background: #ef4444; border-radius: 50%; display: inline-block; margin-right: 4px;"></span>A
+                                    </button>
+                                </div>
+                            ` : '<span style="color: #9ca3af; font-size: 0.875rem;">Future</span>'}
+                        </td>
+                    </tr>
+                `}).join('');
+        }
+        
+        function filterEmployees() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+            if (!searchTerm) {
+                renderAttendanceTable(filteredEmployees);
+                return;
+            }
+            
+            const filtered = filteredEmployees.filter(emp => 
+                emp.employeeName.toLowerCase().includes(searchTerm) ||
+                emp.department.toLowerCase().includes(searchTerm)
+            );
+            
+            renderAttendanceTable(filtered);
+        }
+        
+        async function viewEmployeeDetails(empId) {
+            try {
+                const emp = allEmployees.find(e => e.id === empId);
+                if (!emp) {
+                    auth.showNotification('Employee not found', 'error');
+                    return;
+                }
+                
+                // Get department name from department object or string
+                let deptName = 'N/A';
+                if (emp.department) {
+                    deptName = typeof emp.department === 'object' ? (emp.department.name || emp.department.departmentName || 'N/A') : emp.department;
+                }
+                
+                // Get join date - could be joiningDate or joinDate
+                const joinDate = emp.joiningDate || emp.joinDate || 'N/A';
+                
+                const modal = document.createElement('div');
+                modal.className = 'employee-modal';
+                modal.innerHTML = `
+                    <div class="modal-overlay" onclick="closeEmployeeModal()"></div>
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2>Employee Details</h2>
+                            <button onclick="closeEmployeeModal()" class="close-btn">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="emp-avatar">${(emp.firstName || '')[0]}${(emp.lastName || '')[0]}</div>
+                            <h3>${emp.firstName || ''} ${emp.lastName || ''}</h3>
+                            <p class="emp-designation">${emp.designation || 'N/A'}</p>
+                            
+                            <div class="emp-details-grid">
+                                <div class="detail-item">
+                                    <label>Employee ID</label>
+                                    <span>${emp.id}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Department</label>
+                                    <span>${deptName}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Email</label>
+                                    <span>${emp.email || 'N/A'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Phone</label>
+                                    <span>${emp.phone || 'N/A'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Join Date</label>
+                                    <span>${joinDate}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Salary</label>
+                                    <span>${emp.salary ? '₹' + emp.salary : 'N/A'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            } catch (e) {
+                console.error(e);
+                auth.showNotification('Failed to load employee details', 'error');
             }
         }
         
-        async function markPresent(empId) {
-            if (isFutureDate(selectedDate)) return showPopup('Cannot mark future dates');
-            try {
-                const res = await auth.apiCall(`/api/attendance/mark-present/${empId}?date=${selectedDate}`, { method: 'POST' });
-                if (res && res.ok) {
-                    auth.showNotification('Marked present', 'success');
-                    loadAttendance();
-                }
-            } catch (e) { auth.showNotification(e.message, 'error'); }
+        function closeEmployeeModal() {
+            const modal = document.querySelector('.employee-modal');
+            if (modal) modal.remove();
         }
-        
-        async function markAbsent(empId) {
-            if (isFutureDate(selectedDate)) return showPopup('Cannot mark future dates');
+
+        async function setAttendance(empId, status) {
+            if (isFutureDate(selectedDate)) {
+                showPopup('Cannot mark attendance for future dates');
+                return;
+            }
+            
             try {
-                const res = await auth.apiCall(`/api/attendance/mark-absent/${empId}?date=${selectedDate}`, { method: 'POST' });
+                const res = await auth.apiCall(`/api/attendance/mark-${status.toLowerCase().replace('_', '-')}/${empId}?date=${selectedDate}`, { method: 'POST' });
                 if (res && res.ok) {
-                    auth.showNotification('Marked absent', 'success');
+                    auth.showNotification(`Marked ${status.replace(/_/g, ' ').toLowerCase()}`, 'success');
                     loadAttendance();
+                } else {
+                    const error = await res.text();
+                    auth.showNotification(error || 'Failed to mark attendance', 'error');
                 }
-            } catch (e) { auth.showNotification(e.message, 'error'); }
+            } catch (e) { 
+                console.error(e);
+                auth.showNotification('Failed to mark attendance', 'error'); 
+            }
         }
         
         async function markAllPresent() {
-            if (isFutureDate(selectedDate)) return showPopup('Cannot mark future dates');
-            const rows = document.querySelectorAll('#attendance-table tr');
-            for (const row of rows) {
-                const empId = row.querySelector('button')?.getAttribute('onclick')?.match(/\d+/)?.[0];
-                if (empId) await markPresent(empId);
+            if (isFutureDate(selectedDate)) {
+                showPopup('Cannot mark future dates');
+                return;
             }
+            
+            // Get all employee IDs from the table
+            const rows = document.querySelectorAll('#attendance-table tr');
+            const empIds = [];
+            rows.forEach(row => {
+                const btn = row.querySelector('button[onclick*="setAttendance"]');
+                if (btn) {
+                    const match = btn.getAttribute('onclick').match(/setAttendance\((\d+)/);
+                    if (match) empIds.push(match[1]);
+                }
+            });
+            
+            // Mark all as present
+            for (const empId of empIds) {
+                await setAttendance(empId, 'PRESENT');
+            }
+            
+            auth.showNotification(`Marked ${empIds.length} employees as present`, 'success');
+        }
+        
+        async function markAllAbsent() {
+            if (isFutureDate(selectedDate)) {
+                showPopup('Cannot mark future dates');
+                return;
+            }
+            
+            if (!confirm('Are you sure you want to mark all employees as absent?')) return;
+            
+            const rows = document.querySelectorAll('#attendance-table tr');
+            const empIds = [];
+            rows.forEach(row => {
+                const btn = row.querySelector('button[onclick*="setAttendance"]');
+                if (btn) {
+                    const match = btn.getAttribute('onclick').match(/setAttendance\((\d+)/);
+                    if (match) empIds.push(match[1]);
+                }
+            });
+            
+            for (const empId of empIds) {
+                await setAttendance(empId, 'ABSENT');
+            }
+            
+            auth.showNotification(`Marked ${empIds.length} employees as absent`, 'success');
         }
         
         function showPopup(msg) {
@@ -166,6 +388,184 @@
         .popup { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; }
         .popup-content { background: white; padding: 2rem; border-radius: 12px; text-align: center; }
         .popup-content button { margin-top: 1rem; padding: 0.5rem 1.5rem; background: #4f46e5; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        
+        /* Toggle Button Styles */
+        .btn-toggle {
+            padding: 0.375rem 0.75rem;
+            border: 2px solid #e5e7eb;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-toggle:hover {
+            border-color: #d1d5db;
+            background: #f9fafb;
+        }
+        .btn-toggle.active[data-status="present"] {
+            background: #dcfce7;
+            border-color: #22c55e;
+            color: #166534;
+        }
+        .btn-toggle.active[data-status="half"] {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #92400e;
+        }
+        .btn-toggle.active[data-status="absent"] {
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+        
+        /* Status Badge Styles */
+        .status-badge.present {
+            background: #dcfce7 !important;
+            color: #166534 !important;
+            border: 1px solid #86efac !important;
+        }
+        .status-badge.absent {
+            background: #fee2e2 !important;
+            color: #991b1b !important;
+            border: 1px solid #fca5a5 !important;
+        }
+        .status-badge.half_day {
+            background: #fef3c7 !important;
+            color: #92400e !important;
+            border: 1px solid #fcd34d !important;
+        }
+        .status-badge.not_marked {
+            background: #f3f4f6 !important;
+            color: #6b7280 !important;
+            border: 1px solid #d1d5db !important;
+        }
+        
+        /* Table Styles */
+        .data-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        .data-table td {
+            padding: 1rem;
+            vertical-align: middle;
+        }
+        
+        /* View Button */
+        .btn-view {
+            transition: all 0.2s;
+        }
+        .btn-view:hover {
+            background: #2563eb !important;
+            transform: translateY(-1px);
+        }
+        
+        /* Employee Modal */
+        .employee-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            position: relative;
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+        }
+        .close-btn:hover {
+            color: #1f2937;
+        }
+        .modal-body {
+            padding: 2rem;
+            text-align: center;
+        }
+        .emp-avatar {
+            width: 80px;
+            height: 80px;
+            background: #4f46e5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0 auto 1rem;
+        }
+        .modal-body h3 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1.5rem;
+        }
+        .emp-designation {
+            color: #6b7280;
+            margin: 0 0 1.5rem 0;
+        }
+        .emp-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            text-align: left;
+        }
+        .detail-item {
+            background: #f9fafb;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        .detail-item label {
+            display: block;
+            font-size: 0.75rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+        .detail-item span {
+            font-weight: 600;
+            color: #1f2937;
+        }
     </style>
 </body>
 </html>

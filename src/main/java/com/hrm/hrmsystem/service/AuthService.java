@@ -6,8 +6,11 @@ import com.hrm.hrmsystem.model.Employee;
 import com.hrm.hrmsystem.model.User;
 import com.hrm.hrmsystem.repository.EmployeeRepository;
 import com.hrm.hrmsystem.repository.UserRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -134,6 +137,52 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setIsActive(true);
         user = userRepository.save(user);
+        return convertToDTO(user);
+    }
+
+    /**
+     * Change password for currently logged-in user
+     * Users can only change their own password after verifying current password
+     */
+    @Transactional
+    public void changePassword(ChangePasswordRequest request) {
+        // Get current authenticated user
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Verify current password
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+
+        // Validate new password and confirm password match
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new RuntimeException("New password and confirm password do not match");
+        }
+
+        // Validate password strength (minimum 6 characters)
+        if (request.getNewPassword() == null || request.getNewPassword().length() < 6) {
+            throw new RuntimeException("Password must be at least 6 characters long");
+        }
+
+        // Update password
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+    }
+
+    /**
+     * Get current logged-in user profile
+     */
+    public UserDTO getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         return convertToDTO(user);
     }
 

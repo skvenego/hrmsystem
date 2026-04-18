@@ -1,11 +1,14 @@
 package com.hrm.hrmsystem.controller;
 
 import com.hrm.hrmsystem.dto.AttendanceDTO;
+import com.hrm.hrmsystem.model.Employee;
 import com.hrm.hrmsystem.service.AttendanceService;
+import com.hrm.hrmsystem.service.EmployeeService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDate;
 import java.util.List;
 
@@ -15,9 +18,11 @@ import java.util.List;
 public class AttendanceController {
 
     private final AttendanceService attendanceService;
+    private final EmployeeService employeeService;
 
-    public AttendanceController(AttendanceService attendanceService) {
+    public AttendanceController(AttendanceService attendanceService, EmployeeService employeeService) {
         this.attendanceService = attendanceService;
+        this.employeeService = employeeService;
     }
 
     @PostMapping("/check-in/{employeeId}")
@@ -77,11 +82,34 @@ public class AttendanceController {
         }
     }
 
+    @PostMapping("/mark-half-day/{employeeId}")
+    public ResponseEntity<AttendanceDTO> markHalfDay(
+            @PathVariable Long employeeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return ResponseEntity.ok(attendanceService.markHalfDay(employeeId, date));
+    }
+
     @PutMapping("/{attendanceId}/mark-present")
     public ResponseEntity<AttendanceDTO> updateToPresent(
             @PathVariable Long attendanceId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) Double workingHours) {
         return ResponseEntity.ok(attendanceService.updateAttendanceStatus(attendanceId, status, workingHours));
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<?> getMyAttendance(
+            @RequestParam int month,
+            @RequestParam int year) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth.getName();
+        Employee employee = employeeService.getEmployeeByEmail(email);
+        if (employee == null) {
+            return ResponseEntity.ok(java.util.Collections.emptyList());
+        }
+        // Calculate start and end dates from month/year
+        LocalDate startDate = LocalDate.of(year, month, 1);
+        LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
+        return ResponseEntity.ok(attendanceService.getAttendanceReport(employee.getId(), startDate, endDate));
     }
 }

@@ -2,6 +2,7 @@ package com.hrm.hrmsystem.controller;
 
 import com.hrm.hrmsystem.dto.PayrollDTO;
 import com.hrm.hrmsystem.service.PayrollService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +18,20 @@ public class PayrollController {
 
     public PayrollController(PayrollService payrollService) {
         this.payrollService = payrollService;
+    }
+
+    // Get single payroll by ID
+    @GetMapping("/{payrollId}")
+    public ResponseEntity<PayrollDTO> getPayrollById(@PathVariable Long payrollId) {
+        PayrollDTO payroll = payrollService.getPayrollById(payrollId);
+        return ResponseEntity.ok(payroll);
+    }
+
+    // Update payroll
+    @PutMapping("/{payrollId}")
+    public ResponseEntity<PayrollDTO> updatePayroll(@PathVariable Long payrollId, @RequestBody PayrollDTO payrollDTO) {
+        PayrollDTO updatedPayroll = payrollService.updatePayroll(payrollId, payrollDTO);
+        return ResponseEntity.ok(updatedPayroll);
     }
 
     // Get payrolls by month and year (query params) - used by frontend
@@ -78,5 +93,41 @@ public class PayrollController {
     public ResponseEntity<PayrollDTO> markAsUnpaid(@PathVariable Long payrollId) {
         PayrollDTO payroll = payrollService.markAsUnpaid(payrollId);
         return ResponseEntity.ok(payroll);
+    }
+
+    // Send payroll for accountant approval
+    @PostMapping("/send-for-approval/{payrollId}")
+    public ResponseEntity<PayrollDTO> sendForApproval(@PathVariable Long payrollId, @RequestBody Map<String, String> request) {
+        String approvedBy = request.getOrDefault("approvedBy", "HR");
+        PayrollDTO payroll = payrollService.sendForApproval(payrollId, approvedBy);
+        return ResponseEntity.ok(payroll);
+    }
+
+    // Approve payroll by accountant
+    @PostMapping("/approve/{payrollId}")
+    public ResponseEntity<?> approveByAccountant(@PathVariable Long payrollId, @RequestBody Map<String, String> request) {
+        try {
+            String accountantName = request.getOrDefault("accountantName", "Accountant");
+            PayrollDTO payroll = payrollService.approveByAccountant(payrollId, accountantName);
+            return ResponseEntity.ok(payroll);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error approving payroll: " + e.getMessage());
+        }
+    }
+
+    // Reject payroll by accountant
+    @PostMapping("/reject/{payrollId}")
+    public ResponseEntity<?> rejectByAccountant(@PathVariable Long payrollId, @RequestBody Map<String, String> request) {
+        try {
+            String reason = request.getOrDefault("reason", "");
+            PayrollDTO payroll = payrollService.rejectByAccountant(payrollId, reason);
+            return ResponseEntity.ok(payroll);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error rejecting payroll: " + e.getMessage());
+        }
     }
 }

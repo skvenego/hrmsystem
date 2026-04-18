@@ -87,6 +87,8 @@ public class EmployeeService {
         employee.setOtherAllowance(dto.getOtherAllowance());
         employee.setPf(dto.getPf());
         employee.setTax(dto.getTax());
+        employee.setInsuranceName(dto.getInsuranceName());
+        employee.setInsurancePercentage(dto.getInsurancePercentage());
 
         if (dto.getDepartmentId() != null) {
             Department department = departmentRepository.findById(dto.getDepartmentId())
@@ -142,6 +144,8 @@ public class EmployeeService {
                 .otherAllowance(employee.getOtherAllowance())
                 .pf(employee.getPf())
                 .tax(employee.getTax())
+                .insuranceName(employee.getInsuranceName())
+                .insurancePercentage(employee.getInsurancePercentage())
                 .build();
     }
 
@@ -164,6 +168,8 @@ public class EmployeeService {
                 .otherAllowance(dto.getOtherAllowance())
                 .pf(dto.getPf())
                 .tax(dto.getTax())
+                .insuranceName(dto.getInsuranceName())
+                .insurancePercentage(dto.getInsurancePercentage())
                 .build();
 
         if (dto.getDepartmentId() != null) {

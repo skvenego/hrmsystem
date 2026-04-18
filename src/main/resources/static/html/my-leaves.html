@@ -4,17 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Leaves - HRM System</title>
-    <link rel="stylesheet" href="../css/dashboard.css">
-    <link rel="stylesheet" href="../css/pages.css">
+    <link rel="stylesheet" href="../css/employee-theme.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="dashboard-layout">
+    <div class="app-layout">
+        <!-- Sidebar -->
         <aside class="sidebar"></aside>
 
+        <!-- Main Content -->
         <main class="main-content">
-            <header class="dashboard-header">
-                <h1>My Leave History</h1>
-                <a href="leave-request.html" class="btn-primary">+ Apply for Leave</a>
+            <!-- Header -->
+            <header class="top-header">
+                <div class="page-title">
+                    <div class="page-title-icon" style="background: linear-gradient(135deg, #d1fae5 0%, #10b981 100%);">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1>My Leave History</h1>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn" onclick="history.back()" title="Go Back">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                    </button>
+                    <a href="leave-request.html" class="btn btn-primary">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Apply Leave
+                    </a>
+                    <button class="icon-btn" onclick="auth.logout()" title="Logout">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                    </button>
+                </div>
             </header>
 
             <div class="page-content">
@@ -43,6 +72,44 @@
                         </div>
                     </div>
                     <div class="stat-card">
+                        <div class="stat-icon red" style="background: linear-gradient(135deg, #fee2e2 0%, #ef4444 100%);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="used-unpaid">0</h3>
+                            <p>Unpaid Used Leaves</p>
+                        </div>
+                    </div>
+                    <!-- Probation Status Card -->
+                    <div class="stat-card" id="probation-status-card">
+                        <div class="stat-icon" id="probation-icon" style="background: linear-gradient(135deg, #fef3c7 0%, #f59e0b 100%);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" x2="12" y1="8" y2="12"></line>
+                                <line x1="12" x2="12.01" y1="16" y2="16"></line>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="probation-status-text" style="font-size: 0.9rem; color: #92400e;">In Progress</h3>
+                            <p id="joining-date" style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">Joined: -</p>
+                            <p id="probation-completion-date" style="font-size: 0.75rem; color: #6b7280;">Completes: -</p>
+                            <p id="probation-balance" style="font-size: 0.85rem; color: #166534; font-weight: 600; margin-top: 0.5rem;">Available: 0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card" id="paid-leaves-card">
+                        <div class="stat-icon green" style="background: linear-gradient(135deg, #dcfce7 0%, #22c55e 100%);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="used-paid">0</h3>
+                            <p id="paid-label">Paid Used Leaves</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
                         <div class="stat-icon purple">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -56,45 +123,66 @@
                 </div>
                 
                 <!-- Probation Status -->
-                <div id="probation-banner" class="card" style="margin-bottom: 1.5rem; display: none;">
-                    <div class="card-header" style="background: #fef3c7; border-left: 4px solid #f59e0b;">
+                <div id="probation-banner" class="card" style="margin-bottom: 1.5rem; display: none; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b;">
+                    <div class="card-body">
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <line x1="12" x2="12" y1="8" y2="12"></line>
                                 <line x1="12" x2="12.01" y1="16" y2="16"></line>
                             </svg>
-                            <h3 style="color: #92400e; margin: 0;">Probation Period Status</h3>
+                            <h3 style="color: #92400e; margin: 0; font-size: 1rem;">Probation Period Status</h3>
                         </div>
-                        <p id="probation-text" style="color: #92400e; margin: 0.5rem 0 0 2rem; font-size: 0.9rem;"></p>
+                        <p id="probation-text" style="color: #92400e; margin: 0.5rem 0 0 0; font-size: 0.9rem; padding-left: 1.75rem;"></p>
                     </div>
                 </div>
                 
                 <!-- Leave Policy Info -->
-                <div class="card" style="margin-bottom: 1.5rem; background: #f0f9ff; border-left: 4px solid #0ea5e9;">
-                    <div style="padding: 1rem;">
-                        <h4 style="margin: 0 0 0.5rem 0; color: #0369a1;">Leave Policy</h4>
-                        <ul style="margin: 0; padding-left: 1.2rem; color: #0c4a6e; font-size: 0.9rem;">
-                            <li>You earn 1.5 leaves per month (9 leaves per 6-month cycle)</li>
+                <div class="card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-left: 4px solid #0ea5e9;">
+                    <div class="card-body">
+                        <h4 style="margin: 0 0 0.75rem 0; color: #0369a1; font-size: 1rem;">Leave Policy</h4>
+                        <ul style="margin: 0; padding-left: 1.2rem; color: #0c4a6e; font-size: 0.9rem; line-height: 1.6;">
+                            <li><strong>During Probation:</strong> Leave balance is ZERO. All leaves are unpaid and will be deducted from salary.</li>
+                            <li><strong>After Probation:</strong> You earn 1.5 leaves per month (9 leaves per 6-month cycle)</li>
                             <li>Maximum 3 paid leaves can be taken at one time</li>
-                            <li>Excess days will be converted to unpaid leave</li>
-                            <li>Up to 10 leaves can be carried forward to next cycle</li>
-                            <li>During probation: All leaves are unpaid</li>
+                            <li>Excess days beyond 3 will be converted to unpaid leave</li>
+                            <li>Up to 10 leaves can be carried forward to next cycle (Jan-Jun, Jul-Dec)</li>
+                            <li>At cycle end, remaining leaves expire and new cycle starts</li>
                         </ul>
+                    </div>
+                </div>
+
+                <!-- Probation Note for Table -->
+                <div id="probation-table-note" class="card" style="margin-bottom: 1rem; display: none; background: #fef2f2; border-left: 4px solid #dc2626;">
+                    <div class="card-body" style="padding: 0.75rem 1rem;">
+                        <p style="margin: 0; color: #991b1b; font-size: 0.9rem;">
+                            <strong>⚠️ During Probation:</strong> You are earning leaves but they are <strong>FROZEN</strong> until probation ends. 
+                            All current leaves are unpaid and will be deducted from salary. 
+                            The "Paid" column shows N/A, and "Unpaid" column shows days that will be deducted.
+                        </p>
                     </div>
                 </div>
 
                 <div class="card">
                     <div class="card-header">
-                        <h3>Leave Applications</h3>
+                        <h3 class="card-title">Leave Applications</h3>
                     </div>
                     <div class="table-container">
-                        <table class="data-table">
+                        <table class="table">
                             <thead>
-                                <tr><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Paid</th><th>Unpaid</th><th>Reason</th><th>Status</th></tr>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Days</th>
+                                    <th style="text-align: center;">Paid</th>
+                                    <th style="text-align: center;">Unpaid</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                </tr>
                             </thead>
                             <tbody id="leaves-table">
-                                <tr><td colspan="8" style="text-align: center; padding: 2rem;">Loading...</td></tr>
+                                <tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--gray-500);">Loading...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -108,28 +196,122 @@
     <script>
         if (!auth.requireAuth()) throw new Error('Auth required');
         
+        // Render sidebar explicitly
+        renderSidebar();
+        
         const user = auth.getCurrentUser();
         
         async function loadMyLeaves() {
             try {
+                let isInProbation = false;
+                let leaveBalanceData = null;
+                
                 // Load leave balance
                 const balanceRes = await auth.apiCall('/api/leaves/balance');
                 if (balanceRes && balanceRes.ok) {
-                    const balance = await balanceRes.json();
-                    document.getElementById('available-balance').textContent = balance.availableLeaves || 0;
-                    document.getElementById('earned-balance').textContent = (balance.totalEarnedLeaves || 0) + (balance.carriedForwardLeaves ? ' + ' + balance.carriedForwardLeaves + ' carried' : '');
-                    document.getElementById('cycle-info').textContent = 'Cycle ' + (balance.cycle || 1) + ' - ' + (balance.year || new Date().getFullYear());
+                    leaveBalanceData = await balanceRes.json();
                     
-                    // Show probation status if applicable
-                    if (balance.inProbation) {
+                    // Check if employee is in probation
+                    isInProbation = leaveBalanceData.inProbation;
+                    
+                    // Show actual earned leaves (even during probation - they accrue but can't be used)
+                    const earnedLeaves = leaveBalanceData.totalEarnedLeaves || 0;
+                    const carriedLeaves = leaveBalanceData.carriedForwardLeaves || 0;
+                    const availableLeaves = leaveBalanceData.availableLeaves || 0;
+                    
+                    if (isInProbation) {
+                        // During probation: Available is ZERO, but show earned leaves as frozen
+                        document.getElementById('available-balance').innerHTML = `<span style="color: #dc2626; font-weight: bold;">0</span> <span style="font-size: 0.75rem; color: #9ca3af;">(frozen until probation ends)</span>`;
+                        document.getElementById('earned-balance').innerHTML = `<span style="color: #166534;">${earnedLeaves}</span> <span style="font-size: 0.75rem; color: #9ca3af;">(accrues)</span>`;
+                        document.getElementById('cycle-info').textContent = 'Cycle ' + (leaveBalanceData.cycle || 1) + ' - ' + (leaveBalanceData.year || new Date().getFullYear());
+                    } else {
+                        // After probation: Show actual balance with 1 decimal place
+                        document.getElementById('available-balance').textContent = Number(availableLeaves).toFixed(1);
+                        document.getElementById('available-balance').style.color = '';
+                        document.getElementById('earned-balance').textContent = earnedLeaves + (carriedLeaves ? ' + ' + carriedLeaves + ' carried' : '');
+                        document.getElementById('earned-balance').style.color = '';
+                        document.getElementById('cycle-info').textContent = 'Cycle ' + (leaveBalanceData.cycle || 1) + ' - ' + (leaveBalanceData.year || new Date().getFullYear());
+                    }
+                    
+                    // Show probation status card with dates
+                    const joiningDate = leaveBalanceData.joiningDate ? new Date(leaveBalanceData.joiningDate) : null;
+                    const probationEndDate = leaveBalanceData.probationEndDate ? new Date(leaveBalanceData.probationEndDate) : null;
+                    
+                    if (isInProbation) {
                         document.getElementById('probation-banner').style.display = 'block';
-                        document.getElementById('probation-text').textContent = balance.probationStatus || 'You are currently in probation period. All leaves will be unpaid.';
+                        document.getElementById('probation-text').innerHTML = 
+                            (leaveBalanceData.probationStatus || 'You are currently in probation period') + '.<br>' +
+                            '<strong>Available Paid Leaves: 0</strong> (Earning ' + earnedLeaves + ' leaves - frozen until probation ends)<br>' +
+                            '<span style="color: #dc2626;">During probation: All leaves are UNPAID & deducted from salary.</span>';
+                        
+                        // Show the table note explaining the frozen/paid display
+                        document.getElementById('probation-table-note').style.display = 'block';
+                        
+                        // Update probation status card - In Progress
+                        document.getElementById('probation-status-text').textContent = 'In Progress';
+                        document.getElementById('probation-status-text').style.color = '#92400e';
+                        document.getElementById('probation-icon').style.background = 'linear-gradient(135deg, #fef3c7 0%, #f59e0b 100%)';
+                        if (joiningDate) {
+                            document.getElementById('joining-date').textContent = 'Joined: ' + joiningDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                        }
+                        if (probationEndDate) {
+                            document.getElementById('probation-completion-date').textContent = 'Completes: ' + probationEndDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                        }
+                        document.getElementById('probation-balance').innerHTML = '<span style="color: #dc2626;">Available: 0</span> <span style="font-size: 0.7rem; color: #6b7280;">(frozen)</span>';
+                    } else {
+                        // Probation completed
+                        document.getElementById('probation-status-text').textContent = 'Completed';
+                        document.getElementById('probation-status-text').style.color = '#166534';
+                        document.getElementById('probation-icon').style.background = 'linear-gradient(135deg, #dcfce7 0%, #22c55e 100%)';
+                        if (joiningDate) {
+                            document.getElementById('joining-date').textContent = 'Joined: ' + joiningDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                        }
+                        if (probationEndDate) {
+                            document.getElementById('probation-completion-date').textContent = 'Completed: ' + probationEndDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                        }
+                        document.getElementById('probation-balance').innerHTML = '<span style="color: #166534;">Available: ' + availableLeaves + '</span> <span style="font-size: 0.7rem; color: #6b7280;">(1.5/month)</span>';
                     }
                 }
                 
                 // Load my leaves
                 const res = await auth.apiCall('/api/leaves/my');
                 const data = res && res.ok ? await res.json() : [];
+                
+                // Calculate used leaves - separate paid and unpaid (only APPROVED leaves count)
+                let usedUnpaidLeaves = 0;
+                let usedPaidLeaves = 0;
+                data.forEach(l => {
+                    if (l.status === 'APPROVED') {
+                        const days = l.totalDays || (Math.ceil((new Date(l.endDate) - new Date(l.startDate)) / (1000 * 60 * 60 * 24)) + 1);
+                        // During probation: all leaves are unpaid
+                        // After probation: check paidDays vs unpaidDays
+                        if (isInProbation) {
+                            usedUnpaidLeaves += days; // All unpaid during probation
+                        } else {
+                            // After probation: split based on paid/unpaid days
+                            const paid = l.paidDays || 0;
+                            const unpaid = l.unpaidDays || 0;
+                            usedPaidLeaves += paid;
+                            usedUnpaidLeaves += unpaid;
+                            // If no paid/unpaid data, assume all paid for backward compatibility
+                            if (paid === 0 && unpaid === 0) {
+                                usedPaidLeaves += days;
+                            }
+                        }
+                    }
+                });
+                
+                document.getElementById('used-unpaid').textContent = usedUnpaidLeaves;
+                document.getElementById('used-paid').textContent = usedPaidLeaves;
+                
+                // Update paid label during probation
+                if (isInProbation) {
+                    document.getElementById('paid-label').innerHTML = 'Paid Used Leaves <span style="font-size: 0.75rem; color: #6b7280;">(frozen)</span>';
+                    document.getElementById('used-paid').style.color = '#9ca3af';
+                } else {
+                    document.getElementById('paid-label').textContent = 'Paid Used Leaves';
+                    document.getElementById('used-paid').style.color = '';
+                }
                 
                 const tbody = document.getElementById('leaves-table');
                 if (!data || data.length === 0) {
@@ -140,22 +322,35 @@
                 tbody.innerHTML = data.map(l => {
                     const days = l.totalDays || (Math.ceil((new Date(l.endDate) - new Date(l.startDate)) / (1000 * 60 * 60 * 24)) + 1);
                     const isHalfDay = l.isHalfDay ? '<span style="color: #0ea5e9;">(Half Day)</span>' : '';
+                    
+                    // During probation: Show N/A for paid, and highlight unpaid
+                    const paidDisplay = isInProbation 
+                        ? '<span style="color: #9ca3af; font-size: 0.85rem;">N/A</span>' 
+                        : (l.paidDays || 0);
+                    const unpaidDisplay = isInProbation && (l.unpaidDays || 0) > 0
+                        ? `<span style="color: #991b1b; font-weight: 600;">${l.unpaidDays || 0} <span style="font-size: 0.75rem;">(unpaid)</span></span>`
+                        : (l.unpaidDays || 0);
+                    
                     return `
                         <tr>
                             <td>${l.leaveType || 'CASUAL'}</td>
                             <td>${auth.formatDate(l.startDate)}</td>
                             <td>${auth.formatDate(l.endDate)}</td>
                             <td>${days} ${isHalfDay}</td>
-                            <td style="color: #166534; font-weight: 500;">${l.paidDays || 0}</td>
-                            <td style="color: #991b1b; font-weight: 500;">${l.unpaidDays || 0}</td>
+                            <td style="text-align: center;">${paidDisplay}</td>
+                            <td style="text-align: center;">${unpaidDisplay}</td>
                             <td>${l.reason || '-'}</td>
                             <td><span class="status-badge ${(l.status || 'PENDING').toLowerCase()}">${l.status || 'PENDING'}</span></td>
                         </tr>
                     `;
                 }).join('');
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error(e);
+                auth.showNotification('Failed to load leaves', 'error');
+            }
         }
         
+        // Load data when page loads
         loadMyLeaves();
     </script>
 </body>

@@ -1,6 +1,8 @@
 package com.hrm.hrmsystem.controller;
 
 import com.hrm.hrmsystem.dto.PayslipDTO;
+import com.hrm.hrmsystem.model.Employee;
+import com.hrm.hrmsystem.service.EmployeeService;
 import com.hrm.hrmsystem.service.PayslipService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -14,10 +16,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/payslips")
@@ -28,6 +33,9 @@ public class PayslipController {
 
     @Autowired
     private PayslipService payslipService;
+
+    @Autowired
+    private EmployeeService employeeService;
 
     /**
      * Generate payslip for an employee
@@ -49,6 +57,17 @@ public class PayslipController {
     }
 
     /**
+     * Create payslip for an employee (alternative path to avoid URL conflicts)
+     */
+    @PostMapping("/generate-for-employee")
+    @Operation(summary = "Create payslip for employee", description = "Create payslip for a specific employee and month")
+    public ResponseEntity<?> createPayslip(
+            @Parameter(description = "Employee ID") @RequestParam Long employeeId,
+            @Parameter(description = "Month-Year in format YYYY-MM") @RequestParam String monthYear) {
+        return generatePayslip(employeeId, monthYear);
+    }
+
+    /**
      * Get all payslips
      */
     @GetMapping
@@ -66,9 +85,9 @@ public class PayslipController {
     }
 
     /**
-     * Get payslip by ID
+     * Get payslip by ID - constrained to only match numeric IDs
      */
-    @GetMapping("/{payslipId}")
+    @GetMapping("/{payslipId:[0-9]+}")
     @Operation(summary = "Get payslip details", description = "Retrieve payslip details by payslip ID")
     public ResponseEntity<?> getPayslip(
             @Parameter(description = "Payslip ID") @PathVariable Long payslipId) {
@@ -138,6 +157,49 @@ public class PayslipController {
     }
 
     /**
+     * Get my payslips
+     */
+    @GetMapping("/my")
+    @Operation(summary = "Get my payslips", description = "Retrieve payslips for the currently authenticated employee")
+    public ResponseEntity<?> getMyPayslips(@RequestParam(required = false) Integer year) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String email = auth.getName();
+            Employee employee = employeeService.getEmployeeByEmail(email);
+            if (employee == null) {
+                log.warn("No employee found for user: {}", email);
+                return ResponseEntity.ok(java.util.Collections.emptyList());
+            }
+            log.info("Fetching payslips for employee: {}", employee.getId());
+            List<PayslipDTO> payslips = payslipService.getPayslipsByEmployee(employee.getId());
+            return ResponseEntity.ok(payslips);
+        } catch (Exception e) {
+            log.error("Error fetching payslips: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error fetching payslips: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Get payslip by employee and month/year
+     */
+    @GetMapping("/by-employee-month")
+    @Operation(summary = "Get payslip by employee and month", description = "Retrieve payslip for a specific employee and month/year")
+    public ResponseEntity<?> getPayslipByEmployeeAndMonth(
+            @RequestParam Long employeeId,
+            @RequestParam String monthYear) {
+        try {
+            log.info("Fetching payslip for employee: {} and month: {}", employeeId, monthYear);
+            PayslipDTO payslip = payslipService.getPayslipByEmployeeAndMonth(employeeId, monthYear);
+            return ResponseEntity.ok(payslip);
+        } catch (Exception e) {
+            log.error("Error fetching payslip: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Payslip not found: " + e.getMessage());
+        }
+    }
+
+    /**
      * Approve payslip
      */
     @PutMapping("/{payslipId}/approve")
@@ -173,6 +235,25 @@ public class PayslipController {
             log.error("Error rejecting payslip: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Error rejecting payslip: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Update payslip calculations (admin only)
+     */
+    @PutMapping("/{payslipId}/update")
+    @Operation(summary = "Update payslip", description = "Update payslip calculations before approval")
+    public ResponseEntity<?> updatePayslip(
+            @Parameter(description = "Payslip ID") @PathVariable Long payslipId,
+            @RequestBody Map<String, Object> updates) {
+        try {
+            log.info("Updating payslip: {} with data: {}", payslipId, updates);
+            PayslipDTO payslip = payslipService.updatePayslip(payslipId, updates);
+            return ResponseEntity.ok(payslip);
+        } catch (Exception e) {
+            log.error("Error updating payslip: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error updating payslip: " + e.getMessage());
         }
     }
 

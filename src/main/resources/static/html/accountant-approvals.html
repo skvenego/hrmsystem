@@ -45,65 +45,241 @@
             </div>
         </main>
     </div>
+    
+    <!-- Payroll Detail Modal -->
+    <div id="detail-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Payroll Approval Details</h2>
+                <button onclick="closeModal()" class="close-btn">&times;</button>
+            </div>
+            <div id="modal-content-body">
+                <!-- Content loaded dynamically -->
+            </div>
+            <div class="modal-actions">
+                <button onclick="approve(currentPayrollId)" class="btn btn-approve" style="flex: 1;">Approve Payroll</button>
+                <button onclick="reject(currentPayrollId)" class="btn btn-reject" style="flex: 1;">Reject</button>
+                <button onclick="closeModal()" class="btn btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
 
     <script src="../js/auth.js"></script>
     <script>
         if (!auth.requireAuth()) throw new Error('Auth required');
         
+        let currentPayrollId = null;
+        
         async function loadApprovals() {
             try {
-                const res = await auth.apiCall('/api/payroll/approvals/pending/accountant');
+                // Load all payrolls and filter for PENDING_APPROVAL status
+                const res = await auth.apiCall('/api/payroll/list?t=' + Date.now());
                 const data = res && res.ok ? await res.json() : [];
                 
                 const tbody = document.getElementById('approvals-table');
-                if (!data || data.length === 0) {
+                
+                // Filter for PENDING_APPROVAL status only
+                const pendingApprovals = data.filter(p => p.status === 'PENDING_APPROVAL');
+                
+                if (!pendingApprovals || pendingApprovals.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">No pending approvals</td></tr>';
                     return;
                 }
                 
-                tbody.innerHTML = data.map(a => `
+                tbody.innerHTML = pendingApprovals.map(a => `
                     <tr>
-                        <td>${a.employeeName || 'Unknown'}</td>
+                        <td><strong>${a.employeeName || 'Unknown'}</strong><br><small>${a.designation || ''}</small></td>
                         <td>${a.month}/${a.year}</td>
-                        <td>${auth.formatCurrency(a.netSalary || 0)}</td>
-                        <td><span class="status-badge pending">Pending Accountant</span></td>
+                        <td><strong>${auth.formatCurrency(a.netSalary || 0)}</strong></td>
+                        <td><span class="status-badge pending-approval">Pending Approval</span></td>
                         <td>
+                            <button onclick="viewDetails(${a.id})" class="btn-small" style="background: #dbeafe; color: #1e40af;">View</button>
                             <button onclick="approve(${a.id})" class="btn-small" style="background: #dcfce7; color: #166534;">Approve</button>
                             <button onclick="reject(${a.id})" class="btn-small" style="background: #fee2e2; color: #991b1b;">Reject</button>
                         </td>
                     </tr>
                 `).join('');
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error(e);
+                auth.showNotification('Failed to load approvals', 'error');
+            }
+        }
+        
+        function viewDetails(id) {
+            currentPayrollId = id;
+            // Load all payrolls and find the one with matching ID
+            auth.apiCall('/api/payroll/list?t=' + Date.now()).then(res => {
+                if (res && res.ok) return res.json();
+                throw new Error('Failed to load payroll details');
+            }).then(data => {
+                const p = data.find(payroll => payroll.id === id);
+                if (!p) throw new Error('Payroll not found');
+                
+                const modal = document.getElementById('detail-modal');
+                const content = document.getElementById('modal-content-body');
+                const actionsDiv = document.querySelector('.modal-actions');
+                
+                // Check if still pending approval
+                const isPendingApproval = p.status === 'PENDING_APPROVAL';
+                
+                // Update modal actions based on status
+                if (actionsDiv) {
+                    if (isPendingApproval) {
+                        actionsDiv.innerHTML = `
+                            <button onclick="approve(currentPayrollId)" class="btn btn-approve" style="flex: 1;">Approve Payroll</button>
+                            <button onclick="reject(currentPayrollId)" class="btn btn-reject" style="flex: 1;">Reject</button>
+                            <button onclick="closeModal()" class="btn btn-secondary">Close</button>
+                        `;
+                    } else {
+                        actionsDiv.innerHTML = `
+                            <div style="flex: 1; text-align: center; padding: 0.5rem; background: #f3f4f6; border-radius: 6px;">
+                                <span style="font-weight: 600; color: #6b7280;">Status: ${p.status || 'Unknown'}</span>
+                            </div>
+                            <button onclick="closeModal()" class="btn btn-secondary">Close</button>
+                        `;
+                    }
+                }
+                
+                content.innerHTML = `
+                    <div class="detail-grid">
+                        <div class="detail-section">
+                            <h4>Employee Information</h4>
+                            <div class="detail-row"><span>Name:</span><strong>${p.employeeName || 'N/A'}</strong></div>
+                            <div class="detail-row"><span>Department:</span><strong>${p.department || 'N/A'}</strong></div>
+                            <div class="detail-row"><span>Designation:</span><strong>${p.designation || 'N/A'}</strong></div>
+                            <div class="detail-row"><span>Period:</span><strong>${p.month}/${p.year}</strong></div>
+                            <div class="detail-row"><span>Status:</span><span class="status-badge ${(p.status || 'PENDING').toLowerCase().replace('_', '-')}">${p.status || 'Pending'}</span></div>
+                        </div>
+                        
+                        <div class="detail-section">
+                            <h4>Attendance</h4>
+                            <div class="detail-row"><span>Present Days:</span><strong>${p.presentDays || 0}</strong></div>
+                            <div class="detail-row"><span>Absent Days:</span><strong style="color: #dc2626;">${p.absentDays || 0}</strong></div>
+                            <div class="detail-row"><span>Half Days:</span><strong>${p.halfDays || 0}</strong></div>
+                            <div class="detail-row"><span>Leave Days:</span><strong>${p.leaveDays || 0}</strong></div>
+                        </div>
+                        
+                        <div class="detail-section earnings">
+                            <h4>Earnings</h4>
+                            <div class="detail-row"><span>Basic Salary:</span><span>${auth.formatCurrency(p.basicSalary || 0)}</span></div>
+                            <div class="detail-row"><span>HRA:</span><span>${auth.formatCurrency(p.hra || 0)}</span></div>
+                            <div class="detail-row"><span>DA:</span><span>${auth.formatCurrency(p.da || 0)}</span></div>
+                            <div class="detail-row"><span>TA:</span><span>${auth.formatCurrency(p.ta || 0)}</span></div>
+                            <div class="detail-row"><span>Other Allowances:</span><span>${auth.formatCurrency(p.otherAllowances || 0)}</span></div>
+                            <div class="detail-row total"><span>Gross Salary:</span><strong>${auth.formatCurrency(p.grossSalary || 0)}</strong></div>
+                        </div>
+                        
+                        <div class="detail-section deductions">
+                            <h4>Deductions</h4>
+                            <div class="detail-row"><span>Provident Fund:</span><span style="color: #dc2626;">-${auth.formatCurrency(p.providentFund || 0)}</span></div>
+                            <div class="detail-row"><span>Tax:</span><span style="color: #dc2626;">-${auth.formatCurrency(p.tax || 0)}</span></div>
+                            <div class="detail-row"><span>Insurance:</span><span style="color: #dc2626;">-${auth.formatCurrency(p.insurance || 0)}</span></div>
+                            ${p.absentLeaveDeduction > 0 ? `<div class="detail-row"><span>Absent/Leave Deduction:</span><span style="color: #dc2626;">-${auth.formatCurrency(p.absentLeaveDeduction || 0)}</span></div>` : ''}
+                            <div class="detail-row"><span>Other Deductions:</span><span style="color: #dc2626;">-${auth.formatCurrency(p.otherDeductions || 0)}</span></div>
+                            <div class="detail-row total"><span>Total Deductions:</span><strong style="color: #dc2626;">-${auth.formatCurrency(p.totalDeductions || 0)}</strong></div>
+                        </div>
+                        
+                        <div class="detail-section net-salary">
+                            <h4>Net Salary</h4>
+                            <div class="net-amount">${auth.formatCurrency(p.netSalary || 0)}</div>
+                        </div>
+                    </div>
+                `;
+                
+                modal.style.display = 'flex';
+            }).catch(e => {
+                console.error(e);
+                auth.showNotification('Failed to load payroll details', 'error');
+            });
+        }
+        
+        function closeModal() {
+            document.getElementById('detail-modal').style.display = 'none';
+            currentPayrollId = null;
         }
         
         async function approve(id) {
+            if (!confirm('Are you sure you want to approve this payroll?')) return;
+
             try {
-                const res = await auth.apiCall(`/api/payroll/approvals/${id}/accountant/approve`, { method: 'POST' });
+                const res = await auth.apiCall(`/api/payroll/approve/${id}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ accountantName: 'Accountant' })
+                });
                 if (res && res.ok) {
-                    auth.showNotification('Approved successfully', 'success');
+                    auth.showNotification('Payroll approved successfully', 'success');
                     loadApprovals();
+                    closeModal();
+                } else {
+                    const errorText = await res.text();
+                    auth.showNotification('Error: ' + (errorText || 'Failed to approve payroll'), 'error');
                 }
-            } catch (e) { auth.showNotification(e.message, 'error'); }
+            } catch (e) {
+                auth.showNotification('Error: ' + e.message, 'error');
+            }
         }
         
         async function reject(id) {
             const reason = prompt('Enter rejection reason:');
             if (!reason) return;
+            
             try {
-                const res = await auth.apiCall(`/api/payroll/approvals/${id}/accountant/reject`, {
+                const res = await auth.apiCall(`/api/payroll/reject/${id}`, {
                     method: 'POST',
-                    body: JSON.stringify({ reason })
+                    body: JSON.stringify({ reason: reason })
                 });
                 if (res && res.ok) {
-                    auth.showNotification('Rejected', 'success');
+                    auth.showNotification('Payroll rejected', 'success');
                     loadApprovals();
+                    closeModal();
                 }
-            } catch (e) { auth.showNotification(e.message, 'error'); }
+            } catch (e) { 
+                auth.showNotification(e.message, 'error'); 
+            }
         }
         
         function logout() { auth.logout(); }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('detail-modal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+        
         loadApprovals();
     </script>
-    <style>.badge-warning { background: #fef3c7; color: #92400e; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }</style>
+    <style>
+        .badge-warning { background: #fef3c7; color: #92400e; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
+        .status-badge.pending-approval { background: #fef3c7; color: #92400e; }
+        
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 1rem; }
+        .modal-content { background: white; border-radius: 12px; max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; }
+        .modal-header h2 { margin: 0; font-size: 1.25rem; }
+        .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; }
+        .close-btn:hover { color: #374151; }
+        
+        .detail-grid { padding: 1.5rem; display: grid; gap: 1.5rem; }
+        .detail-section { background: #f9fafb; padding: 1rem; border-radius: 8px; }
+        .detail-section h4 { margin: 0 0 0.75rem 0; font-size: 0.875rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+        .detail-row { display: flex; justify-content: space-between; padding: 0.375rem 0; font-size: 0.875rem; }
+        .detail-row.total { border-top: 1px solid #d1d5db; margin-top: 0.5rem; padding-top: 0.5rem; font-size: 1rem; }
+        .detail-section.earnings { background: #f0fdf4; border: 1px solid #86efac; }
+        .detail-section.deductions { background: #fef2f2; border: 1px solid #fca5a5; }
+        .detail-section.net-salary { background: #eff6ff; border: 1px solid #93c5fd; text-align: center; }
+        .net-amount { font-size: 1.75rem; font-weight: 700; color: #1e40af; }
+        
+        .modal-actions { display: flex; gap: 0.5rem; padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; background: #f9fafb; }
+        .btn { padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-weight: 500; }
+        .btn-approve { background: #dcfce7; color: #166534; }
+        .btn-approve:hover { background: #bbf7d0; }
+        .btn-reject { background: #fee2e2; color: #991b1b; }
+        .btn-reject:hover { background: #fecaca; }
+        .btn-secondary { background: #f3f4f6; color: #374151; }
+        .btn-secondary:hover { background: #e5e7eb; }
+    </style>
 </body>
 </html>

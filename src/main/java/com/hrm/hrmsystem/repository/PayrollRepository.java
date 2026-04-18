@@ -14,6 +14,9 @@ public interface PayrollRepository extends JpaRepository<Payroll, Long> {
 
     Optional<Payroll> findByEmployeeIdAndMonthAndYear(Long employeeId, Integer month, Integer year);
 
+    // Use this when there might be duplicates - returns the most recent one
+    Optional<Payroll> findFirstByEmployeeIdAndMonthAndYearOrderByIdDesc(Long employeeId, Integer month, Integer year);
+
     List<Payroll> findByMonthAndYear(Integer month, Integer year);
 
     List<Payroll> findByStatus(Payroll.PayrollStatus status);

@@ -43,6 +43,9 @@ public class PayslipDTO {
     private String status;
     // Payroll status for the same month/year (used to show payslip only when payroll is PAID)
     private String payrollStatus;
+    // Probation status
+    private Boolean inProbation;
+    private String probationStatus;
     private LocalDate generatedDate;
     private LocalDate approvedDate;
     private String approvedBy;
@@ -79,6 +82,8 @@ public class PayslipDTO {
     public java.util.List<String> getAbsentDates() { return absentDates; }
     public String getStatus() { return status; }
     public String getPayrollStatus() { return payrollStatus; }
+    public Boolean getInProbation() { return inProbation; }
+    public String getProbationStatus() { return probationStatus; }
     public LocalDate getGeneratedDate() { return generatedDate; }
     public LocalDate getApprovedDate() { return approvedDate; }
     public String getApprovedBy() { return approvedBy; }
@@ -113,6 +118,8 @@ public class PayslipDTO {
     public void setAbsentDates(java.util.List<String> absentDates) { this.absentDates = absentDates; }
     public void setStatus(String status) { this.status = status; }
     public void setPayrollStatus(String payrollStatus) { this.payrollStatus = payrollStatus; }
+    public void setInProbation(Boolean inProbation) { this.inProbation = inProbation; }
+    public void setProbationStatus(String probationStatus) { this.probationStatus = probationStatus; }
     public void setGeneratedDate(LocalDate generatedDate) { this.generatedDate = generatedDate; }
     public void setApprovedDate(LocalDate approvedDate) { this.approvedDate = approvedDate; }
     public void setApprovedBy(String approvedBy) { this.approvedBy = approvedBy; }
@@ -144,11 +151,14 @@ public class PayslipDTO {
         private Integer leaveDays;
         private Integer paidLeaveDays;
         private Integer unpaidLeaveDays;
+        private Integer halfDays;
         private Integer workingDays;
         private Integer totalDays;
         private java.util.List<String> absentDates;
         private String status;
         private String payrollStatus;
+        private Boolean inProbation;
+        private String probationStatus;
         private LocalDate generatedDate;
         private LocalDate approvedDate;
         private String approvedBy;
@@ -175,11 +185,14 @@ public class PayslipDTO {
         public Builder leaveDays(Integer leaveDays) { this.leaveDays = leaveDays; return this; }
         public Builder paidLeaveDays(Integer paidLeaveDays) { this.paidLeaveDays = paidLeaveDays; return this; }
         public Builder unpaidLeaveDays(Integer unpaidLeaveDays) { this.unpaidLeaveDays = unpaidLeaveDays; return this; }
+        public Builder halfDays(Integer halfDays) { this.halfDays = halfDays; return this; }
         public Builder workingDays(Integer workingDays) { this.workingDays = workingDays; return this; }
         public Builder totalDays(Integer totalDays) { this.totalDays = totalDays; return this; }
         public Builder absentDates(java.util.List<String> absentDates) { this.absentDates = absentDates; return this; }
         public Builder status(String status) { this.status = status; return this; }
         public Builder payrollStatus(String payrollStatus) { this.payrollStatus = payrollStatus; return this; }
+        public Builder inProbation(Boolean inProbation) { this.inProbation = inProbation; return this; }
+        public Builder probationStatus(String probationStatus) { this.probationStatus = probationStatus; return this; }
         public Builder generatedDate(LocalDate generatedDate) { this.generatedDate = generatedDate; return this; }
         public Builder approvedDate(LocalDate approvedDate) { this.approvedDate = approvedDate; return this; }
         public Builder approvedBy(String approvedBy) { this.approvedBy = approvedBy; return this; }
@@ -208,11 +221,14 @@ public class PayslipDTO {
             dto.leaveDays = this.leaveDays;
             dto.paidLeaveDays = this.paidLeaveDays;
             dto.unpaidLeaveDays = this.unpaidLeaveDays;
+            dto.halfDays = this.halfDays;
             dto.workingDays = this.workingDays;
             dto.totalDays = this.totalDays;
             dto.absentDates = this.absentDates;
             dto.status = this.status;
             dto.payrollStatus = this.payrollStatus;
+            dto.inProbation = this.inProbation;
+            dto.probationStatus = this.probationStatus;
             dto.generatedDate = this.generatedDate;
             dto.approvedDate = this.approvedDate;
             dto.approvedBy = this.approvedBy;
