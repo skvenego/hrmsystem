@@ -8,6 +8,11 @@ public class PayslipDTO {
     private Long id;
     private Long employeeId;
     private String employeeName;
+    private String department;
+    private String designation;
+    private String email;
+    private String phone;
+    private LocalDate joinDate;
     private String monthYear;
     
     // Earnings
@@ -29,11 +34,11 @@ public class PayslipDTO {
     private BigDecimal netSalary;
     
     // Attendance
-    private Integer presentDays;
-    private Integer absentDays;
-    private Integer leaveDays;
-    private Integer paidLeaveDays;
-    private Integer unpaidLeaveDays;
+    private Double presentDays;
+    private Double absentDays;
+    private Double leaveDays;
+    private Double paidLeaveDays;
+    private Double unpaidLeaveDays;
     private Integer halfDays;
     private Integer workingDays;
     private Integer totalDays;
@@ -46,6 +51,10 @@ public class PayslipDTO {
     // Probation status
     private Boolean inProbation;
     private String probationStatus;
+    private Integer probationMonths;
+    private LocalDate probationCompletionDate;
+    // Leave Balance
+    private LeaveBalanceInfo leaveBalance;
     private LocalDate generatedDate;
     private LocalDate approvedDate;
     private String approvedBy;
@@ -58,6 +67,11 @@ public class PayslipDTO {
     public Long getId() { return id; }
     public Long getEmployeeId() { return employeeId; }
     public String getEmployeeName() { return employeeName; }
+    public String getDepartment() { return department; }
+    public String getDesignation() { return designation; }
+    public String getEmail() { return email; }
+    public String getPhone() { return phone; }
+    public LocalDate getJoinDate() { return joinDate; }
     public String getMonthYear() { return monthYear; }
     public BigDecimal getBasicSalary() { return basicSalary; }
     public BigDecimal getDa() { return da; }
@@ -71,11 +85,11 @@ public class PayslipDTO {
     public BigDecimal getTotalDeduction() { return totalDeduction; }
     public BigDecimal getAbsentLeaveDeduction() { return absentLeaveDeduction; }
     public BigDecimal getNetSalary() { return netSalary; }
-    public Integer getPresentDays() { return presentDays; }
-    public Integer getAbsentDays() { return absentDays; }
-    public Integer getLeaveDays() { return leaveDays; }
-    public Integer getPaidLeaveDays() { return paidLeaveDays; }
-    public Integer getUnpaidLeaveDays() { return unpaidLeaveDays; }
+    public Double getPresentDays() { return presentDays; }
+    public Double getAbsentDays() { return absentDays; }
+    public Double getLeaveDays() { return leaveDays; }
+    public Double getPaidLeaveDays() { return paidLeaveDays; }
+    public Double getUnpaidLeaveDays() { return unpaidLeaveDays; }
     public Integer getHalfDays() { return halfDays; }
     public Integer getWorkingDays() { return workingDays; }
     public Integer getTotalDays() { return totalDays; }
@@ -94,6 +108,11 @@ public class PayslipDTO {
     public void setId(Long id) { this.id = id; }
     public void setEmployeeId(Long employeeId) { this.employeeId = employeeId; }
     public void setEmployeeName(String employeeName) { this.employeeName = employeeName; }
+    public void setDepartment(String department) { this.department = department; }
+    public void setDesignation(String designation) { this.designation = designation; }
+    public void setEmail(String email) { this.email = email; }
+    public void setPhone(String phone) { this.phone = phone; }
+    public void setJoinDate(LocalDate joinDate) { this.joinDate = joinDate; }
     public void setMonthYear(String monthYear) { this.monthYear = monthYear; }
     public void setBasicSalary(BigDecimal basicSalary) { this.basicSalary = basicSalary; }
     public void setDa(BigDecimal da) { this.da = da; }
@@ -107,11 +126,11 @@ public class PayslipDTO {
     public void setTotalDeduction(BigDecimal totalDeduction) { this.totalDeduction = totalDeduction; }
     public void setAbsentLeaveDeduction(BigDecimal absentLeaveDeduction) { this.absentLeaveDeduction = absentLeaveDeduction; }
     public void setNetSalary(BigDecimal netSalary) { this.netSalary = netSalary; }
-    public void setPresentDays(Integer presentDays) { this.presentDays = presentDays; }
-    public void setAbsentDays(Integer absentDays) { this.absentDays = absentDays; }
-    public void setLeaveDays(Integer leaveDays) { this.leaveDays = leaveDays; }
-    public void setPaidLeaveDays(Integer paidLeaveDays) { this.paidLeaveDays = paidLeaveDays; }
-    public void setUnpaidLeaveDays(Integer unpaidLeaveDays) { this.unpaidLeaveDays = unpaidLeaveDays; }
+    public void setPresentDays(Double presentDays) { this.presentDays = presentDays; }
+    public void setAbsentDays(Double absentDays) { this.absentDays = absentDays; }
+    public void setLeaveDays(Double leaveDays) { this.leaveDays = leaveDays; }
+    public void setPaidLeaveDays(Double paidLeaveDays) { this.paidLeaveDays = paidLeaveDays; }
+    public void setUnpaidLeaveDays(Double unpaidLeaveDays) { this.unpaidLeaveDays = unpaidLeaveDays; }
     public void setHalfDays(Integer halfDays) { this.halfDays = halfDays; }
     public void setWorkingDays(Integer workingDays) { this.workingDays = workingDays; }
     public void setTotalDays(Integer totalDays) { this.totalDays = totalDays; }
@@ -120,6 +139,11 @@ public class PayslipDTO {
     public void setPayrollStatus(String payrollStatus) { this.payrollStatus = payrollStatus; }
     public void setInProbation(Boolean inProbation) { this.inProbation = inProbation; }
     public void setProbationStatus(String probationStatus) { this.probationStatus = probationStatus; }
+    public void setProbationMonths(Integer probationMonths) { this.probationMonths = probationMonths; }
+    public LocalDate getProbationCompletionDate() { return probationCompletionDate; }
+    public void setProbationCompletionDate(LocalDate probationCompletionDate) { this.probationCompletionDate = probationCompletionDate; }
+    public LeaveBalanceInfo getLeaveBalance() { return leaveBalance; }
+    public void setLeaveBalance(LeaveBalanceInfo leaveBalance) { this.leaveBalance = leaveBalance; }
     public void setGeneratedDate(LocalDate generatedDate) { this.generatedDate = generatedDate; }
     public void setApprovedDate(LocalDate approvedDate) { this.approvedDate = approvedDate; }
     public void setApprovedBy(String approvedBy) { this.approvedBy = approvedBy; }
@@ -146,11 +170,11 @@ public class PayslipDTO {
         private BigDecimal otherDeduction;
         private BigDecimal totalDeduction;
         private BigDecimal netSalary;
-        private Integer presentDays;
-        private Integer absentDays;
-        private Integer leaveDays;
-        private Integer paidLeaveDays;
-        private Integer unpaidLeaveDays;
+        private Double presentDays;
+        private Double absentDays;
+        private Double leaveDays;
+        private Double paidLeaveDays;
+        private Double unpaidLeaveDays;
         private Integer halfDays;
         private Integer workingDays;
         private Integer totalDays;
@@ -164,6 +188,9 @@ public class PayslipDTO {
         private String approvedBy;
         private String remarks;
         private String pdfFilePath;
+        private Integer probationMonths;
+        private LocalDate probationCompletionDate;
+        private LeaveBalanceInfo leaveBalance;
 
         public Builder id(Long id) { this.id = id; return this; }
         public Builder employeeId(Long employeeId) { this.employeeId = employeeId; return this; }
@@ -180,11 +207,11 @@ public class PayslipDTO {
         public Builder otherDeduction(BigDecimal otherDeduction) { this.otherDeduction = otherDeduction; return this; }
         public Builder totalDeduction(BigDecimal totalDeduction) { this.totalDeduction = totalDeduction; return this; }
         public Builder netSalary(BigDecimal netSalary) { this.netSalary = netSalary; return this; }
-        public Builder presentDays(Integer presentDays) { this.presentDays = presentDays; return this; }
-        public Builder absentDays(Integer absentDays) { this.absentDays = absentDays; return this; }
-        public Builder leaveDays(Integer leaveDays) { this.leaveDays = leaveDays; return this; }
-        public Builder paidLeaveDays(Integer paidLeaveDays) { this.paidLeaveDays = paidLeaveDays; return this; }
-        public Builder unpaidLeaveDays(Integer unpaidLeaveDays) { this.unpaidLeaveDays = unpaidLeaveDays; return this; }
+        public Builder presentDays(Double presentDays) { this.presentDays = presentDays; return this; }
+        public Builder absentDays(Double absentDays) { this.absentDays = absentDays; return this; }
+        public Builder leaveDays(Double leaveDays) { this.leaveDays = leaveDays; return this; }
+        public Builder paidLeaveDays(Double paidLeaveDays) { this.paidLeaveDays = paidLeaveDays; return this; }
+        public Builder unpaidLeaveDays(Double unpaidLeaveDays) { this.unpaidLeaveDays = unpaidLeaveDays; return this; }
         public Builder halfDays(Integer halfDays) { this.halfDays = halfDays; return this; }
         public Builder workingDays(Integer workingDays) { this.workingDays = workingDays; return this; }
         public Builder totalDays(Integer totalDays) { this.totalDays = totalDays; return this; }
@@ -193,6 +220,9 @@ public class PayslipDTO {
         public Builder payrollStatus(String payrollStatus) { this.payrollStatus = payrollStatus; return this; }
         public Builder inProbation(Boolean inProbation) { this.inProbation = inProbation; return this; }
         public Builder probationStatus(String probationStatus) { this.probationStatus = probationStatus; return this; }
+        public Builder probationMonths(Integer probationMonths) { this.probationMonths = probationMonths; return this; }
+        public Builder probationCompletionDate(LocalDate probationCompletionDate) { this.probationCompletionDate = probationCompletionDate; return this; }
+        public Builder leaveBalance(LeaveBalanceInfo leaveBalance) { this.leaveBalance = leaveBalance; return this; }
         public Builder generatedDate(LocalDate generatedDate) { this.generatedDate = generatedDate; return this; }
         public Builder approvedDate(LocalDate approvedDate) { this.approvedDate = approvedDate; return this; }
         public Builder approvedBy(String approvedBy) { this.approvedBy = approvedBy; return this; }
@@ -229,12 +259,37 @@ public class PayslipDTO {
             dto.payrollStatus = this.payrollStatus;
             dto.inProbation = this.inProbation;
             dto.probationStatus = this.probationStatus;
+            dto.probationMonths = this.probationMonths;
+            dto.probationCompletionDate = this.probationCompletionDate;
             dto.generatedDate = this.generatedDate;
             dto.approvedDate = this.approvedDate;
             dto.approvedBy = this.approvedBy;
             dto.remarks = this.remarks;
             dto.pdfFilePath = this.pdfFilePath;
+            dto.leaveBalance = this.leaveBalance;
             return dto;
         }
+    }
+
+    // Nested class for leave balance information
+    public static class LeaveBalanceInfo {
+        private Double totalEarnedLeaves;
+        private Double usedLeaves;
+        private Double availableLeaves;
+        private Double carriedForwardLeaves;
+        private Double unpaidLeaves;
+
+        public LeaveBalanceInfo() {}
+
+        public Double getTotalEarnedLeaves() { return totalEarnedLeaves; }
+        public void setTotalEarnedLeaves(Double totalEarnedLeaves) { this.totalEarnedLeaves = totalEarnedLeaves; }
+        public Double getUsedLeaves() { return usedLeaves; }
+        public void setUsedLeaves(Double usedLeaves) { this.usedLeaves = usedLeaves; }
+        public Double getAvailableLeaves() { return availableLeaves; }
+        public void setAvailableLeaves(Double availableLeaves) { this.availableLeaves = availableLeaves; }
+        public Double getCarriedForwardLeaves() { return carriedForwardLeaves; }
+        public void setCarriedForwardLeaves(Double carriedForwardLeaves) { this.carriedForwardLeaves = carriedForwardLeaves; }
+        public Double getUnpaidLeaves() { return unpaidLeaves; }
+        public void setUnpaidLeaves(Double unpaidLeaves) { this.unpaidLeaves = unpaidLeaves; }
     }
 }

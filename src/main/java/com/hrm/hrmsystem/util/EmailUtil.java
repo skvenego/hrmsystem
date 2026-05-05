@@ -221,6 +221,31 @@ public class EmailUtil {
     }
 
     /**
+     * Send leave cancellation notification to employee
+     */
+    public void sendLeaveCancellationNotification(String employeeEmail, String employeeName, String leaveType, String fromDate, String toDate, String cancellationReason) {
+        String subject = "Leave Application Cancelled";
+        String reasonText = cancellationReason != null && !cancellationReason.trim().isEmpty() 
+                ? "<p><strong>Cancellation Reason:</strong> " + cancellationReason + "</p>"
+                : "";
+        String htmlBody = String.format(
+                "<html><body style='font-family: Arial, sans-serif;'>" +
+                "<h2 style='color: #dc2626;'>Leave Application Cancelled</h2>" +
+                "<p>Dear <strong>%s</strong>,</p>" +
+                "<p>Your leave application has been <strong>cancelled</strong>.</p>" +
+                "<p><strong>Leave Type:</strong> %s</p>" +
+                "<p><strong>From Date:</strong> %s</p>" +
+                "<p><strong>To Date:</strong> %s</p>" +
+                "%s" +
+                "<p style='color: #666;'><em>If you have any questions, please contact HR.</em></p>" +
+                "</body></html>",
+                employeeName, leaveType, fromDate, toDate, reasonText
+        );
+        
+        sendHtmlEmail(employeeEmail, subject, htmlBody);
+    }
+
+    /**
      * Send attendance reminder
      */
     public void sendAttendanceReminder(String employeeEmail, String employeeName) {

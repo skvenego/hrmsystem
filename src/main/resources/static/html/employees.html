@@ -25,8 +25,6 @@
                     <h1>Employees</h1>
                 </div>
                 <div class="header-actions">
-                    <input type="text" id="search-input" placeholder="Search employees..." class="search-input" style="margin-right: 0.75rem;">
-                    <a href="employee-form.html" class="btn-primary">+ Add Employee</a>
                     <button class="icon-btn" onclick="auth.logout()" title="Logout">
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
@@ -39,24 +37,73 @@
             <div class="content-area">
 
             <div class="page-content">
+                <!-- Stats Cards -->
+                <div class="stats-grid" style="margin-bottom: 2rem; grid-template-columns: repeat(3, 1fr);">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="stat-total">0</h3>
+                            <p>Total Employees</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="stat-active">0</h3>
+                            <p>Active</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" x2="12" y1="8" y2="12"></line>
+                                <line x1="12" x2="12.01" y1="16" y2="16"></line>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="stat-inactive">0</h3>
+                            <p>Inactive</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card">
-                    <div class="table-container">
-                        <table class="data-table">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="font-size: 1.25rem; font-weight: 600; color: #1f2937;">Employee List</h2>
+                        <div style="display: flex; gap: 0.75rem; align-items: center;">
+                            <input type="text" id="search-input" placeholder="Search employees..." class="search-input" style="margin: 0; padding: 0.625rem 1rem; border-radius: 8px; border: 1px solid #d1d5db; font-size: 0.875rem; min-width: 200px;">
+                            <a href="employee-form.html" class="btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.625rem 1.25rem; border-radius: 8px; font-size: 0.875rem; font-weight: 500;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="5" y2="19"></line><line x1="5" x2="19" y1="12" y2="12"></line></svg>
+                                Add Employee
+                            </a>
+                        </div>
+                    </div>
+                    <div class="table-container" style="overflow-x: auto;">
+                        <table class="data-table" style="min-width: 900px;">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Phone</th>
-                                    <th>Department</th>
-                                    <th>Designation</th>
-                                    <th>Salary</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
+                                    <th style="min-width: 250px;">Employee</th>
+                                    <th style="min-width: 200px;">Email</th>
+                                    <th style="min-width: 150px;">Department</th>
+                                    <th style="min-width: 150px;">Designation</th>
+                                    <th style="min-width: 120px;">Salary</th>
+                                    <th style="min-width: 100px;">Status</th>
+                                    <th style="min-width: 80px; text-align: right;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="employees-table">
-                                <tr><td colspan="9" style="text-align: center; padding: 2rem;">Loading...</td></tr>
+                                <tr><td colspan="7" style="text-align: center; padding: 2rem;">Loading...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -76,31 +123,50 @@
                 const res = await auth.apiCall('/api/employees');
                 if (!res || !res.ok) throw new Error('Failed to load');
                 const employees = await res.json();
-                
+
+                // Update stats
+                const total = employees.length;
+                const active = employees.filter(e => e.status === 'ACTIVE').length;
+                const inactive = total - active;
+                document.getElementById('stat-total').textContent = total;
+                document.getElementById('stat-active').textContent = active;
+                document.getElementById('stat-inactive').textContent = inactive;
+
                 const tbody = document.getElementById('employees-table');
                 if (employees.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 2rem;">No employees found</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;">No employees found</td></tr>';
                     return;
                 }
-                
+
                 tbody.innerHTML = employees.map(emp => `
                     <tr>
-                        <td>${emp.id}</td>
-                        <td>${emp.firstName} ${emp.lastName}</td>
-                        <td>${emp.email || 'N/A'}</td>
-                        <td>${emp.phone || 'N/A'}</td>
-                        <td>${emp.departmentName || emp.department?.name || emp.department || 'N/A'}</td>
-                        <td>${emp.designation || 'N/A'}</td>
-                        <td>${auth.formatCurrency(emp.salary || 0)}</td>
-                        <td><span class="status-badge ${(emp.status || 'Active').toLowerCase()}">${emp.status || 'Active'}</span></td>
                         <td>
-                            <a href="employee-form.html?edit=${emp.id}" class="btn-small">Edit</a>
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.875rem;">
+                                    ${(emp.firstName || '?')[0]}${(emp.lastName || '?')[0]}
+                                </div>
+                                <div>
+                                    <div style="font-weight: 500; color: #1f2937;">${emp.firstName} ${emp.lastName}</div>
+                                    <div style="font-size: 0.75rem; color: #6b7280;">ID: ${emp.id}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="color: #6b7280;">${emp.email || 'N/A'}</td>
+                        <td><span style="background: #e0e7ff; color: #4338ca; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500;">${emp.departmentName || emp.department?.name || emp.department || 'N/A'}</span></td>
+                        <td style="color: #374151;">${emp.designation || 'N/A'}</td>
+                        <td style="font-weight: 500; color: #1f2937;">${auth.formatCurrency(emp.salary || 0)}</td>
+                        <td><span class="status-badge ${(emp.status || 'ACTIVE').toLowerCase()}">${emp.status || 'Active'}</span></td>
+                        <td style="text-align: right;">
+                            <a href="employee-form.html?edit=${emp.id}" class="btn-small" style="display: inline-flex; align-items: center; gap: 0.25rem;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                Edit
+                            </a>
                         </td>
                     </tr>
                 `).join('');
             } catch (e) {
                 console.error(e);
-                document.getElementById('employees-table').innerHTML = '<tr><td colspan="9" style="text-align: center; color: red; padding: 2rem;">Error loading employees</td></tr>';
+                document.getElementById('employees-table').innerHTML = '<tr><td colspan="7" style="text-align: center; color: red; padding: 2rem;">Error loading employees</td></tr>';
             }
         }
         

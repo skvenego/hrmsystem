@@ -19,4 +19,9 @@ public interface LeaveBalanceEnhancedRepository extends JpaRepository<LeaveBalan
      * Find all leave balances for an employee
      */
     List<LeaveBalanceEnhanced> findByEmployeeId(Long employeeId);
+
+    /**
+     * Find all leave balances for employee in specific year
+     */
+    List<LeaveBalanceEnhanced> findAllByEmployeeIdAndYear(Long employeeId, Integer year);
 }

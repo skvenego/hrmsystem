@@ -33,7 +33,7 @@ public class Attendance {
     private String remarks;
 
     public enum AttendanceStatus {
-        PRESENT, ABSENT, HALF_DAY, LATE, ON_LEAVE
+        PRESENT, ABSENT, HALF_DAY, LATE, ON_LEAVE, PENDING
     }
 
     // Default Constructor

@@ -4,34 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance - HRM System</title>
-    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/employee-theme.css">
     <link rel="stylesheet" href="../css/pages.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="dashboard-layout">
-        <aside class="sidebar">
-            <div class="sidebar-header"><h2>HRM System</h2></div>
-            <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>Dashboard</a>
-                <a href="employees.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Employees</a>
-                <a href="attendance.html" class="nav-item active"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" x2="16" y1="2" y2="6"></line><line x1="8" x2="8" y1="2" y2="6"></line><line x1="3" x2="21" y1="10" y2="10"></line></svg>Attendance</a>
-                <a href="leave.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" x2="8" y1="13" y2="13"></line><line x1="16" x2="8" y1="17" y2="17"></line></svg>Leave</a>
-                <a href="payroll.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="2" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>Payroll</a>
-                <a href="payslips.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" x2="8" y1="13" y2="13"></line><line x1="16" x2="8" y1="17" y2="17"></line></svg>Payslips</a>
-                <a href="profile.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>Profile</a>
-                <a href="settings.html" class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Settings</a>
-            </nav>
-            <div class="sidebar-footer"><button onclick="logout()" class="logout-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>Logout</button></div>
-        </aside>
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar"></aside>
 
+        <!-- Main Content -->
         <main class="main-content">
-            <header class="dashboard-header">
-                <h1>Attendance Management</h1>
+            <!-- Header -->
+            <header class="top-header">
+                <div class="page-title">
+                    <div class="page-title-icon">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <h1>Attendance Management</h1>
+                </div>
                 <div class="header-actions" style="display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end;">
                     <div style="display: flex; gap: 0.5rem;">
                         <input type="date" id="date-input" class="search-input" style="padding: 0.5rem; border-radius: 6px; border: 1px solid #d1d5db;">
                         <button onclick="markAllPresent()" class="btn-primary" style="background: #16a34a; color: white; padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer;">✓ All Present</button>
                         <button onclick="markAllAbsent()" class="btn-secondary" style="background: #dc2626; color: white; padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer;">✗ All Absent</button>
+                        <button onclick="clearAllAttendance()" class="btn-danger" style="background: #b91c1c; color: white; padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer;">🗑️ Clear All</button>
+                        <button onclick="filterPendingOnly()" id="filter-pending-btn" style="background: #eab308; color: white; padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer;">⚠ Pending Only</button>
                     </div>
                     <input type="text" id="search-input" placeholder="🔍 Search employee by name..." style="padding: 0.5rem; border-radius: 6px; border: 1px solid #d1d5db; width: 300px;" onkeyup="filterEmployees()">
                 </div>
@@ -61,6 +61,7 @@
     </div>
 
     <script src="../js/auth.js"></script>
+    <script src="../js/sidebar.js"></script>
     <script>
         if (!auth.requireAuth()) throw new Error('Auth required');
         
@@ -73,6 +74,12 @@
             const today = new Date();
             today.setHours(0,0,0,0);
             return selected > today;
+        }
+        
+        // SUNDAY CHECK: Returns true if date is Sunday
+        function isSunday(date) {
+            const d = new Date(date);
+            return d.getDay() === 0; // 0 = Sunday
         }
         
         let allEmployees = [];
@@ -96,6 +103,11 @@
                 return;
             }
             
+            // SUNDAY CHECK: Show warning and disable actions
+            if (isSunday(selectedDate)) {
+                showPopup('⚠️ Sunday is a non-working day. Attendance cannot be marked.');
+            }
+            
             try {
                 // First ensure we have all employees
                 if (allEmployees.length === 0) {
@@ -105,6 +117,7 @@
                 // Load attendance for selected date
                 const res = await auth.apiCall(`/api/attendance/date/${selectedDate}`);
                 attendanceData = res && res.ok ? await res.json() : [];
+                console.log('Loaded attendance data for date', selectedDate, ':', attendanceData);
                 
                 const tbody = document.getElementById('attendance-table');
                 
@@ -112,18 +125,18 @@
                 const mergedData = allEmployees.map(emp => {
                     const attendance = attendanceData.find(a => a.employeeId === emp.id);
                     
-                    // Extract department name from department object
-                    let deptName = '-';
-                    if (emp.department) {
-                        deptName = typeof emp.department === 'object' ? (emp.department.name || emp.department.departmentName || '-') : emp.department;
-                    }
+                    // Extract department name from departmentName field
+                    const deptName = emp.departmentName || emp.department || '-';
+                    
+                    const status = attendance?.status || 'NOT_MARKED';
+                    console.log(`Employee ${emp.id} (${emp.firstName}) status:`, status);
                     
                     return {
                         employeeId: emp.id,
                         employeeName: `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || 'Unknown',
                         department: deptName,
                         date: selectedDate,
-                        status: attendance?.status || 'NOT_MARKED',
+                        status: status,
                         checkInTime: attendance?.checkInTime || '-',
                         checkOutTime: attendance?.checkOutTime || '-',
                         isFuture: isFutureDate(selectedDate)
@@ -159,7 +172,10 @@
                 const isPresent = status === 'PRESENT';
                 const isAbsent = status === 'ABSENT';
                 const isHalfDay = status === 'HALF_DAY';
-                const isNotMarked = status === 'NOT_MARKED' || status === 'PENDING';
+                const isPending = status === 'PENDING';
+                const isNotMarked = status === 'NOT_MARKED';
+                const isPaidLeave = status === 'PAID_LEAVE';
+                const isUnpaidLeave = status === 'UNPAID_LEAVE';
                 
                 return `
                     <tr>
@@ -176,25 +192,38 @@
                         <td>${a.date}</td>
                         <td>
                             <span class="status-badge ${statusClass}" style="
-                                background: ${isPresent ? '#dcfce7' : isAbsent ? '#fee2e2' : isHalfDay ? '#fef3c7' : '#f3f4f6'};
-                                color: ${isPresent ? '#166534' : isAbsent ? '#991b1b' : isHalfDay ? '#92400e' : '#6b7280'};
-                                border: 1px solid ${isPresent ? '#86efac' : isAbsent ? '#fca5a5' : isHalfDay ? '#fcd34d' : '#d1d5db'};
-                            ">${status.replace(/_/g, ' ')}</span>
+                                background: ${isPresent ? '#dcfce7' : isAbsent ? '#fee2e2' : isHalfDay ? '#fef3c7' : isPending ? '#fef9c3' : isPaidLeave ? '#dbeafe' : isUnpaidLeave ? '#fee2e2' : '#f3f4f6'};
+                                color: ${isPresent ? '#166534' : isAbsent ? '#991b1b' : isHalfDay ? '#92400e' : isPending ? '#854d0e' : isPaidLeave ? '#1e40af' : isUnpaidLeave ? '#991b1b' : '#6b7280'};
+                                border: 1px solid ${isPresent ? '#86efac' : isAbsent ? '#fca5a5' : isHalfDay ? '#fcd34d' : isPending ? '#fde047' : isPaidLeave ? '#60a5fa' : isUnpaidLeave ? '#fca5a5' : '#d1d5db'};
+                            ">${isPaidLeave || isUnpaidLeave ? `LEAVE ${a.remarks || 'Unknown'} (${isPaidLeave ? 'PAID' : 'UNPAID'})` : status.replace(/_/g, ' ')}</span>
                         </td>
                         <td>${a.checkInTime}</td>
                         <td>${a.checkOutTime}</td>
+                        <td>${isUnpaidLeave ? 'Unpaid Leave' : (isPaidLeave ? 'Paid Leave' : (a.workingHours !== undefined ? a.workingHours + ' hrs' : '-'))}</td>
                         <td>
                             ${!a.isFuture ? `
                                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                    <button onclick="setAttendance(${a.employeeId}, 'PRESENT')" class="btn-toggle ${isPresent ? 'active' : ''}" data-status="present" title="Mark Present">
-                                        <span style="width: 10px; height: 10px; background: #22c55e; border-radius: 50%; display: inline-block; margin-right: 4px;"></span>P
-                                    </button>
-                                    <button onclick="setAttendance(${a.employeeId}, 'HALF_DAY')" class="btn-toggle ${isHalfDay ? 'active' : ''}" data-status="half" title="Mark Half Day">
-                                        <span style="width: 10px; height: 10px; background: #f59e0b; border-radius: 50%; display: inline-block; margin-right: 4px;"></span>H
-                                    </button>
-                                    <button onclick="setAttendance(${a.employeeId}, 'ABSENT')" class="btn-toggle ${isAbsent ? 'active' : ''}" data-status="absent" title="Mark Absent">
-                                        <span style="width: 10px; height: 10px; background: #ef4444; border-radius: 50%; display: inline-block; margin-right: 4px;"></span>A
-                                    </button>
+                                    ${isPaidLeave || isUnpaidLeave ? `
+                                        <span style="color: #6b7280; font-size: 0.875rem; font-style: italic;">On Leave</span>
+                                    ` : isPending ? `
+                                        <button onclick="resolvePendingAttendance(${a.employeeId}, 'PRESENT', this)" class="btn-toggle" data-status="present" title="Mark Present" style="background: #22c55e; color: white;">
+                                            <span style="width: 10px; height: 10px; background: white; border-radius: 50%; display: inline-block; margin-right: 4px;"></span> Present
+                                        </button>
+                                        <button onclick="resolvePendingAttendance(${a.employeeId}, 'ABSENT', this)" class="btn-toggle" data-status="absent" title="Mark Absent" style="background: #ef4444; color: white;">
+                                            <span style="width: 10px; height: 10px; background: white; border-radius: 50%; display: inline-block; margin-right: 4px;"></span> Absent
+                                            <span style="width: 10px; height: 10px; background: white; border-radius: 50%; display: inline-block; margin-right: 4px;"></span>✗ Absent
+                                        </button>
+                                    ` : `
+                                        <button onclick="setAttendance(${a.employeeId}, 'PRESENT')" class="btn-toggle ${isPresent ? 'active' : ''}" data-status="present" title="Mark Present">
+                                            <span style="width: 10px; height: 10px; background: #22c55e; border-radius: 50%; display: inline-block; margin-right: 4px;"></span>P
+                                        </button>
+                                        <button onclick="setAttendance(${a.employeeId}, 'HALF_DAY')" class="btn-toggle ${isHalfDay ? 'active' : ''}" data-status="half" title="Mark Half Day">
+                                            <span style="width: 10px; height: 10px; background: #f59e0b; border-radius: 50%; display: inline-block; margin-right: 4px;"></span>H
+                                        </button>
+                                        <button onclick="setAttendance(${a.employeeId}, 'ABSENT')" class="btn-toggle ${isAbsent ? 'active' : ''}" data-status="absent" title="Mark Absent">
+                                            <span style="width: 10px; height: 10px; background: #ef4444; border-radius: 50%; display: inline-block; margin-right: 4px;"></span>A
+                                        </button>
+                                    `}
                                 </div>
                             ` : '<span style="color: #9ca3af; font-size: 0.875rem;">Future</span>'}
                         </td>
@@ -208,13 +237,30 @@
                 renderAttendanceTable(filteredEmployees);
                 return;
             }
-            
-            const filtered = filteredEmployees.filter(emp => 
+
+            const filtered = filteredEmployees.filter(emp =>
                 emp.employeeName.toLowerCase().includes(searchTerm) ||
                 emp.department.toLowerCase().includes(searchTerm)
             );
-            
+
             renderAttendanceTable(filtered);
+        }
+
+        let showPendingOnly = false;
+        function filterPendingOnly() {
+            showPendingOnly = !showPendingOnly;
+            const btn = document.getElementById('filter-pending-btn');
+
+            if (showPendingOnly) {
+                btn.style.background = '#ca8a04';
+                btn.textContent = '✓ Show All';
+                const pendingOnly = filteredEmployees.filter(emp => emp.status === 'PENDING');
+                renderAttendanceTable(pendingOnly);
+            } else {
+                btn.style.background = '#eab308';
+                btn.textContent = '⚠ Pending Only';
+                renderAttendanceTable(filteredEmployees);
+            }
         }
         
         async function viewEmployeeDetails(empId) {
@@ -225,11 +271,8 @@
                     return;
                 }
                 
-                // Get department name from department object or string
-                let deptName = 'N/A';
-                if (emp.department) {
-                    deptName = typeof emp.department === 'object' ? (emp.department.name || emp.department.departmentName || 'N/A') : emp.department;
-                }
+                // Get department name from departmentName field
+                const deptName = emp.departmentName || emp.department || 'N/A';
                 
                 // Get join date - could be joiningDate or joinDate
                 const joinDate = emp.joiningDate || emp.joinDate || 'N/A';
@@ -295,24 +338,147 @@
                 return;
             }
             
+            // SUNDAY CHECK: Block attendance marking on Sundays
+            if (isSunday(selectedDate)) {
+                showPopup('❌ Sunday is a non-working day. Attendance cannot be marked.');
+                return;
+            }
+
             try {
                 const res = await auth.apiCall(`/api/attendance/mark-${status.toLowerCase().replace('_', '-')}/${empId}?date=${selectedDate}`, { method: 'POST' });
                 if (res && res.ok) {
                     auth.showNotification(`Marked ${status.replace(/_/g, ' ').toLowerCase()}`, 'success');
-                    loadAttendance();
+                    // Force reload attendance data to reflect the change
+                    await loadAttendance();
                 } else {
                     const error = await res.text();
                     auth.showNotification(error || 'Failed to mark attendance', 'error');
                 }
-            } catch (e) { 
+            } catch (e) {
                 console.error(e);
-                auth.showNotification('Failed to mark attendance', 'error'); 
+                auth.showNotification('Failed to mark attendance', 'error');
+            }
+        }
+
+        async function resolvePendingAttendance(empId, newStatus, buttonElement) {
+            console.log('resolvePendingAttendance called with empId:', empId, 'newStatus:', newStatus, 'buttonElement:', !!buttonElement);
+            try {
+                // Change button color to blue to indicate processing
+                if (buttonElement) {
+                    buttonElement.style.background = '#3b82f6';
+                    buttonElement.style.opacity = '0.7';
+                    console.log('Button color changed to blue');
+                }
+
+                // Update status badge immediately for visual feedback
+                const row = buttonElement ? buttonElement.closest('tr') : null;
+                console.log('Row found:', !!row);
+                if (row) {
+                    console.log('Calling updateStatusBadge with newStatus:', newStatus);
+                    updateStatusBadge(row, newStatus);
+                } else {
+                    console.error('Could not find row from button element');
+                }
+
+                // Find the attendance record for this employee and date
+                const attRes = await auth.apiCall(`/api/attendance/date/${selectedDate}`);
+                if (attRes && attRes.ok) {
+                    const attendanceList = await attRes.json();
+                    const attendance = attendanceList.find(a => a.employeeId === empId);
+
+                    if (attendance && attendance.id) {
+                        console.log('Resolving attendance ID:', attendance.id, 'to status:', newStatus);
+                        const res = await auth.apiCall(`/api/attendance/${attendance.id}/resolve-pending?newStatus=${newStatus}`, { method: 'PUT' });
+                        if (res && res.ok) {
+                            const result = await res.json();
+                            console.log('Resolve response:', result);
+                            auth.showNotification(`Resolved PENDING to ${newStatus}`, 'success');
+                            // Clear cached data and force reload
+                            attendanceData = [];
+                            await loadAttendance();
+                        } else {
+                            const error = await res.text();
+                            console.error('Resolve failed:', error);
+                            auth.showNotification(error || 'Failed to resolve pending attendance', 'error');
+                            // Reset button color on error
+                            if (buttonElement) {
+                                buttonElement.style.background = newStatus === 'PRESENT' ? '#22c55e' : '#ef4444';
+                                buttonElement.style.opacity = '1';
+                            }
+                            // Revert status badge on error
+                            if (row) {
+                                updateStatusBadge(row, 'PENDING');
+                            }
+                        }
+                    } else {
+                        console.error('Attendance record not found for employee:', empId);
+                        auth.showNotification('Attendance record not found', 'error');
+                        // Reset button color on error
+                        if (buttonElement) {
+                            buttonElement.style.background = newStatus === 'PRESENT' ? '#22c55e' : '#ef4444';
+                            buttonElement.style.opacity = '1';
+                        }
+                        // Revert status badge on error
+                        if (row) {
+                            updateStatusBadge(row, 'PENDING');
+                        }
+                    }
+                } else {
+                    auth.showNotification('Failed to fetch attendance records', 'error');
+                    // Reset button color on error
+                    if (buttonElement) {
+                        buttonElement.style.background = newStatus === 'PRESENT' ? '#22c55e' : '#ef4444';
+                        buttonElement.style.opacity = '1';
+                    }
+                    // Revert status badge on error
+                    if (row) {
+                        updateStatusBadge(row, 'PENDING');
+                    }
+                }
+            } catch (e) {
+                console.error('Error in resolvePendingAttendance:', e);
+                auth.showNotification('Failed to resolve pending attendance', 'error');
+                // Reset button color on error
+                if (buttonElement) {
+                    buttonElement.style.background = newStatus === 'PRESENT' ? '#22c55e' : '#ef4444';
+                    buttonElement.style.opacity = '1';
+                }
+                // Revert status badge on error
+                const row = buttonElement ? buttonElement.closest('tr') : null;
+                if (row) {
+                    updateStatusBadge(row, 'PENDING');
+                }
+            }
+        }
+
+        // Update status badge immediately when button is clicked
+        function updateStatusBadge(row, newStatus) {
+            const statusBadge = row.querySelector('.status-badge');
+            console.log('updateStatusBadge called with status:', newStatus, 'badge found:', !!statusBadge);
+            if (statusBadge) {
+                const isPresent = newStatus === 'PRESENT';
+                const isAbsent = newStatus === 'ABSENT';
+                const isPending = newStatus === 'PENDING';
+                
+                statusBadge.style.background = isPresent ? '#dcfce7' : isAbsent ? '#fee2e2' : isPending ? '#fef9c3' : '#f3f4f6';
+                statusBadge.style.color = isPresent ? '#166534' : isAbsent ? '#991b1b' : isPending ? '#854d0e' : '#6b7280';
+                statusBadge.style.border = isPresent ? '1px solid #86efac' : isAbsent ? '1px solid #fca5a5' : isPending ? '1px solid #fde047' : '1px solid #d1d5db';
+                statusBadge.textContent = newStatus.replace(/_/g, ' ');
+                console.log('Status badge updated to:', newStatus);
+            } else {
+                console.error('Status badge not found in row');
             }
         }
         
         async function markAllPresent() {
             if (isFutureDate(selectedDate)) {
                 showPopup('Cannot mark future dates');
+                return;
+            }
+            
+            // SUNDAY CHECK: Block bulk marking on Sundays
+            if (isSunday(selectedDate)) {
+                showPopup('❌ Sunday is a non-working day. Cannot mark attendance.');
                 return;
             }
             
@@ -341,6 +507,12 @@
                 return;
             }
             
+            // SUNDAY CHECK: Block bulk marking on Sundays
+            if (isSunday(selectedDate)) {
+                showPopup('❌ Sunday is a non-working day. Cannot mark attendance.');
+                return;
+            }
+            
             if (!confirm('Are you sure you want to mark all employees as absent?')) return;
             
             const rows = document.querySelectorAll('#attendance-table tr');
@@ -358,6 +530,19 @@
             }
             
             auth.showNotification(`Marked ${empIds.length} employees as absent`, 'success');
+        }
+        
+        async function clearAllAttendance() {
+            if (!confirm('Are you sure you want to delete ALL attendance records? This action cannot be undone.')) return;
+            try {
+                const res = await auth.apiCall('/api/attendance/clear-all', {
+                    method: 'DELETE'
+                });
+                if (res && res.ok) {
+                    auth.showNotification('All attendance records deleted successfully', 'success');
+                    loadAttendance();
+                }
+            } catch (e) { auth.showNotification(e.message, 'error'); }
         }
         
         function showPopup(msg) {

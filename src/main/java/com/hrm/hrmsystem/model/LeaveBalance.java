@@ -24,6 +24,11 @@ public class LeaveBalance {
     private Integer cycle; // 1 or 2
     private Integer year;
 
+    // Leave cycle expiry and carry-forward
+    private Integer carryForwardLimit; // Max leaves that can be carried forward
+    private Integer carriedForwardFromPrevious; // Leaves carried from previous cycle
+    private Integer expiredLeaves; // Leaves that expired at cycle end
+
     // Default Constructor
     public LeaveBalance() {}
 
@@ -49,6 +54,9 @@ public class LeaveBalance {
     public Integer getCarriedForwardLeaves() { return carriedForwardLeaves; }
     public Integer getCycle() { return cycle; }
     public Integer getYear() { return year; }
+    public Integer getCarryForwardLimit() { return carryForwardLimit; }
+    public Integer getCarriedForwardFromPrevious() { return carriedForwardFromPrevious; }
+    public Integer getExpiredLeaves() { return expiredLeaves; }
     
     // Helper methods
     public Double getAvailableLeaves() {
@@ -66,6 +74,9 @@ public class LeaveBalance {
     public void setCarriedForwardLeaves(Integer carriedForwardLeaves) { this.carriedForwardLeaves = carriedForwardLeaves; }
     public void setCycle(Integer cycle) { this.cycle = cycle; }
     public void setYear(Integer year) { this.year = year; }
+    public void setCarryForwardLimit(Integer carryForwardLimit) { this.carryForwardLimit = carryForwardLimit; }
+    public void setCarriedForwardFromPrevious(Integer carriedForwardFromPrevious) { this.carriedForwardFromPrevious = carriedForwardFromPrevious; }
+    public void setExpiredLeaves(Integer expiredLeaves) { this.expiredLeaves = expiredLeaves; }
 
     // Builder
     public static Builder builder() {
@@ -81,6 +92,9 @@ public class LeaveBalance {
         private Integer carriedForwardLeaves;
         private Integer cycle;
         private Integer year;
+        private Integer carryForwardLimit;
+        private Integer carriedForwardFromPrevious;
+        private Integer expiredLeaves;
 
         public Builder id(Long id) { this.id = id; return this; }
         public Builder employee(Employee employee) { this.employee = employee; return this; }
@@ -90,9 +104,16 @@ public class LeaveBalance {
         public Builder carriedForwardLeaves(Integer carriedForwardLeaves) { this.carriedForwardLeaves = carriedForwardLeaves; return this; }
         public Builder cycle(Integer cycle) { this.cycle = cycle; return this; }
         public Builder year(Integer year) { this.year = year; return this; }
+        public Builder carryForwardLimit(Integer carryForwardLimit) { this.carryForwardLimit = carryForwardLimit; return this; }
+        public Builder carriedForwardFromPrevious(Integer carriedForwardFromPrevious) { this.carriedForwardFromPrevious = carriedForwardFromPrevious; return this; }
+        public Builder expiredLeaves(Integer expiredLeaves) { this.expiredLeaves = expiredLeaves; return this; }
 
         public LeaveBalance build() {
-            return new LeaveBalance(id, employee, totalEarnedLeaves, usedLeaves, unpaidLeaves, carriedForwardLeaves, cycle, year);
+            LeaveBalance balance = new LeaveBalance(id, employee, totalEarnedLeaves, usedLeaves, unpaidLeaves, carriedForwardLeaves, cycle, year);
+            balance.setCarryForwardLimit(carryForwardLimit);
+            balance.setCarriedForwardFromPrevious(carriedForwardFromPrevious);
+            balance.setExpiredLeaves(expiredLeaves);
+            return balance;
         }
     }
 }

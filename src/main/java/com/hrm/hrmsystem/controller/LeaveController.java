@@ -5,13 +5,13 @@ import com.hrm.hrmsystem.dto.LeaveBalanceDTO;
 import com.hrm.hrmsystem.model.Employee;
 import com.hrm.hrmsystem.service.LeaveService;
 import com.hrm.hrmsystem.service.EmployeeService;
+import com.hrm.hrmsystem.service.LeaveCalculationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,10 +31,12 @@ public class LeaveController {
 
     private final LeaveService leaveService;
     private final EmployeeService employeeService;
+    private final LeaveCalculationService leaveCalculationService;
 
-    public LeaveController(LeaveService leaveService, EmployeeService employeeService) {
+    public LeaveController(LeaveService leaveService, EmployeeService employeeService, LeaveCalculationService leaveCalculationService) {
         this.leaveService = leaveService;
         this.employeeService = employeeService;
+        this.leaveCalculationService = leaveCalculationService;
     }
 
     @PostMapping("/apply")
@@ -127,10 +129,14 @@ public class LeaveController {
     }
 
     @PostMapping("/approve/{leaveId}")
-    public ResponseEntity<LeaveDTO> approveLeave(
+    public ResponseEntity<?> approveLeave(
             @PathVariable Long leaveId,
             @RequestParam String approvedBy) {
-        return ResponseEntity.ok(leaveService.approveLeave(leaveId, approvedBy));
+        try {
+            return ResponseEntity.ok(leaveService.approveLeave(leaveId, approvedBy));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PostMapping("/reject/{leaveId}")
@@ -141,8 +147,26 @@ public class LeaveController {
     }
 
     @PostMapping("/cancel/{leaveId}")
-    public ResponseEntity<LeaveDTO> cancelLeave(@PathVariable Long leaveId) {
-        return ResponseEntity.ok(leaveService.cancelLeave(leaveId));
+    public ResponseEntity<?> cancelLeave(
+            @PathVariable Long leaveId,
+            @RequestParam(required = false) String reason) {
+        try {
+            return ResponseEntity.ok(leaveService.cancelLeave(leaveId, reason));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/modify/{leaveId}")
+    public ResponseEntity<?> modifyLeave(
+            @PathVariable Long leaveId,
+            @RequestBody LeaveDTO updatedLeaveDTO,
+            @RequestParam(required = false) String reason) {
+        try {
+            return ResponseEntity.ok(leaveService.modifyLeave(leaveId, updatedLeaveDTO, reason));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @GetMapping("/employee/{employeeId}")
@@ -169,7 +193,9 @@ public class LeaveController {
 
     @GetMapping("/balance/{employeeId}")
     public ResponseEntity<LeaveBalanceDTO> getLeaveBalance(@PathVariable Long employeeId) {
-        return ResponseEntity.ok(leaveService.getLeaveBalance(employeeId));
+        // Use LeaveService for leave balance calculation (it handles cycle-based logic correctly)
+        LeaveBalanceDTO balance = leaveService.getLeaveBalance(employeeId);
+        return ResponseEntity.ok(balance);
     }
 
     @GetMapping("/balance")
@@ -181,7 +207,9 @@ public class LeaveController {
         if (employee == null) {
             return ResponseEntity.ok(new LeaveBalanceDTO()); // Return empty balance
         }
-        return ResponseEntity.ok(leaveService.getLeaveBalance(employee.getId()));
+        // Use LeaveService for leave balance calculation (it handles cycle-based logic correctly)
+        LeaveBalanceDTO balance = leaveService.getLeaveBalance(employee.getId());
+        return ResponseEntity.ok(balance);
     }
 
     @GetMapping("/my")
@@ -199,5 +227,15 @@ public class LeaveController {
     @PostMapping("/balance/initialize/{employeeId}")
     public ResponseEntity<LeaveBalanceDTO> initializeLeaveBalance(@PathVariable Long employeeId) {
         return ResponseEntity.ok(leaveService.initializeLeaveBalance(employeeId));
+    }
+
+    @DeleteMapping("/clear-all")
+    public ResponseEntity<String> clearAllLeaves() {
+        try {
+            leaveService.deleteAllLeaves();
+            return ResponseEntity.ok("All leave records deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting leave records: " + e.getMessage());
+        }
     }
 }

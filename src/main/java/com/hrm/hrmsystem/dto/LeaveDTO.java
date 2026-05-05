@@ -14,10 +14,12 @@ public class LeaveDTO {
     private Double paidDays;
     private Double unpaidDays;
     private Boolean isHalfDay;
+    private String halfType;
     private String reason;
     private String status;
     private String approvedBy;
     private String rejectionReason;
+    private String cancellationReason;
     private String contactNumber;
     private LocalDate appliedDate;
 
@@ -34,10 +36,12 @@ public class LeaveDTO {
     public Double getPaidDays() { return paidDays; }
     public Double getUnpaidDays() { return unpaidDays; }
     public Boolean getIsHalfDay() { return isHalfDay; }
+    public String getHalfType() { return halfType; }
     public String getReason() { return reason; }
     public String getStatus() { return status; }
     public String getApprovedBy() { return approvedBy; }
     public String getRejectionReason() { return rejectionReason; }
+    public String getCancellationReason() { return cancellationReason; }
     public String getContactNumber() { return contactNumber; }
     public LocalDate getAppliedDate() { return appliedDate; }
 
@@ -52,10 +56,12 @@ public class LeaveDTO {
     public void setPaidDays(Double paidDays) { this.paidDays = paidDays; }
     public void setUnpaidDays(Double unpaidDays) { this.unpaidDays = unpaidDays; }
     public void setIsHalfDay(Boolean isHalfDay) { this.isHalfDay = isHalfDay; }
+    public void setHalfType(String halfType) { this.halfType = halfType; }
     public void setReason(String reason) { this.reason = reason; }
     public void setStatus(String status) { this.status = status; }
     public void setApprovedBy(String approvedBy) { this.approvedBy = approvedBy; }
     public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
+    public void setCancellationReason(String cancellationReason) { this.cancellationReason = cancellationReason; }
     public void setContactNumber(String contactNumber) { this.contactNumber = contactNumber; }
     public void setAppliedDate(LocalDate appliedDate) { this.appliedDate = appliedDate; }
 
@@ -74,10 +80,12 @@ public class LeaveDTO {
         private Double paidDays;
         private Double unpaidDays;
         private Boolean isHalfDay;
+        private String halfType;
         private String reason;
         private String status;
         private String approvedBy;
         private String rejectionReason;
+        private String cancellationReason;
         private String contactNumber;
         private LocalDate appliedDate;
 
@@ -91,10 +99,12 @@ public class LeaveDTO {
         public Builder paidDays(Double paidDays) { this.paidDays = paidDays; return this; }
         public Builder unpaidDays(Double unpaidDays) { this.unpaidDays = unpaidDays; return this; }
         public Builder isHalfDay(Boolean isHalfDay) { this.isHalfDay = isHalfDay; return this; }
+        public Builder halfType(String halfType) { this.halfType = halfType; return this; }
         public Builder reason(String reason) { this.reason = reason; return this; }
         public Builder status(String status) { this.status = status; return this; }
         public Builder approvedBy(String approvedBy) { this.approvedBy = approvedBy; return this; }
         public Builder rejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; return this; }
+        public Builder cancellationReason(String cancellationReason) { this.cancellationReason = cancellationReason; return this; }
         public Builder contactNumber(String contactNumber) { this.contactNumber = contactNumber; return this; }
         public Builder appliedDate(LocalDate appliedDate) { this.appliedDate = appliedDate; return this; }
 
@@ -110,10 +120,12 @@ public class LeaveDTO {
             dto.paidDays = this.paidDays;
             dto.unpaidDays = this.unpaidDays;
             dto.isHalfDay = this.isHalfDay;
+            dto.halfType = this.halfType;
             dto.reason = this.reason;
             dto.status = this.status;
             dto.approvedBy = this.approvedBy;
             dto.rejectionReason = this.rejectionReason;
+            dto.cancellationReason = this.cancellationReason;
             dto.contactNumber = this.contactNumber;
             dto.appliedDate = this.appliedDate;
             return dto;

@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Dashboard - HRM System</title>
-    <link rel="stylesheet" href="../css/employee-theme.css">
+    <link rel="stylesheet" href="../css/employee-theme.css?v=2">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -100,7 +103,49 @@
                         </div>
                         <div class="stat-info">
                             <h3 id="stat-leave">0</h3>
-                            <p>Leave Requests</p>
+                            <p>Pending Leaves</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="stat-salary-paid">₹0</h3>
+                            <p>Salary Paid</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #dcfce7 0%, #86efac 100%);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <path d="m9 16 2 2 4-4"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="stat-leave-approved">0</h3>
+                            <p>Approved Leaves</p>
+                            <span id="stat-leave-approved-month" style="font-size: 0.65rem; color: #6b7280;">This Month: 0</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #fef3c7 0%, #fbbf24 100%);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" x2="8" y1="13" y2="13"></line>
+                                <line x1="16" x2="8" y1="17" y2="17"></line>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="stat-payslip-pending">0</h3>
+                            <p>Payslip Pending</p>
                         </div>
                     </div>
                 </div>
@@ -182,8 +227,8 @@
         </main>
     </div>
 
-    <script src="../js/auth.js"></script>
-    <script src="../js/sidebar.js"></script>
+    <script src="../js/auth.js?v=4"></script>
+    <script src="../js/sidebar.js?v=4"></script>
     <script>
         if (!auth.requireAuth()) throw new Error('Auth required');
         
@@ -216,6 +261,7 @@
             document.getElementById('dashboard-content').style.display = 'block';
             document.getElementById('dashboard-content').innerHTML = `
                 <div class="stats-grid">
+                    <!-- Present Days -->
                     <div class="stat-card">
                         <div class="stat-icon green">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -225,20 +271,88 @@
                         </div>
                         <div class="stat-info">
                             <h3 id="my-present">0</h3>
-                            <p>Present This Month</p>
+                            <p>Present Days</p>
                         </div>
                     </div>
+                    <!-- Paid Leave Days -->
                     <div class="stat-card">
-                        <div class="stat-icon orange">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #dbeafe 0%, #3b82f6 100%);">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <path d="m9 16 2 2 4-4"></path>
                             </svg>
                         </div>
                         <div class="stat-info">
-                            <h3 id="my-leaves">0</h3>
-                            <p>Leave Balance</p>
+                            <h3 id="my-paid-leaves">0</h3>
+                            <p>Paid Leave Days</p>
                         </div>
                     </div>
+                    <!-- Unpaid Leave Days -->
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #fee2e2 0%, #ef4444 100%);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="9" y1="15" x2="15" y2="15"></line>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="my-unpaid-leaves">0</h3>
+                            <p>Unpaid Leave Days</p>
+                        </div>
+                    </div>
+                    <!-- Hours Worked -->
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="my-hours">0</h3>
+                            <p>Total Hours</p>
+                        </div>
+                    </div>
+                    <!-- Total Earned -->
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #d1fae5 0%, #10b981 100%);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="my-earned">0</h3>
+                            <p>Total Earned</p>
+                        </div>
+                    </div>
+                    <!-- Used Leaves -->
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #fef3c7 0%, #f59e0b 100%);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="my-used">0</h3>
+                            <p>Used Leaves</p>
+                        </div>
+                    </div>
+                    <!-- Remaining Balance -->
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #e0e7ff 0%, #6366f1 100%);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M8 12h8M12 8v8"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="my-remaining">0</h3>
+                            <p>Remaining</p>
+                        </div>
+                    </div>
+                    <!-- Salary -->
                     <div class="stat-card">
                         <div class="stat-icon blue">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -249,18 +363,6 @@
                         <div class="stat-info">
                             <h3 id="my-salary">₹0</h3>
                             <p>Last Month Salary</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon purple">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14"></polyline>
-                            </svg>
-                        </div>
-                        <div class="stat-info">
-                            <h3 id="my-hours">0</h3>
-                            <p>Hours Worked</p>
                         </div>
                     </div>
                 </div>
@@ -349,44 +451,42 @@
             </div>
             `;
             
-            // Load employee stats from new API
+            // Load employee stats from new API (with cache-busting)
             try {
-                const res = await auth.apiCall('/api/dashboard/my');
+                const timestamp = new Date().getTime();
+                const res = await auth.apiCall(`/api/dashboard/my?_t=${timestamp}`);
                 if (res && res.ok) {
                     const data = await res.json();
-                    
-                    // Attendance
+
+                    // Attendance - Present Days & Hours
                     if (data.attendance) {
-                        document.getElementById('my-present').textContent = data.attendance.presentDays || 0;
+                        document.getElementById('my-present').textContent = (data.attendance.presentDays || 0).toFixed(1);
                         document.getElementById('my-hours').textContent = (data.attendance.totalHours || 0).toFixed(1);
                     }
-                    
-                    // Leave Balance
+
+                    // Leave Balance - All values
                     if (data.leaveBalance) {
                         const lb = data.leaveBalance;
-                        const availableLeaves = lb.availableLeaves || 0;
-                        const earnedLeaves = lb.totalEarnedLeaves || 0;
-                        const carriedLeaves = lb.carriedForwardLeaves || 0;
-                        const totalEarned = earnedLeaves + carriedLeaves;
                         
-                        // Check if employee is in probation
-                        if (lb.inProbation) {
-                            // During probation: Available is 0, show earned in small text
-                            document.getElementById('my-leaves').innerHTML = `<span style="color: #dc2626; font-weight: bold;">0</span><span style="font-size: 0.65rem; color: #6b7280; display: block;">(${totalEarned} frozen)</span>`;
-                        } else {
-                            // After probation: Show actual available balance
-                            document.getElementById('my-leaves').textContent = availableLeaves;
-                            document.getElementById('my-leaves').style.color = '';
+                        // Set all leave balance fields
+                        document.getElementById('my-earned').textContent = (lb.totalEarnedLeaves || 0).toFixed(1);
+                        document.getElementById('my-used').textContent = (lb.usedLeaves || 0).toFixed(1);
+                        document.getElementById('my-remaining').textContent = (lb.availableLeaves || 0).toFixed(1);
+                    }
+
+                    // Paid/Unpaid Leave Days from latest payslip
+                    if (data.latestPayslip) {
+                        const p = data.latestPayslip;
+                        document.getElementById('my-paid-leaves').textContent = (p.paidLeaveDays || 0).toFixed(1);
+                        document.getElementById('my-unpaid-leaves').textContent = (p.unpaidLeaveDays || 0).toFixed(1);
+                        
+                        if (p.netSalary) {
+                            document.getElementById('my-salary').textContent = auth.formatCurrency(p.netSalary);
                         }
                     }
-                    
-                    // Latest Payslip
-                    if (data.latestPayslip && data.latestPayslip.netSalary) {
-                        document.getElementById('my-salary').textContent = auth.formatCurrency(data.latestPayslip.netSalary);
-                    }
                 }
-            } catch (e) { 
-                console.error('Failed to load dashboard data:', e); 
+            } catch (e) {
+                console.error('Failed to load dashboard data:', e);
             }
         }
         
@@ -395,7 +495,35 @@
             document.getElementById('loading').style.display = 'none';
             document.getElementById('dashboard-content').style.display = 'block';
             document.getElementById('dashboard-content').innerHTML = `
-                <div class="stats-grid">
+                <!-- Navigation Bar -->
+                <div style="margin-bottom: 2rem; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <h3 style="margin-bottom: 1rem; color: #1f2937; font-size: 1.1rem;">Quick Navigation</h3>
+                    <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
+                        <a href="/html/employees.html" class="nav-link" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border-radius: 8px; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+                            Employees
+                        </a>
+                        <a href="/html/attendance.html" class="nav-link" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border-radius: 8px; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" x2="16" y1="2" y2="6"></line><line x1="8" x2="8" y1="2" y2="6"></line><line x1="3" x2="21" y1="10" y2="10"></line></svg>
+                            Attendance
+                        </a>
+                        <a href="/html/leave.html" class="nav-link" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border-radius: 8px; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                            Leaves
+                        </a>
+                        <a href="/html/payroll.html" class="nav-link" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; border-radius: 8px; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="2" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                            Payroll
+                        </a>
+                        <a href="/html/payslips.html" class="nav-link" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); color: white; border-radius: 8px; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" x2="8" y1="13" y2="13"></line><line x1="16" x2="8" y1="17" y2="17"></line></svg>
+                            Payslips
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
                     <div class="stat-card">
                         <div class="stat-icon green">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -443,6 +571,76 @@
                             <p>Pending Leaves</p>
                         </div>
                     </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="stat-salary-paid">₹0</h3>
+                            <p>Salary Paid</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #dcfce7 0%, #86efac 100%);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <path d="m9 16 2 2 4-4"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="stat-leave-approved">0</h3>
+                            <p>Approved Leaves</p>
+                            <span id="stat-leave-approved-month" style="font-size: 0.65rem; color: #6b7280;">This Month: 0</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #fef3c7 0%, #fbbf24 100%);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" x2="8" y1="13" y2="13"></line>
+                                <line x1="16" x2="8" y1="17" y2="17"></line>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="stat-payslip-pending">0</h3>
+                            <p>Payslip Pending</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card" id="stat-payroll-pending-card" style="display: none;">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #dbeafe 0%, #3b82f6 100%);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="stat-payroll-pending">0</h3>
+                            <p>Payroll Approvals</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accountant Section - Pending Payroll Approvals -->
+                <div id="accountant-section" style="display: none; margin-bottom: 2rem;">
+                    <div class="card" style="border-left: 4px solid #3b82f6;">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h3 style="color: #1e40af; margin: 0;">⏳ Pending Payroll Approvals</h3>
+                                <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #6b7280;">Review and approve payrolls awaiting your approval</p>
+                            </div>
+                            <a href="accountant-approvals.html" class="btn" style="background: #3b82f6; color: white; padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none;">View All</a>
+                        </div>
+                        <div id="pending-payroll-list" style="padding: 1rem;">
+                            <p style="text-align: center; color: #6b7280;">Loading pending approvals...</p>
+                        </div>
+                    </div>
                 </div>
             `;
             
@@ -454,9 +652,10 @@
                     auth.apiCall('/api/leaves'),
                     auth.apiCall('/api/payroll/list')
                 ]);
-                
+
+                let emps = [];
                 if (empRes?.ok) {
-                    const emps = await empRes.json();
+                    emps = await empRes.json();
                     document.getElementById('stat-employees').textContent = emps.length || 0;
                 }
                 if (attRes?.ok) {
@@ -465,12 +664,75 @@
                 }
                 if (leaveRes?.ok) {
                     const leaves = await leaveRes.json();
-                    document.getElementById('stat-leave').textContent = leaves.filter(l => l.status === 'PENDING').length;
+                    const statLeaveEl = document.getElementById('stat-leave');
+                    if (statLeaveEl) statLeaveEl.textContent = leaves.filter(l => l.status === 'PENDING').length;
+
+                    // Calculate approved leaves
+                    const approvedLeaves = leaves.filter(l => l.status === 'APPROVED');
+                    const currentMonth = new Date().getMonth();
+                    const currentYear = new Date().getFullYear();
+                    const thisMonthApproved = approvedLeaves.filter(l => {
+                        const leaveDate = new Date(l.startDate);
+                        return leaveDate.getMonth() === currentMonth && leaveDate.getFullYear() === currentYear;
+                    });
+                    const statLeaveApprovedEl = document.getElementById('stat-leave-approved');
+                    if (statLeaveApprovedEl) statLeaveApprovedEl.textContent = approvedLeaves.length;
+                    const statLeaveApprovedMonthEl = document.getElementById('stat-leave-approved-month');
+                    if (statLeaveApprovedMonthEl) statLeaveApprovedMonthEl.textContent = `This Month: ${thisMonthApproved.length}`;
                 }
                 if (payrollRes?.ok) {
                     const payroll = await payrollRes.json();
                     const total = payroll.reduce((sum, p) => sum + (p.netSalary || 0), 0);
-                    document.getElementById('stat-payroll').textContent = auth.formatCurrency(total);
+                    const statPayrollEl = document.getElementById('stat-payroll');
+                    if (statPayrollEl) statPayrollEl.textContent = auth.formatCurrency(total);
+
+                    // Calculate salary paid (only PAID status)
+                    const salaryPaid = payroll.filter(p => p.status === 'PAID').reduce((sum, p) => sum + (p.netSalary || 0), 0);
+                    const statSalaryPaidEl = document.getElementById('stat-salary-paid');
+                    if (statSalaryPaidEl) statSalaryPaidEl.textContent = auth.formatCurrency(salaryPaid);
+
+                    // Calculate payslip pending (employees without PAID payroll for current month)
+                    const currentMonth = new Date().getMonth() + 1;
+                    const currentYear = new Date().getFullYear();
+                    const paidPayrollEmployees = payroll.filter(p => p.status === 'PAID' && p.month === currentMonth && p.year === currentYear).map(p => p.employeeId);
+                    const payslipPending = emps.length - paidPayrollEmployees.length;
+                    const statPayslipPendingEl = document.getElementById('stat-payslip-pending');
+                    if (statPayslipPendingEl) statPayslipPendingEl.textContent = payslipPending > 0 ? payslipPending : 0;
+
+                    // Calculate pending payroll approvals (for accountants/directors)
+                    const pendingPayrollApprovals = payroll.filter(p => p.status === 'PENDING_APPROVAL');
+                    const statPayrollPendingEl = document.getElementById('stat-payroll-pending');
+                    const statPayrollPendingCardEl = document.getElementById('stat-payroll-pending-card');
+                    const accountantSectionEl = document.getElementById('accountant-section');
+                    
+                    if (statPayrollPendingEl) statPayrollPendingEl.textContent = pendingPayrollApprovals.length;
+                    
+                    // Show accountant section if user is accountant/director and has pending approvals
+                    if (auth.isAccountant() || auth.isDirector()) {
+                        if (statPayrollPendingCardEl) statPayrollPendingCardEl.style.display = 'flex';
+                        if (accountantSectionEl) accountantSectionEl.style.display = 'block';
+                        
+                        // Populate pending payroll list
+                        const pendingListEl = document.getElementById('pending-payroll-list');
+                        if (pendingListEl) {
+                            if (pendingPayrollApprovals.length === 0) {
+                                pendingListEl.innerHTML = '<p style="text-align: center; color: #16a34a; padding: 1rem;">✓ No pending payroll approvals</p>';
+                            } else {
+                                pendingListEl.innerHTML = pendingPayrollApprovals.slice(0, 5).map(p => `
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: #f9fafb; border-radius: 6px; margin-bottom: 0.5rem;">
+                                        <div>
+                                            <strong>${p.employeeName || 'Unknown'}</strong>
+                                            <span style="color: #6b7280; font-size: 0.875rem; margin-left: 0.5rem;">${p.month}/${p.year}</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 1rem;">
+                                            <strong>${auth.formatCurrency(p.netSalary || 0)}</strong>
+                                            <a href="accountant-approvals.html" style="background: #10b981; color: white; padding: 0.375rem 0.75rem; border-radius: 4px; text-decoration: none; font-size: 0.875rem;">Review</a>
+                                        </div>
+                                    </div>
+                                `).join('');
+                            }
+                        }
+                    }
                 }
             } catch (e) {
                 console.error('Failed to load stats:', e);

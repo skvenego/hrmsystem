@@ -49,6 +49,12 @@ public class Payroll {
     @Column(precision = 12, scale = 2)
     private BigDecimal otherDeductions;
 
+    // Attendance summary fields - store calculated values for payroll table display
+    private Double presentDays;
+    private Double absentDays;
+    private Double paidLeaveDays;
+    private Double unpaidLeaveDays;
+
     @Column(precision = 12, scale = 2)
     private BigDecimal grossSalary;
 
@@ -122,6 +128,10 @@ public class Payroll {
     public BigDecimal getTax() { return tax; }
     public BigDecimal getInsurance() { return insurance; }
     public BigDecimal getOtherDeductions() { return otherDeductions; }
+    public Double getPresentDays() { return presentDays; }
+    public Double getAbsentDays() { return absentDays; }
+    public Double getPaidLeaveDays() { return paidLeaveDays; }
+    public Double getUnpaidLeaveDays() { return unpaidLeaveDays; }
     public BigDecimal getGrossSalary() { return grossSalary; }
     public BigDecimal getTotalDeductions() { return totalDeductions; }
     public BigDecimal getNetSalary() { return netSalary; }
@@ -146,6 +156,10 @@ public class Payroll {
     public void setTax(BigDecimal tax) { this.tax = tax; }
     public void setInsurance(BigDecimal insurance) { this.insurance = insurance; }
     public void setOtherDeductions(BigDecimal otherDeductions) { this.otherDeductions = otherDeductions; }
+    public void setPresentDays(Double presentDays) { this.presentDays = presentDays; }
+    public void setAbsentDays(Double absentDays) { this.absentDays = absentDays; }
+    public void setPaidLeaveDays(Double paidLeaveDays) { this.paidLeaveDays = paidLeaveDays; }
+    public void setUnpaidLeaveDays(Double unpaidLeaveDays) { this.unpaidLeaveDays = unpaidLeaveDays; }
     public void setGrossSalary(BigDecimal grossSalary) { this.grossSalary = grossSalary; }
     public void setTotalDeductions(BigDecimal totalDeductions) { this.totalDeductions = totalDeductions; }
     public void setNetSalary(BigDecimal netSalary) { this.netSalary = netSalary; }

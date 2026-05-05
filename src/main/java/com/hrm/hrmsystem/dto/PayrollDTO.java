@@ -39,12 +39,32 @@ public class PayrollDTO {
     private String status;
     
     // Attendance details (for display in frontend)
-    private Integer presentDays;
-    private Integer absentDays;
+    private Double presentDays;
+    private Double absentDays;
     private Integer leaveDays;
-    private Integer paidLeaveDays;
-    private Integer unpaidLeaveDays;
+    private Double paidLeaveDays;
+    private Double unpaidLeaveDays;
     private Integer halfDays;
     private Double absentLeaveDeduction;
+    
+    // Leave balance info (for display in payslip modal)
+    private LeaveBalanceInfo leaveBalance;
+    private Boolean inProbation;
+    private String probationStatus;
+    private Integer probationMonths;
+    private LocalDate joinDate;
+    private LocalDate probationCompletionDate;
+    
+    // Nested class for leave balance
+    @Data
+    @Builder
+    public static class LeaveBalanceInfo {
+        private Double totalEarnedLeaves;
+        private Double usedLeaves;
+        private Double availableLeaves;
+        private Double carriedForwardLeaves;
+        private Double unpaidLeaves;
+        private Integer cycle; // 1 = Jan-Jun, 2 = Jul-Dec
+    }
 
 }

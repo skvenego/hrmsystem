@@ -130,4 +130,15 @@ public class PayrollController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error rejecting payroll: " + e.getMessage());
         }
     }
+
+    // Delete all payroll records
+    @DeleteMapping("/clear-all")
+    public ResponseEntity<String> clearAllPayrolls() {
+        try {
+            payrollService.deleteAllPayrolls();
+            return ResponseEntity.ok("All payroll records deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting payroll records: " + e.getMessage());
+        }
+    }
 }

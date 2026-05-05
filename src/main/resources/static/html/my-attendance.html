@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>My Attendance - HRM System</title>
-    <link rel="stylesheet" href="../css/employee-theme.css">
+    <link rel="stylesheet" href="../css/employee-theme.css?v=2">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -92,18 +95,31 @@
                         <div class="stat-info">
                             <h3 id="absent-days">0</h3>
                             <p>Absent Days</p>
+                            <small style="color: #dc2626; font-size: 0.65rem;">Deducted from salary as unpaid leave</small>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon blue">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <path d="M16 2v4M8 2v4M3 10h18"></path>
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
                             </svg>
                         </div>
                         <div class="stat-info">
-                            <h3 id="leave-days">0</h3>
-                            <p>Leave Days</p>
+                            <h3 id="paid-leave-days">0</h3>
+                            <p>Paid Leave Days</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon red">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="15" x2="9" y1="9" y2="15"></line>
+                                <line x1="9" x2="15" y1="9" y2="15"></line>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="unpaid-leave-days">0</h3>
+                            <p>Unpaid Leave Days</p>
                         </div>
                     </div>
                     <div class="stat-card">
@@ -164,34 +180,46 @@
         async function loadMyAttendance() {
             const month = parseInt(document.getElementById('month-filter').value) + 1;
             const year = parseInt(document.getElementById('year-filter').value);
-            
+
             try {
-                console.log(`Fetching attendance and leaves for month=${month}, year=${year}`);
+                // Month boundaries for overlap calculation
+                const monthStart = new Date(year, month - 1, 1);
+                const monthEnd = new Date(year, month, 0);
+
+                // FIXED: Use AttendanceEngine API for consistent calculation with payroll
+                let presentDays = 0, absentDays = 0, paidLeaveDays = 0, unpaidLeaveDays = 0, totalHours = 0;
                 
-                // Fetch both attendance and leaves in parallel
-                const [attRes, leavesRes] = await Promise.all([
-                    auth.apiCall(`/api/attendance/my?month=${month}&year=${year}`),
-                    auth.apiCall('/api/leaves/my')
-                ]);
-                
-                if (!attRes || !attRes.ok) {
-                    console.error('Attendance API response not OK:', attRes?.status);
-                    auth.showNotification('Failed to fetch attendance data', 'error');
-                    return;
+                // Call the AttendanceEngine API (single source of truth)
+                const summaryRes = await auth.apiCall('/api/dashboard/my/attendance');
+                if (summaryRes && summaryRes.ok) {
+                    const summary = await summaryRes.json();
+                    presentDays = summary.presentDays || 0;
+                    absentDays = summary.absentDays || 0;
+                    paidLeaveDays = summary.paidLeaveDays || 0;
+                    unpaidLeaveDays = summary.unpaidLeaveDays || 0;
+                    totalHours = summary.totalHours || 0;
+                } else {
+                    console.error('Failed to load attendance summary from AttendanceEngine');
                 }
-                
-                const attendanceData = await attRes.json();
-                const leavesData = leavesRes && leavesRes.ok ? await leavesRes.json() : [];
-                
-                console.log('Attendance data:', attendanceData.length, 'records');
-                console.log('Leaves data:', leavesData.length, 'records');
-                
+
+                // Fetch attendance data for table display only (not for calculations)
+                const attRes = await auth.apiCall(`/api/attendance/my?month=${month}&year=${year}`);
+                let attendanceData = [];
+                if (attRes && attRes.ok) {
+                    attendanceData = await attRes.json();
+                }
+
                 // Create a map of existing attendance by date
                 const attendanceMap = new Map();
                 attendanceData.forEach(a => {
                     attendanceMap.set(a.date, a);
                 });
-                
+
+                // Also fetch leaves to add to the table
+                const leavesTableRes = await auth.apiCall('/api/leaves/my');
+                const leavesData = leavesTableRes && leavesTableRes.ok ? await leavesTableRes.json() : [];
+                // Leaves data loaded successfully
+
                 // Add approved leaves as LEAVE status in attendance
                 let approvedLeaveDays = 0;
                 leavesData.forEach(leave => {
@@ -200,13 +228,31 @@
                         const start = new Date(leave.startDate);
                         const end = new Date(leave.endDate);
                         
+                        // Track which days are unpaid (unpaid days typically at the end of leave)
+                        const totalDays = leave.totalDays || 0;
+                        const unpaidDays = leave.unpaidDays || 0;
+                        const paidDays = leave.paidDays || 0;
+                        let dayCounter = 0;
+
+                        // Check if this leave spans multiple months
+                        const spansMonths = start.getMonth() !== end.getMonth() || start.getFullYear() !== end.getFullYear();
+                        const nextMonthStart = new Date(year, month, 1); // First day of next month
+
                         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
                             const dateStr = d.toISOString().split('T')[0];
-                            
+                            dayCounter++;
+
                             // Check if this date is in the selected month/year
                             if (d.getMonth() + 1 === month && d.getFullYear() === year) {
                                 approvedLeaveDays++;
                                 
+                                // Determine if this day is unpaid (last N days of leave are unpaid)
+                                // For example: 4 days total, 1 unpaid = last 1 day is unpaid
+                                const isUnpaid = dayCounter > paidDays;
+                                
+                                // Check if leave continues into next month
+                                const continuesNextMonth = spansMonths && d.getDate() === new Date(year, month, 0).getDate();
+
                                 // Only add if not already marked as attendance
                                 if (!attendanceMap.has(dateStr)) {
                                     attendanceMap.set(dateStr, {
@@ -216,7 +262,9 @@
                                         checkOutTime: null,
                                         workingHours: 0,
                                         leaveReason: leave.reason,
-                                        leaveType: leave.leaveType
+                                        leaveType: leave.leaveType,
+                                        isUnpaid: isUnpaid,  // Track if this day is unpaid
+                                        continuesNextMonth: continuesNextMonth // Track if continues
                                     });
                                 }
                             }
@@ -226,25 +274,14 @@
                 
                 // Convert map back to array
                 const mergedData = Array.from(attendanceMap.values());
-                console.log('Merged data:', mergedData.length, 'records (including', approvedLeaveDays, 'approved leave days)');
-                
-                // Calculate summary
-                let present = 0, absent = 0, leave = 0, halfDays = 0, hours = 0;
-                mergedData.forEach(a => {
-                    if (a.status === 'PRESENT') present++;
-                    else if (a.status === 'ABSENT') absent++;
-                    else if (a.status === 'LEAVE') leave++;
-                    else if (a.status === 'HALF_DAY') halfDays++;
-                    hours += a.workingHours || 0;
-                });
-                
-                // Present includes half days (0.5 each)
-                const totalPresent = present + (halfDays * 0.5);
-                
-                document.getElementById('present-days').textContent = totalPresent % 1 === 0 ? totalPresent : totalPresent.toFixed(1);
-                document.getElementById('absent-days').textContent = absent;
-                document.getElementById('leave-days').textContent = leave;
-                document.getElementById('working-hours').textContent = hours.toFixed(1);
+                // Merged data ready for display
+
+                // FIXED: Use AttendanceEngine values directly for summary cards
+                document.getElementById('present-days').textContent = presentDays % 1 === 0 ? presentDays : presentDays.toFixed(1);
+                document.getElementById('absent-days').textContent = absentDays % 1 === 0 ? absentDays : absentDays.toFixed(1);
+                document.getElementById('paid-leave-days').textContent = paidLeaveDays % 1 === 0 ? paidLeaveDays : paidLeaveDays.toFixed(1);
+                document.getElementById('unpaid-leave-days').textContent = unpaidLeaveDays % 1 === 0 ? unpaidLeaveDays : unpaidLeaveDays.toFixed(1);
+                document.getElementById('working-hours').textContent = totalHours.toFixed(1);
                 
                 // Render table
                 const tbody = document.getElementById('attendance-table');
@@ -275,7 +312,7 @@
                 
                 tbody.innerHTML = mergedData.map(a => {
                     const statusClass = a.status?.toLowerCase() || 'na';
-                    const statusDisplay = a.status === 'HALF_DAY' ? 'HALF DAY' : (a.status || 'N/A');
+                    const statusDisplay = a.status === 'HALF_DAY' ? 'HALF DAY' : (a.status === 'PENDING' ? 'PENDING' : (a.status || 'N/A'));
                     
                     // For leave days, show the leave type and reason
                     let checkInDisplay = a.checkInTime || '-';
@@ -283,9 +320,13 @@
                     let hoursDisplay = a.workingHours ? a.workingHours.toFixed(2) + ' hrs' : '-';
                     
                     if (a.status === 'LEAVE' && a.leaveType) {
-                        checkInDisplay = `<span style="color: #6b7280; font-size: 0.85rem;">${a.leaveType}</span>`;
+                        // Show UNPAID in red text
+                        const unpaidStyle = a.isUnpaid ? 'color: #dc2626; font-weight: 600;' : 'color: #6b7280;';
+                        const unpaidLabel = a.isUnpaid ? ' (UNPAID)' : '';
+                        const continuesLabel = a.continuesNextMonth ? ' (→May)' : '';
+                        checkInDisplay = `<span style="${unpaidStyle} font-size: 0.85rem;">${a.leaveType}${unpaidLabel}${continuesLabel}</span>`;
                         checkOutDisplay = a.leaveReason ? `<span style="color: #6b7280; font-size: 0.85rem;">${a.leaveReason.substring(0, 20)}${a.leaveReason.length > 20 ? '...' : ''}</span>` : '-';
-                        hoursDisplay = '<span style="color: #6b7280;">On Leave</span>';
+                        hoursDisplay = a.isUnpaid ? '<span style="color: #dc2626; font-weight: 600;">Unpaid Leave</span>' : '<span style="color: #6b7280;">Paid Leave</span>';
                     }
                     
                     return `
@@ -306,6 +347,16 @@
         document.getElementById('month-filter').addEventListener('change', loadMyAttendance);
         document.getElementById('year-filter').addEventListener('change', loadMyAttendance);
         
+        // Add refresh button handler
+        const refreshBtn = document.getElementById('refresh-btn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                loadMyAttendance();
+                auth.showNotification('Attendance data refreshed', 'success');
+            });
+        }
+        
+        // Initial load
         loadMyAttendance();
     </script>
 </body>

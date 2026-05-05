@@ -5,6 +5,7 @@ import com.hrm.hrmsystem.model.Employee;
 import com.hrm.hrmsystem.service.AttendanceService;
 import com.hrm.hrmsystem.service.EmployeeService;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -40,6 +41,16 @@ public class AttendanceController {
         return ResponseEntity.ok(attendanceService.getAttendanceByEmployee(employeeId));
     }
 
+    @GetMapping("/employee/{employeeId}/monthly")
+    public ResponseEntity<List<AttendanceDTO>> getMonthlyAttendance(
+            @PathVariable Long employeeId,
+            @RequestParam int month,
+            @RequestParam int year) {
+        LocalDate startDate = LocalDate.of(year, month, 1);
+        LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
+        return ResponseEntity.ok(attendanceService.getAttendanceReport(employeeId, startDate, endDate));
+    }
+
     @GetMapping("/date/{date}")
     public ResponseEntity<List<AttendanceDTO>> getAttendanceByDate(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
@@ -62,31 +73,43 @@ public class AttendanceController {
     }
 
     @PostMapping("/mark-absent/{employeeId}")
-    public ResponseEntity<AttendanceDTO> markAbsent(
+    public ResponseEntity<?> markAbsent(
             @PathVariable Long employeeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(required = false) String remarks) {
-        return ResponseEntity.ok(attendanceService.markAbsent(employeeId, date, remarks));
+        try {
+            return ResponseEntity.ok(attendanceService.markAbsent(employeeId, date, remarks));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PostMapping("/mark-present/{employeeId}")
-    public ResponseEntity<AttendanceDTO> markPresent(
+    public ResponseEntity<?> markPresent(
             @PathVariable Long employeeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) Double workingHours) {
-        if (status != null && workingHours != null) {
-            return ResponseEntity.ok(attendanceService.markPresentWithOptions(employeeId, date, status, workingHours));
-        } else {
-            return ResponseEntity.ok(attendanceService.markPresent(employeeId, date));
+        try {
+            if (status != null && workingHours != null) {
+                return ResponseEntity.ok(attendanceService.markPresentWithOptions(employeeId, date, status, workingHours));
+            } else {
+                return ResponseEntity.ok(attendanceService.markPresent(employeeId, date));
+            }
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
     @PostMapping("/mark-half-day/{employeeId}")
-    public ResponseEntity<AttendanceDTO> markHalfDay(
+    public ResponseEntity<?> markHalfDay(
             @PathVariable Long employeeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return ResponseEntity.ok(attendanceService.markHalfDay(employeeId, date));
+        try {
+            return ResponseEntity.ok(attendanceService.markHalfDay(employeeId, date));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PutMapping("/{attendanceId}/mark-present")
@@ -95,6 +118,18 @@ public class AttendanceController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) Double workingHours) {
         return ResponseEntity.ok(attendanceService.updateAttendanceStatus(attendanceId, status, workingHours));
+    }
+
+    /**
+     * Admin endpoint to resolve PENDING attendance status
+     * Marks PENDING attendance as either PRESENT or ABSENT
+     */
+    @PutMapping("/{attendanceId}/resolve-pending")
+    public ResponseEntity<AttendanceDTO> resolvePendingAttendance(
+            @PathVariable Long attendanceId,
+            @RequestParam String newStatus, // "PRESENT" or "ABSENT"
+            @RequestParam(required = false) String remarks) {
+        return ResponseEntity.ok(attendanceService.resolvePendingAttendance(attendanceId, newStatus, remarks));
     }
 
     @GetMapping("/my")
@@ -111,5 +146,15 @@ public class AttendanceController {
         LocalDate startDate = LocalDate.of(year, month, 1);
         LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
         return ResponseEntity.ok(attendanceService.getAttendanceReport(employee.getId(), startDate, endDate));
+    }
+
+    @DeleteMapping("/clear-all")
+    public ResponseEntity<String> clearAllAttendance() {
+        try {
+            attendanceService.deleteAllAttendance();
+            return ResponseEntity.ok("All attendance records deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting attendance records: " + e.getMessage());
+        }
     }
 }

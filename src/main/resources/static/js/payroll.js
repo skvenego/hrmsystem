@@ -82,13 +82,40 @@ async function loadPayroll() {
 async function generatePayroll() {
     const month = document.getElementById('month-filter').value;
     const year = document.getElementById('year-filter').value;
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    
+    console.log(`Generating payroll for ${monthNames[month-1]} ${year}...`);
+    
     try {
         const res = await auth.apiCall('/api/payroll/generate-all', {
             method: 'POST',
             body: JSON.stringify({ month: parseInt(month), year: parseInt(year) })
         });
+        
         if (res && res.ok) {
-            auth.showNotification('Payroll generated', 'success');
+            const data = await res.json();
+            console.log('Generated payrolls:', data);
+            auth.showNotification(`Payroll generated for ${monthNames[month-1]} ${year} (${data.length} employees)`, 'success');
+            setTimeout(() => loadPayroll(), 500); // Small delay to ensure DB commit
+        } else {
+            const error = await res.text();
+            console.error('Generate payroll failed:', error);
+            auth.showNotification('Failed: ' + error, 'error');
+        }
+    } catch (e) { 
+        console.error('Generate error:', e);
+        auth.showNotification(e.message, 'error'); 
+    }
+}
+
+async function clearAllPayrolls() {
+    if (!confirm('Are you sure you want to delete ALL payroll records? This action cannot be undone. After deletion, you will need to regenerate payroll to see the updated calculations.')) return;
+    try {
+        const res = await auth.apiCall('/api/payroll/clear-all', {
+            method: 'DELETE'
+        });
+        if (res && res.ok) {
+            auth.showNotification('All payroll records deleted successfully', 'success');
             loadPayroll();
         }
     } catch (e) { auth.showNotification(e.message, 'error'); }
@@ -167,14 +194,35 @@ async function viewPayslipDetails(id) {
         console.log('API URL:', url);
         const res = await auth.apiCall(url);
         console.log('Payslip API response:', res);
+        
+        let p;
         if (!res || !res.ok) {
+            // Payslip not found - use payroll data directly
+            console.log('Payslip not found, using payroll data directly');
             const errorText = await res.text();
-            console.error('API error:', res.status, errorText);
-            alert('Failed to load payslip: ' + res.status);
-            return;
+            console.log('API error (expected for missing payslip):', res.status, errorText);
+            
+            // Use payroll data as payslip data
+            p = {
+                ...payroll,
+                monthYear: monthYear,
+                status: payroll.status || 'PENDING',
+                // Calculate absentLeaveDeduction if not present
+                absentLeaveDeduction: payroll.absentLeaveDeduction || payroll.otherDeductions || 0,
+                // Map payroll field names to payslip field names
+                pf: payroll.providentFund,
+                incomeTax: payroll.tax,
+                otherDeduction: payroll.insurance,
+                totalDeduction: payroll.totalDeductions,
+                paidLeaveDays: payroll.paidLeaveDays || 0,
+                unpaidLeaveDays: payroll.unpaidLeaveDays || 0,
+                leaveBalance: payroll.leaveBalance
+            };
+            console.log('Using payroll data as payslip:', p);
+        } else {
+            p = await res.json();
+            console.log('Payslip data:', p);
         }
-        const p = await res.json();
-        console.log('Payslip data:', p);
         
         const modal = document.getElementById('payslip-modal');
         const content = document.getElementById('modal-content-body');
@@ -195,31 +243,63 @@ async function viewPayslipDetails(id) {
                 <span style="display: inline-block; margin-top: 0.5rem; background: ${statusColor}20; color: ${statusColor}; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600;">${p.status || 'Pending'}</span>
             </div>
             
-            <!-- Leave Details Section -->
+            <!-- Paid Leave Balance Section -->
             <div style="margin-bottom: 1rem;">
-                <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #374151;">Leave Details</h4>
-                <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; border: 1px solid #bae6fd;">
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
+                <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #374151;">💰 Paid Leave Balance</h4>
+                <div style="background: #f0fdf4; padding: 0.75rem; border-radius: 8px; border: 1px solid #86efac;">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-bottom: 0.5rem;">
                         <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px;">
-                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Total Days</p>
-                            <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #0284c7;">${((p.leaveDays || 0) + (p.halfDays || 0) * 0.5).toFixed(1)}</p>
+                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Total Earned</p>
+                            <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #16a34a;">${((p.leaveBalance && typeof p.leaveBalance.totalEarnedLeaves === 'number') ? p.leaveBalance.totalEarnedLeaves : 0).toFixed(1)}</p>
                         </div>
                         <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px;">
-                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Paid Days</p>
-                            <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #16a34a;">${(p.paidLeaveDays || 0).toFixed(1)}</p>
-                        </div>
-                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px;">
-                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Unpaid Days</p>
-                            <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #dc2626;">${(p.unpaidLeaveDays || 0).toFixed(1)}</p>
-                        </div>
-                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px;">
-                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Half Days</p>
-                            <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #f59e0b;">${p.halfDays || 0}</p>
+                            ${p.inProbation || p.probationStatus === 'In Progress' ?
+                                `<p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Probation Status</p>
+                                <p style="margin: 0; font-size: 1rem; font-weight: 600; color: #dc2626;">⏳ In Progress (${p.probationMonths || 3} months)</p>
+                                <p style="margin: 4px 0 0 0; font-size: 0.7rem; color: #64748b;">Joined: ${p.joinDate ? new Date(p.joinDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}<br>Complete: ${p.joinDate ? new Date(new Date(p.joinDate).setMonth(new Date(p.joinDate).getMonth() + (p.probationMonths || 3))).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</p>` :
+                                `<p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Probation Status</p>
+                                <p style="margin: 0; font-size: 1rem; font-weight: 600; color: #16a34a;">✅ Completed (${p.probationMonths || 3} months)</p>
+                                <p style="margin: 4px 0 0 0; font-size: 0.7rem; color: #64748b;">Joined: ${p.joinDate ? new Date(p.joinDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}<br>Completed: ${p.joinDate ? new Date(new Date(p.joinDate).setMonth(new Date(p.joinDate).getMonth() + (p.probationMonths || 3))).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</p>`
+                            }
                         </div>
                     </div>
-                    ${p.absentDays > 0 ? `<div style="margin-top: 0.5rem; padding: 0.5rem; background: #fef2f2; border-radius: 6px; text-align: center;">
-                        <p style="margin: 0; font-size: 0.875rem; color: #dc2626;">Absent Days: <strong>${p.absentDays}</strong></p>
-                    </div>` : ''}
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
+                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px;">
+                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Used</p>
+                            <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #d97706;">${((p.leaveBalance && typeof p.leaveBalance.usedLeaves === 'number') ? p.leaveBalance.usedLeaves : 0).toFixed(1)}</p>
+                        </div>
+                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px;">
+                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Remaining</p>
+                            <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #16a34a;">${((p.leaveBalance && typeof p.leaveBalance.availableLeaves === 'number') ? p.leaveBalance.availableLeaves : 0).toFixed(1)}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Leave Details Section -->
+            <div style="margin-bottom: 1rem;">
+                <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #374151;">📊 Attendance & Leave Summary</h4>
+                <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; border: 1px solid #bae6fd;">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px;">
+                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Present Days</p>
+                            <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #059669;">${(p.presentDays || 0).toFixed(1)}</p>
+                        </div>
+                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px;">
+                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Absent Days</p>
+                            <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #dc2626;">${(p.absentDays || 0).toFixed(1)}</p>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
+                        <div style="text-align: center; padding: 0.5rem; background: #f0fdf4; border-radius: 6px;">
+                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Paid Leave Days</p>
+                            <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #16a34a;">${(p.paidLeaveDays || 0).toFixed(1)}</p>
+                        </div>
+                        <div style="text-align: center; padding: 0.5rem; background: #fef2f2; border-radius: 6px;">
+                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Unpaid Leave Days</p>
+                            <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #dc2626;">${(p.unpaidLeaveDays || 0).toFixed(1)}</p>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -236,16 +316,34 @@ async function viewPayslipDetails(id) {
                 </div>
             </div>
             
+            <!-- Attendance Deduction Breakdown -->
             <div style="margin-bottom: 1rem;">
-                <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #374151;">Deductions</h4>
+                <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #374151;">Attendance Deductions (Daily Rate: ${auth.formatCurrency((p.basicSalary || 0) / 26)} based on 26 days)</h4>
                 <div style="background: #fef2f2; padding: 0.75rem; border-radius: 8px;">
-                    <div style="display: flex; justify-content: space-between; padding: 0.25rem 0;"><span>Provident Fund</span><span style="color: #dc2626;">-${auth.formatCurrency(p.pf || 0)}</span></div>
-                    <div style="display: flex; justify-content: space-between; padding: 0.25rem 0;"><span>Tax</span><span style="color: #dc2626;">-${auth.formatCurrency(p.incomeTax || 0)}</span></div>
-                    <div style="display: flex; justify-content: space-between; padding: 0.25rem 0;"><span>${p.insuranceName || 'Insurance'}</span><span style="color: #dc2626;">-${auth.formatCurrency(p.insurance || 0)}</span></div>
-                    <div style="display: flex; justify-content: space-between; padding: 0.25rem 0;"><span>Other Deductions</span><span style="color: #dc2626;">-${auth.formatCurrency(p.otherDeduction || 0)}</span></div>
-                    ${p.absentLeaveDeduction > 0 ? `<div style="display: flex; justify-content: space-between; padding: 0.25rem 0;"><span>Absent/Leave Deduction</span><span style="color: #dc2626;">-${auth.formatCurrency(p.absentLeaveDeduction || 0)}</span></div>` : ''}
+                    <!-- CRITICAL FIX: Half days are already included in absentDays - do NOT show separately to avoid double-counting display -->
+                    ${p.absentDays > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;"><span>Absent (${p.absentDays} days):</span><span style="color: #dc2626;">-${auth.formatCurrency(p.absentDays * ((p.basicSalary || 0) / 26))}</span></div>` : ''}
+                    ${p.unpaidLeaveDays > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;"><span>Unpaid Leaves (${p.unpaidLeaveDays} days):</span><span style="color: #dc2626;">-${auth.formatCurrency(p.unpaidLeaveDays * ((p.basicSalary || 0) / 26))}</span></div>` : ''}
+                    ${p.absentLeaveDeduction > 0 ? `<div style="display: flex; justify-content: space-between; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #e5e7eb; color: #dc2626;"><span><strong>Total Attendance Deduction:</strong></span><strong>-${auth.formatCurrency(p.absentLeaveDeduction)}</strong></div>` : '<div style="color: #059669; text-align: center;">✓ No attendance deductions</div>'}
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #374151;">Other Deductions</h4>
+                <div style="background: #fef2f2; padding: 0.75rem; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; padding: 0.25rem 0;"><span>Provident Fund</span><span style="color: #dc2626;">-${auth.formatCurrency(p.pf || p.providentFund || 0)}</span></div>
+                    <div style="display: flex; justify-content: space-between; padding: 0.25rem 0;"><span>Tax</span><span style="color: #dc2626;">-${auth.formatCurrency(p.incomeTax || p.tax || 0)}</span></div>
+                    <div style="display: flex; justify-content: space-between; padding: 0.25rem 0;"><span>Insurance</span><span style="color: #dc2626;">-${auth.formatCurrency(p.otherDeduction || p.insurance || 0)}</span></div>
                     <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-top: 1px solid #fca5a5; margin-top: 0.5rem; font-weight: 600;">
-                        <span>Total Deductions</span><span style="color: #dc2626;">-${auth.formatCurrency(p.totalDeduction || 0)}</span>
+                        <span>Total Other Deductions</span><span style="color: #dc2626;">-${auth.formatCurrency((p.totalDeductions || p.totalDeduction || 0) - (p.absentLeaveDeduction || 0))}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #374151;">Total Deductions</h4>
+                <div style="background: #fef2f2; padding: 0.75rem; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; font-weight: 600; font-size: 1.1rem;">
+                        <span>Total Deductions</span><span style="color: #dc2626;">-${auth.formatCurrency(p.totalDeductions || p.totalDeduction || 0)}</span>
                     </div>
                 </div>
             </div>
@@ -338,7 +436,7 @@ function showPayrollDataInModal(payroll) {
         <div style="background: #fef2f2; padding: 0.75rem; border-radius: 8px;">
             <div style="display: flex; justify-content: space-between; padding: 0.25rem 0;"><span>Provident Fund</span><span style="color: #dc2626;">-${auth.formatCurrency(payroll.providentFund || 0)}</span></div>
             <div style="display: flex; justify-content: space-between; padding: 0.25rem 0;"><span>Tax</span><span style="color: #dc2626;">-${auth.formatCurrency(payroll.tax || 0)}</span></div>
-            <div style="display: flex; justify-content: space-between; padding: 0.25rem 0;"><span>${payroll.insuranceName || 'Insurance'}</span><span style="color: #dc2626;">-${auth.formatCurrency(payroll.insurance || 0)}</span></div>
+            <div style="display: flex; justify-content: space-between; padding: 0.25rem 0;"><span>Insurance</span><span style="color: #dc2626;">-${auth.formatCurrency(payroll.insurance || 0)}</span></div>
             <div style="display: flex; justify-content: space-between; padding: 0.25rem 0;"><span>Other Deductions</span><span style="color: #dc2626;">-${auth.formatCurrency(payroll.otherDeductions || 0)}</span></div>
             ${payroll.absentLeaveDeduction > 0 ? `<div style="display: flex; justify-content: space-between; padding: 0.25rem 0;"><span>Absent/Leave Deduction</span><span style="color: #dc2626;">-${auth.formatCurrency(payroll.absentLeaveDeduction || 0)}</span></div>` : ''}
             <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-top: 1px solid #fca5a5; margin-top: 0.5rem; font-weight: 600;">
@@ -405,11 +503,11 @@ async function editPayroll(id) {
                 <div style="background: #fef2f2; padding: 0.75rem; border-radius: 8px;">
                     <div style="margin-bottom: 0.5rem;">
                         <label style="display: block; font-size: 0.875rem; margin-bottom: 0.25rem;">Provident Fund (PF)</label>
-                        <input type="number" name="pf" value="${payroll.pf || 0}" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                        <input type="number" name="providentFund" value="${payroll.providentFund || 0}" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
                     </div>
                     <div style="margin-bottom: 0.5rem;">
                         <label style="display: block; font-size: 0.875rem; margin-bottom: 0.25rem;">Tax</label>
-                        <input type="number" name="incomeTax" value="${payroll.incomeTax || 0}" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                        <input type="number" name="tax" value="${payroll.tax || 0}" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
                     </div>
                     <div style="margin-bottom: 0.5rem;">
                         <label style="display: block; font-size: 0.875rem; margin-bottom: 0.25rem;">Insurance</label>
@@ -445,8 +543,8 @@ async function savePayrollEdit(id) {
         hra: parseFloat(formData.get('hra')) || 0,
         da: parseFloat(formData.get('da')) || 0,
         otherAllowances: parseFloat(formData.get('otherAllowances')) || 0,
-        providentFund: parseFloat(formData.get('pf')) || 0,
-        tax: parseFloat(formData.get('incomeTax')) || 0,
+        providentFund: parseFloat(formData.get('providentFund')) || 0,
+        tax: parseFloat(formData.get('tax')) || 0,
         insurance: parseFloat(formData.get('insurance')) || 0,
         otherDeductions: parseFloat(formData.get('otherDeductions')) || 0
     };
@@ -493,10 +591,11 @@ async function updateAssociatedPayslip(payrollId, payrollData) {
                 da: payrollData.da,
                 otherAllowance: payrollData.otherAllowances,
                 grossSalary: payrollData.grossSalary,
-                pf: payrollData.pf,
-                incomeTax: payrollData.incomeTax,
-                otherDeduction: payrollData.insurance + payrollData.otherDeductions,
-                totalDeduction: payrollData.totalDeductions,
+                providentFund: payrollData.providentFund,
+                tax: payrollData.tax,
+                insurance: payrollData.insurance,
+                otherDeductions: payrollData.otherDeductions,
+                totalDeductions: payrollData.totalDeductions,
                 netSalary: payrollData.netSalary
             };
             

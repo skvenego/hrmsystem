@@ -91,10 +91,12 @@ public class SecurityConfig {
                 // Leave management (approve/reject) - Admin/HR
                 .requestMatchers(HttpMethod.POST, "/api/leaves/apply").authenticated() // Employees can apply
                 .requestMatchers(HttpMethod.POST, "/api/leaves/approve/**", "/api/leaves/reject/**", "/api/leaves/cancel/**").hasAnyRole("ADMIN", "HR")
+                .requestMatchers(HttpMethod.POST, "/api/leaves/recalculate-paid-days").hasAnyRole("ADMIN", "HR") // Data fix endpoint
                 
                 // Payroll management - Admin/HR/Accountant
                 .requestMatchers(HttpMethod.POST, "/api/payroll/**").hasAnyRole("ADMIN", "HR", "ACCOUNTANT")
                 .requestMatchers(HttpMethod.PUT, "/api/payroll/**").hasAnyRole("ADMIN", "HR", "ACCOUNTANT")
+                .requestMatchers(HttpMethod.DELETE, "/api/payroll/**").hasAnyRole("ADMIN", "HR")
                 
                 // Payslip management - Admin/HR/Accountant
                 .requestMatchers(HttpMethod.POST, "/api/payslips/**").hasAnyRole("ADMIN", "HR", "ACCOUNTANT")

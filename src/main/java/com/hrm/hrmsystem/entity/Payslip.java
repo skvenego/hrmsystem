@@ -68,19 +68,19 @@ public class Payslip {
     private Integer workingDays = 26;
 
     @Column(name = "present_days")
-    private Integer presentDays;
+    private Double presentDays;
 
     @Column(name = "absent_days")
-    private Integer absentDays;
+    private Double absentDays;
 
     @Column(name = "leave_days")
-    private Integer leaveDays;
+    private Double leaveDays;
     
     @Column(name = "paid_leave_days")
-    private Integer paidLeaveDays;
+    private Double paidLeaveDays;
     
     @Column(name = "unpaid_leave_days")
-    private Integer unpaidLeaveDays;
+    private Double unpaidLeaveDays;
 
     @Column(name = "half_days")
     private Integer halfDays;
@@ -164,11 +164,11 @@ public class Payslip {
     public BigDecimal getNetSalary() { return netSalary; }
     public Integer getTotalDays() { return totalDays; }
     public Integer getWorkingDays() { return workingDays; }
-    public Integer getPresentDays() { return presentDays; }
-    public Integer getAbsentDays() { return absentDays; }
-    public Integer getLeaveDays() { return leaveDays; }
-    public Integer getPaidLeaveDays() { return paidLeaveDays; }
-    public Integer getUnpaidLeaveDays() { return unpaidLeaveDays; }
+    public Double getPresentDays() { return presentDays; }
+    public Double getAbsentDays() { return absentDays; }
+    public Double getLeaveDays() { return leaveDays; }
+    public Double getPaidLeaveDays() { return paidLeaveDays; }
+    public Double getUnpaidLeaveDays() { return unpaidLeaveDays; }
     public Integer getHalfDays() { return halfDays; }
     public BigDecimal getAbsentLeaveDeduction() { return absentLeaveDeduction; }
     public java.util.List<String> getAbsentDates() { return absentDates; }
@@ -202,11 +202,11 @@ public class Payslip {
     public void setNetSalary(BigDecimal netSalary) { this.netSalary = netSalary; }
     public void setTotalDays(Integer totalDays) { this.totalDays = totalDays; }
     public void setWorkingDays(Integer workingDays) { this.workingDays = workingDays; }
-    public void setPresentDays(Integer presentDays) { this.presentDays = presentDays; }
-    public void setAbsentDays(Integer absentDays) { this.absentDays = absentDays; }
-    public void setLeaveDays(Integer leaveDays) { this.leaveDays = leaveDays; }
-    public void setPaidLeaveDays(Integer paidLeaveDays) { this.paidLeaveDays = paidLeaveDays; }
-    public void setUnpaidLeaveDays(Integer unpaidLeaveDays) { this.unpaidLeaveDays = unpaidLeaveDays; }
+    public void setPresentDays(Double presentDays) { this.presentDays = presentDays; }
+    public void setAbsentDays(Double absentDays) { this.absentDays = absentDays; }
+    public void setLeaveDays(Double leaveDays) { this.leaveDays = leaveDays; }
+    public void setPaidLeaveDays(Double paidLeaveDays) { this.paidLeaveDays = paidLeaveDays; }
+    public void setUnpaidLeaveDays(Double unpaidLeaveDays) { this.unpaidLeaveDays = unpaidLeaveDays; }
     public void setHalfDays(Integer halfDays) { this.halfDays = halfDays; }
     public void setAbsentLeaveDeduction(BigDecimal absentLeaveDeduction) { this.absentLeaveDeduction = absentLeaveDeduction; }
     public void setAbsentDates(java.util.List<String> absentDates) { this.absentDates = absentDates; }

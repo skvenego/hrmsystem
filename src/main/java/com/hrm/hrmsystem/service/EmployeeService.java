@@ -3,8 +3,10 @@ package com.hrm.hrmsystem.service;
 import com.hrm.hrmsystem.dto.EmployeeDTO;
 import com.hrm.hrmsystem.model.Employee;
 import com.hrm.hrmsystem.model.Department;
+import com.hrm.hrmsystem.model.User;
 import com.hrm.hrmsystem.repository.EmployeeRepository;
 import com.hrm.hrmsystem.repository.DepartmentRepository;
+import com.hrm.hrmsystem.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
@@ -21,10 +23,12 @@ public class EmployeeService {
 
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
+    private final UserRepository userRepository;
 
-    public EmployeeService(EmployeeRepository employeeRepository, DepartmentRepository departmentRepository) {
+    public EmployeeService(EmployeeRepository employeeRepository, DepartmentRepository departmentRepository, UserRepository userRepository) {
         this.employeeRepository = employeeRepository;
         this.departmentRepository = departmentRepository;
+        this.userRepository = userRepository;
     }
 
     @Transactional(readOnly = true)
@@ -110,6 +114,20 @@ public class EmployeeService {
         }
 
         employee = employeeRepository.save(employee);
+
+        // Also update the User entity's email and username if it exists
+        try {
+            userRepository.findByEmployeeId(employee.getId()).ifPresent(user -> {
+                if (!user.getEmail().equals(dto.getEmail())) {
+                    user.setEmail(dto.getEmail());
+                    user.setUsername(dto.getEmail()); // Update username to match email for login
+                    userRepository.save(user);
+                }
+            });
+        } catch (Exception e) {
+            System.err.println("Error updating user email: " + e.getMessage());
+        }
+
         return convertToDTO(employee);
     }
 

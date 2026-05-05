@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leave Management - HRM System</title>
-    <link rel="stylesheet" href="../css/employee-theme.css">
-    <link rel="stylesheet" href="../css/pages.css">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Leave - HRM System</title>
+    <link rel="stylesheet" href="../css/employee-theme.css?v=2">
+    <link rel="stylesheet" href="../css/pages.css?v=2">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -25,10 +28,11 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 13h8M8 17h8"/>
                         </svg>
                     </div>
-                    <h1>Leave Management</h1>
+                    <h1>Leave</h1>
                 </div>
                 <div class="header-actions">
                     <button onclick="openModal()" class="btn-primary">+ Apply Leave</button>
+                    <button onclick="clearAllLeaves()" class="btn-danger" style="background: #b91c1c; color: white; padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer; margin-left: 0.5rem;">🗑️ Clear All</button>
                     <button class="icon-btn" onclick="auth.logout()" title="Logout">
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
@@ -183,7 +187,7 @@
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
                                 <div>
                                     <p style="margin: 0; font-size: 0.75rem; color: #15803d;">Total Earned</p>
-                                    <p id="leave-earned" style="margin: 0; font-weight: 600; color: #166534; font-size: 1rem;">0</p>
+                                    <p id="leave-total-earned" style="margin: 0; font-weight: 600; color: #166534; font-size: 1rem;">0</p>
                                 </div>
                                 <div>
                                     <p style="margin: 0; font-size: 0.75rem; color: #15803d;">Used</p>
@@ -193,33 +197,57 @@
                                     <p style="margin: 0; font-size: 0.75rem; color: #15803d;">Remaining</p>
                                     <p id="leave-remaining" style="margin: 0; font-weight: 600; color: #166534; font-size: 1rem;">0</p>
                                 </div>
-                                <div>
-                                    <p style="margin: 0; font-size: 0.75rem; color: #15803d;">Unpaid</p>
-                                    <p id="leave-unpaid" style="margin: 0; font-weight: 600; color: #dc2626; font-size: 1rem;">0</p>
-                                </div>
                             </div>
                             <p id="leave-cycle" style="margin: 0.5rem 0 0 0; font-size: 0.75rem; color: #15803d; text-align: center;">-</p>
                         </div>
                         
-                        <!-- Attendance Summary -->
-                        <div id="attendance-summary-card" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.5rem; padding: 1rem; margin-top: 1rem; display: none;">
-                            <h4 style="margin: 0 0 0.75rem 0; color: #1e40af; font-size: 0.9rem; border-bottom: 1px solid #bfdbfe; padding-bottom: 0.5rem;">Attendance (This Month)</h4>
-                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; text-align: center;">
+                        <!-- Paid Leave Balance (Real-time) -->
+                        <div id="paid-leave-balance-card" style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 0.5rem; padding: 1rem; margin-top: 1rem; display: none;">
+                            <h4 style="margin: 0 0 0.75rem 0; color: #166534; font-size: 0.9rem; border-bottom: 1px solid #86efac; padding-bottom: 0.5rem;">💰 Paid Leave Balance Preview</h4>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; text-align: center; margin-bottom: 0.5rem;">
                                 <div>
-                                    <p style="margin: 0; font-size: 0.75rem; color: #3b82f6;">Present</p>
+                                    <p style="margin: 0; font-size: 0.75rem; color: #22c55e;">Current Remaining</p>
+                                    <p id="bal-earned" style="margin: 0; font-weight: 600; color: #15803d;">0</p>
+                                </div>
+                                <div>
+                                    <p style="margin: 0; font-size: 0.75rem; color: #6366f1;">Probation Status</p>
+                                    <p id="bal-probation" style="margin: 0; font-weight: 600; color: #6366f1;">-</p>
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; text-align: center;">
+                                <div>
+                                    <p style="margin: 0; font-size: 0.75rem; color: #f59e0b;">This Application</p>
+                                    <p id="bal-used-calc" style="margin: 0; font-weight: 600; color: #d97706;">0</p>
+                                </div>
+                                <div>
+                                    <p style="margin: 0; font-size: 0.75rem; color: #16a34a;">After Approval</p>
+                                    <p id="bal-remaining" style="margin: 0; font-weight: 600; color: #16a34a;">0</p>
+                                </div>
+                            </div>
+                            <p id="balance-note" style="margin: 0.75rem 0 0 0; font-size: 0.7rem; color: #166534; text-align: center; font-style: italic;"></p>
+                        </div>
+                        
+                        <!-- Attendance & Leave Summary -->
+                        <div id="attendance-summary-card" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.5rem; padding: 1rem; margin-top: 1rem; display: none;">
+                            <h4 style="margin: 0 0 0.75rem 0; color: #1e40af; font-size: 0.9rem; border-bottom: 1px solid #bfdbfe; padding-bottom: 0.5rem;">📊 Attendance & Leave Summary</h4>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; text-align: center;">
+                                <div>
+                                    <p style="margin: 0; font-size: 0.75rem; color: #3b82f6;">Present Days</p>
                                     <p id="att-present" style="margin: 0; font-weight: 600; color: #1d4ed8;">0</p>
                                 </div>
                                 <div>
-                                    <p style="margin: 0; font-size: 0.75rem; color: #3b82f6;">Absent</p>
+                                    <p style="margin: 0; font-size: 0.75rem; color: #3b82f6;">Absent Days</p>
                                     <p id="att-absent" style="margin: 0; font-weight: 600; color: #dc2626;">0</p>
                                 </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; text-align: center; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #bfdbfe;">
                                 <div>
-                                    <p style="margin: 0; font-size: 0.75rem; color: #3b82f6;">Leave</p>
-                                    <p id="att-leave" style="margin: 0; font-weight: 600; color: #f59e0b;">0</p>
+                                    <p style="margin: 0; font-size: 0.75rem; color: #15803d;">Paid Leave Days</p>
+                                    <p id="att-paid" style="margin: 0; font-weight: 600; color: #059669;">0</p>
                                 </div>
                                 <div>
-                                    <p style="margin: 0; font-size: 0.75rem; color: #3b82f6;">Half Day</p>
-                                    <p id="att-half" style="margin: 0; font-weight: 600; color: #8b5cf6;">0</p>
+                                    <p style="margin: 0; font-size: 0.75rem; color: #dc2626;">Unpaid Leave Days</p>
+                                    <p id="att-unpaid" style="margin: 0; font-weight: 600; color: #dc2626;">0</p>
                                 </div>
                             </div>
                             <p id="attendance-note" style="margin: 0.75rem 0 0 0; font-size: 0.7rem; color: #dc2626; text-align: center; font-style: italic;"></p>
@@ -239,7 +267,6 @@
                                 <option value="ANNUAL">Annual Leave</option>
                                 <option value="MATERNITY">Maternity Leave</option>
                                 <option value="PATERNITY">Paternity Leave</option>
-                                <option value="HALF">Half Day Leave</option>
                                 <option value="OTHER">Other</option>
                             </select>
                         </div>
@@ -260,17 +287,27 @@
                         </div>
                         
                         <div class="form-group" style="margin-bottom: 1rem;">
-                            <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; background: #f3f4f6; border-radius: 0.375rem;">
-                                <input type="checkbox" id="is-half-day" name="isHalfDay" style="width: 18px; height: 18px; accent-color: #3b82f6;">
-                                <span style="color: #374151; font-size: 0.9rem;">Half Day Leave (0.5 day deduction)</span>
-                            </label>
-                        </div>
-                        
-                        <div class="form-group" style="margin-bottom: 1rem;">
                             <label class="form-label" style="font-weight: 600; color: #374151;">
                                 <span style="color: #ef4444;">*</span> Reason
                             </label>
                             <textarea name="reason" id="reason" class="form-input" rows="3" required placeholder="Enter reason for leave..."></textarea>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" style="font-weight: 600; color: #374151;">
+                                <input type="checkbox" id="is-half-day" style="margin-right: 0.5rem;">
+                                Half Day Leave
+                            </label>
+                        </div>
+                        
+                        <div id="half-type-container" class="form-group" style="margin-bottom: 1rem; display: none;">
+                            <label class="form-label" style="font-weight: 600; color: #374151;">
+                                Half Type
+                            </label>
+                            <select id="half-type" class="form-input">
+                                <option value="FIRST_HALF">First Half</option>
+                                <option value="SECOND_HALF">Second Half</option>
+                            </select>
                         </div>
                         
                         <!-- Warning Section -->
@@ -367,6 +404,43 @@
                     </div>
                 </div>
                 
+                <!-- Attendance & Leave Summary (for Admin View) -->
+                <div id="view-attendance-summary" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.75rem; padding: 1.25rem; margin-bottom: 1.5rem; display: none;">
+                    <h4 style="margin: 0 0 1rem 0; color: #1e40af; font-size: 0.95rem; border-bottom: 1px solid #bfdbfe; padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #3b82f6;">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" x2="16" y1="2" y2="6"></line>
+                            <line x1="8" x2="8" y1="2" y2="6"></line>
+                            <line x1="3" x2="21" y1="10" y2="10"></line>
+                        </svg>
+                        📊 Attendance & Leave Summary
+                    </h4>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 0.75rem;">
+                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px;">
+                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Present Days</p>
+                            <p id="view-att-present" style="margin: 0.25rem 0 0 0; font-weight: 700; color: #059669; font-size: 1.25rem;">-</p>
+                        </div>
+                        <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px;">
+                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Absent Days</p>
+                            <p id="view-att-absent" style="margin: 0.25rem 0 0 0; font-weight: 700; color: #dc2626; font-size: 1.25rem;">-</p>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 0.75rem;">
+                        <div style="text-align: center; padding: 0.5rem; background: #f0fdf4; border-radius: 6px;">
+                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Paid Leave Days</p>
+                            <p id="view-att-paid" style="margin: 0.25rem 0 0 0; font-weight: 700; color: #16a34a; font-size: 1.25rem;">-</p>
+                        </div>
+                        <div style="text-align: center; padding: 0.5rem; background: #fef2f2; border-radius: 6px;">
+                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Unpaid Leave Days</p>
+                            <p id="view-att-unpaid" style="margin: 0.25rem 0 0 0; font-weight: 700; color: #dc2626; font-size: 1.25rem;">-</p>
+                        </div>
+                        <div style="text-align: center; padding: 0.5rem; background: #eff6ff; border-radius: 6px;">
+                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Remaining Paid Leaves</p>
+                            <p id="view-att-remaining" style="margin: 0.25rem 0 0 0; font-weight: 700; color: #2563eb; font-size: 1.25rem;">-</p>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Leave Details Section -->
                 <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 0.75rem; padding: 1.25rem; margin-bottom: 1.5rem;">
                     <h4 style="margin: 0 0 1rem 0; color: #166534; font-size: 0.95rem; border-bottom: 1px solid #bbf7d0; padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
@@ -376,7 +450,7 @@
                             <line x1="8" x2="8" y1="2" y2="6"></line>
                             <line x1="3" x2="21" y1="10" y2="10"></line>
                         </svg>
-                        Leave Details
+                        Leave Application Details
                     </h4>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                         <div>
@@ -409,6 +483,28 @@
                             <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Unpaid Days</p>
                             <p id="view-unpaid-days" style="margin: 0.25rem 0 0 0; font-weight: 700; color: #dc2626; font-size: 1.25rem;">0</p>
                         </div>
+                    </div>
+                    
+                    <!-- Multi-Month Leave Split Display -->
+                    <div id="monthly-split-section" style="display: none; margin-top: 1rem; background: #fef3c7; border: 1px solid #fbbf24; border-radius: 0.5rem; padding: 1rem;">
+                        <h5 style="margin: 0 0 0.75rem 0; color: #92400e; font-size: 0.9rem; text-align: center;">
+                            📅 Multi-Month Leave Split
+                        </h5>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div style="background: white; padding: 0.75rem; border-radius: 0.375rem; text-align: center;">
+                                <p style="margin: 0; font-size: 0.7rem; color: #6b7280;">April Portion</p>
+                                <p id="view-april-days" style="margin: 0.25rem 0 0 0; font-weight: 700; color: #059669; font-size: 1.1rem;">2 days</p>
+                                <p style="margin: 0; font-size: 0.65rem; color: #9ca3af;">Apr 29-30</p>
+                            </div>
+                            <div style="background: white; padding: 0.75rem; border-radius: 0.375rem; text-align: center;">
+                                <p style="margin: 0; font-size: 0.7rem; color: #6b7280;">May Portion</p>
+                                <p id="view-may-days" style="margin: 0.25rem 0 0 0; font-weight: 700; color: #059669; font-size: 1.1rem;">2 days</p>
+                                <p style="margin: 0; font-size: 0.65rem; color: #9ca3af;">May 1-2</p>
+                            </div>
+                        </div>
+                        <p style="margin: 0.75rem 0 0 0; font-size: 0.75rem; color: #92400e; text-align: center;">
+                            Each month calculates paid/unpaid separately based on that month's balance
+                        </p>
                     </div>
                     <!-- Balance Calculation Note -->
                     <p id="view-balance-note" style="margin: 0.75rem 0 0 0; padding: 0.5rem; background: #f0f9ff; border-radius: 0.25rem; font-size: 0.75rem; color: #0369a1; text-align: center; display: none;"></p>
@@ -472,10 +568,132 @@
         </div>
     </div>
 
+    <!-- Modify Leave Modal -->
+    <div id="modify-leave-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Modify Leave</h2>
+                <button onclick="closeModifyModal()" class="modal-close">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="modify-leave-form">
+                    <input type="hidden" id="modify-leave-id">
+                    
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label class="form-label" style="font-weight: 600; color: #374151;">
+                            <span style="color: #ef4444;">*</span> Start Date
+                        </label>
+                        <input type="date" id="modify-start-date" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label class="form-label" style="font-weight: 600; color: #374151;">
+                            <span style="color: #ef4444;">*</span> End Date
+                        </label>
+                        <input type="date" id="modify-end-date" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label class="form-label" style="font-weight: 600; color: #374151;">
+                            Reason
+                        </label>
+                        <textarea id="modify-reason" class="form-input" rows="3" placeholder="Enter leave reason"></textarea>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label class="form-label" style="font-weight: 600; color: #374151;">
+                            <input type="checkbox" id="modify-is-half-day" style="margin-right: 0.5rem;">
+                            Half Day Leave
+                        </label>
+                    </div>
+                    
+                    <div id="modify-half-type-container" class="form-group" style="margin-bottom: 1rem; display: none;">
+                        <label class="form-label" style="font-weight: 600; color: #374151;">
+                            Half Type
+                        </label>
+                        <select id="modify-half-type" class="form-input">
+                            <option value="FIRST_HALF">First Half</option>
+                            <option value="SECOND_HALF">Second Half</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="modal-footer" style="justify-content: center; background: #f9fafb;">
+                <button onclick="submitModifyLeave()" class="btn-small" style="background: #4f46e5; color: white; padding: 0.625rem 2rem; font-size: 0.95rem; font-weight: 500; border-radius: 0.5rem; border: none; cursor: pointer; margin-right: 0.5rem;">
+                    Save Changes
+                </button>
+                <button onclick="closeModifyModal()" class="btn-small" style="background: #6b7280; color: white; padding: 0.625rem 2rem; font-size: 0.95rem; font-weight: 500; border-radius: 0.5rem; border: none; cursor: pointer;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="../js/auth.js"></script>
     <script src="../js/sidebar.js"></script>
     <script>
         if (!auth.requireManagement()) throw new Error('Management access required');
+
+        // Helper function to show month context banner
+        function showMonthContext(month, year) {
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+            const monthName = monthNames[month - 1];
+            
+            // Create or update month context banner
+            let banner = document.getElementById('month-context-banner');
+            if (!banner) {
+                banner = document.createElement('div');
+                banner.id = 'month-context-banner';
+                banner.style.cssText = 'background: #dbeafe; border: 1px solid #3b82f6; border-radius: 6px; padding: 0.75rem; margin-bottom: 1rem; text-align: center;';
+                
+                const employeeInfoCard = document.getElementById('employee-info-card');
+                if (employeeInfoCard) {
+                    employeeInfoCard.parentNode.insertBefore(banner, employeeInfoCard);
+                }
+            }
+            
+            const today = new Date();
+            const isFutureMonth = month > (today.getMonth() + 1) || year > today.getFullYear();
+            const isPastMonth = month < (today.getMonth() + 1) || year < today.getFullYear();
+            
+            let badge = '';
+            if (isFutureMonth) {
+                badge = '<span style="background: #16a34a; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;">Future</span>';
+            } else if (isPastMonth) {
+                badge = '<span style="background: #dc2626; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;">Past</span>';
+            } else {
+                badge = '<span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;">Current</span>';
+            }
+            
+            banner.innerHTML = `
+                <div style="font-weight: 600; color: #1e40af;">
+                    📅 Showing data for: ${monthName} ${year} ${badge}
+                </div>
+                <div style="font-size: 0.75rem; color: #3b82f6; margin-top: 4px;">
+                    Leave balance and attendance calculated for this month
+                </div>
+            `;
+            banner.style.display = 'block';
+        }
+
+        // Helper function to count days excluding Sundays (GLOBAL SCOPE)
+        function countDaysExcludingSundays(start, end) {
+            if (!start || !end) return 0;
+            let days = 0;
+            let current = new Date(start);
+            const endDate = new Date(end);
+            while (current <= endDate) {
+                // Sunday = 0, don't count it
+                if (current.getDay() !== 0) {
+                    days++;
+                }
+                current.setDate(current.getDate() + 1);
+            }
+            return days;
+        }
         
         async function loadLeaves() {
             try {
@@ -520,8 +738,24 @@
                     return;
                 }
                 
+                // Helper function to count days excluding Sundays
+                function countDaysExcludingSundays(start, end) {
+                    let days = 0;
+                    let current = new Date(start);
+                    const endDate = new Date(end);
+                    while (current <= endDate) {
+                        // Sunday = 0, don't count it
+                        if (current.getDay() !== 0) {
+                            days++;
+                        }
+                        current.setDate(current.getDate() + 1);
+                    }
+                    return days;
+                }
+
                 tbody.innerHTML = filteredData.map(l => {
-                    const days = l.totalDays || (Math.ceil((new Date(l.endDate) - new Date(l.startDate)) / (1000 * 60 * 60 * 24)) + 1);
+                    // Use totalDays from server (which excludes Sundays) or calculate excluding Sundays
+                    const days = l.totalDays || (l.isHalfDay ? 0.5 : countDaysExcludingSundays(l.startDate, l.endDate));
                     const isHalfDay = l.isHalfDay ? '<span style="color: #0ea5e9;">(H)</span>' : '';
                     const paidDays = l.paidDays || 0;
                     const unpaidDays = l.unpaidDays || 0;
@@ -541,7 +775,11 @@
                                     <button onclick="viewLeaveDetails(${l.id})" class="btn-small" style="background: #e0e7ff; color: #3730a3;">View</button>
                                     <button onclick="approveLeave(${l.id})" class="btn-small" style="background: #dcfce7; color: #166534;">Approve</button>
                                     <button onclick="rejectLeave(${l.id})" class="btn-small" style="background: #fee2e2; color: #991b1b;">Reject</button>
-                                ` : l.status === 'APPROVED' || l.status === 'REJECTED' ? `
+                                ` : l.status === 'APPROVED' ? `
+                                    <button onclick="viewLeaveDetails(${l.id})" class="btn-small" style="background: #e0e7ff; color: #3730a3;">View</button>
+                                    <button onclick="cancelLeave(${l.id})" class="btn-small" style="background: #fee2e2; color: #991b1b;">Cancel</button>
+                                    <button onclick="openModifyModal(${l.id})" class="btn-small" style="background: #fef3c7; color: #92400e;">Modify</button>
+                                ` : l.status === 'REJECTED' ? `
                                     <button onclick="viewLeaveDetails(${l.id})" class="btn-small" style="background: #e0e7ff; color: #3730a3;">View</button>
                                 ` : '<span style="color: #9ca3af;">-</span>'}
                             </td>
@@ -610,6 +848,74 @@
             document.getElementById('view-reason').textContent = leave.reason || 'No reason provided';
             document.getElementById('view-contact-number').textContent = leave.contactNumber || 'Not provided';
             
+            // Calculate and display monthly split for multi-month leaves
+            if (leave.startDate && leave.endDate) {
+                const startDate = new Date(leave.startDate);
+                const endDate = new Date(leave.endDate);
+                const startMonth = startDate.getMonth();
+                const endMonth = endDate.getMonth();
+                const startYear = startDate.getFullYear();
+                const endYear = endDate.getFullYear();
+                
+                // Check if multi-month leave
+                if (startMonth !== endMonth || startYear !== endYear) {
+                    // Calculate days in each month
+                    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    
+                    // Days in start month
+                    const lastDayOfStartMonth = new Date(startYear, startMonth + 1, 0).getDate();
+                    const daysInStartMonth = lastDayOfStartMonth - startDate.getDate() + 1;
+                    
+                    // Days in end month
+                    const daysInEndMonth = endDate.getDate();
+                    
+                    // Update the split display
+                    const firstMonthName = monthNames[startMonth];
+                    const secondMonthName = monthNames[endMonth];
+                    
+                    document.getElementById('view-april-days').textContent = daysInStartMonth + ' days';
+                    document.getElementById('view-april-days').parentElement.querySelector('p:first-child').textContent = firstMonthName + ' Portion';
+                    document.getElementById('view-april-days').parentElement.querySelector('p:last-child').textContent = 
+                        firstMonthName + ' ' + startDate.getDate() + '-' + lastDayOfStartMonth;
+                    
+                    document.getElementById('view-may-days').textContent = daysInEndMonth + ' days';
+                    document.getElementById('view-may-days').parentElement.querySelector('p:first-child').textContent = secondMonthName + ' Portion';
+                    document.getElementById('view-may-days').parentElement.querySelector('p:last-child').textContent = 
+                        secondMonthName + ' 1-' + daysInEndMonth;
+                    
+                    // Show the monthly split section
+                    document.getElementById('monthly-split-section').style.display = 'block';
+                } else {
+                    // Single month leave - hide split section
+                    document.getElementById('monthly-split-section').style.display = 'none';
+                }
+            }
+            
+            // Fetch and display attendance summary for the employee using AttendanceEngine API
+            if (leave.employeeId) {
+                try {
+                    // FIXED: Use AttendanceEngine API for consistent calculation with payroll
+                    const res = await auth.apiCall(`/api/dashboard/attendance/${leave.employeeId}`);
+                    
+                    if (res && res.ok) {
+                        const data = await res.json();
+                        
+                        console.log('AttendanceEngine data (view modal):', data);
+
+                        // Show and populate attendance summary
+                        document.getElementById('view-attendance-summary').style.display = 'block';
+                        document.getElementById('view-att-present').textContent = (data.presentDays || 0).toFixed(1);
+                        document.getElementById('view-att-absent').textContent = (data.absentDays || 0).toFixed(1);
+                        document.getElementById('view-att-paid').textContent = (data.paidLeaveDays || 0).toFixed(1);
+                        document.getElementById('view-att-unpaid').textContent = (data.unpaidLeaveDays || 0).toFixed(1);
+                        document.getElementById('view-att-remaining').textContent = (data.paidLeaveDays || 0).toFixed(1);
+                    }
+                } catch (e) { 
+                    console.error('Failed to load attendance summary from AttendanceEngine', e);
+                    document.getElementById('view-attendance-summary').style.display = 'none';
+                }
+            }
+            
             // Show balance calculation note for pending leaves
             const balanceNoteEl = document.getElementById('view-balance-note');
             if (balanceNoteEl) {
@@ -660,6 +966,19 @@
             resetModal();
         }
         
+        async function clearAllLeaves() {
+            if (!confirm('Are you sure you want to delete ALL leave records? This action cannot be undone.')) return;
+            try {
+                const res = await auth.apiCall('/api/leaves/clear-all', {
+                    method: 'DELETE'
+                });
+                if (res && res.ok) {
+                    auth.showNotification('All leave records deleted successfully', 'success');
+                    loadLeaves();
+                }
+            } catch (e) { auth.showNotification(e.message, 'error'); }
+        }
+        
         function resetModal() {
             document.getElementById('leave-form').reset();
             document.getElementById('selected-employee-id').value = '';
@@ -667,6 +986,7 @@
             document.getElementById('employee-dropdown').style.display = 'none';
             document.getElementById('employee-info-card').style.display = 'none';
             document.getElementById('leave-summary-card').style.display = 'none';
+            document.getElementById('paid-leave-balance-card').style.display = 'none';
             document.getElementById('attendance-summary-card').style.display = 'none';
             document.getElementById('calculation-preview').style.display = 'none';
             document.getElementById('warning-section').style.display = 'none';
@@ -747,11 +1067,28 @@
             // Calculate and show probation status
             await loadEmployeeProbationStatus(emp);
             
-            // Load leave balance
-            await loadEmployeeLeaveBalance(emp.id);
+            // CRITICAL FIX: Detect month from selected dates or default to current month
+            const startDateInput = document.getElementById('start-date').value;
+            let month, year;
+            if (startDateInput) {
+                const d = new Date(startDateInput);
+                month = d.getMonth() + 1;
+                year = d.getFullYear();
+            } else {
+                const today = new Date();
+                month = today.getMonth() + 1;
+                year = today.getFullYear();
+            }
+            currentMonthContext = { month, year };
             
-            // Load attendance summary
-            await loadEmployeeAttendance(emp.id);
+            // Load leave balance for detected month
+            await loadEmployeeLeaveBalance(emp.id, month, year);
+            
+            // Load attendance summary for detected month
+            await loadEmployeeAttendance(emp.id, month, year);
+            
+            // Show month context banner
+            showMonthContext(month, year);
             
             // Update calculation if dates are already filled
             updateLeaveCalculation();
@@ -786,123 +1123,133 @@
             }
         }
         
-        // Load employee leave balance
-        async function loadEmployeeLeaveBalance(employeeId) {
+        // Track current month context
+        let currentMonthContext = null;
+
+        // Load employee leave balance for specific month (month-aware)
+        async function loadEmployeeLeaveBalance(employeeId, month, year) {
             try {
-                const res = await auth.apiCall(`/api/leaves/balance/${employeeId}`);
+                const res = await auth.apiCall(`/api/dashboard/leave-balance/${employeeId}?month=${month}&year=${year}`);
                 if (res && res.ok) {
                     employeeLeaveBalance = await res.json();
                     
+                    // DEBUG: Log what API returned
+                    console.log('API Response:', JSON.stringify(employeeLeaveBalance, null, 2));
+
                     document.getElementById('leave-summary-card').style.display = 'block';
-                    document.getElementById('leave-earned').textContent = employeeLeaveBalance.totalEarnedLeaves || 0;
-                    // Show used leaves with 1 decimal place to display half-day values (e.g., 2.5)
-                    const usedLeaves = employeeLeaveBalance.usedLeaves || 0;
-                    document.getElementById('leave-used').textContent = Number(usedLeaves).toFixed(1);
-                    const availableLeaves = employeeLeaveBalance.availableLeaves || 0;
-                    document.getElementById('leave-remaining').textContent = Number(availableLeaves).toFixed(1);
-                    const unpaidLeaves = employeeLeaveBalance.unpaidLeaves || 0;
-                    document.getElementById('leave-unpaid').textContent = Number(unpaidLeaves).toFixed(1);
-                    document.getElementById('leave-cycle').textContent = `Cycle ${employeeLeaveBalance.cycle || 1} - ${employeeLeaveBalance.year || new Date().getFullYear()}`;
+                    // Use correct field names from API response
+                    const totalEarned = employeeLeaveBalance.totalEarned || 0;
+                    const used = employeeLeaveBalance.used || 0;
+                    const remaining = employeeLeaveBalance.remaining || 0;
+                    
+                    // DEBUG: Log API values
+                    console.log(`API VALUES -> Total Earned: ${totalEarned}, Used: ${used}, Remaining: ${remaining}`);
+                    
+                    // CRITICAL FIX: Display correct values for new field names
+                    document.getElementById('leave-total-earned').textContent = Number(totalEarned).toFixed(1); // Total Earned: 7.5
+                    document.getElementById('leave-used').textContent = Number(used).toFixed(1); // Used: 4.0
+                    document.getElementById('leave-remaining').textContent = Number(remaining).toFixed(1); // Remaining: 3.5
+                    document.getElementById('leave-cycle').textContent = employeeLeaveBalance.month || `Month ${month} - ${year}`;
                 }
-            } catch (e) { console.error('Failed to load leave balance', e); }
+            } catch (e) { console.error('Failed to load leave balance for month', e); }
         }
         
-        // Load employee attendance for current month
-        async function loadEmployeeAttendance(employeeId) {
+        // Load employee attendance for specific month using AttendanceEngine (month-aware)
+        async function loadEmployeeAttendance(employeeId, month, year) {
             try {
-                const today = new Date();
-                const month = today.getMonth() + 1;
-                const year = today.getFullYear();
-                
-                // Fetch attendance and approved leaves
-                const [attRes, leaveRes] = await Promise.all([
-                    auth.apiCall(`/api/attendance/employee/${employeeId}?month=${month}&year=${year}`),
-                    auth.apiCall(`/api/leaves/employee/${employeeId}?year=${year}&month=${month}&status=APPROVED`)
-                ]);
-                
-                let present = 0, absent = 0, leave = 0, halfDay = 0;
-                let approvedLeaveDays = 0, approvedHalfDays = 0, totalHalfDayValue = 0;
-                
-                // Process attendance data
-                if (attRes && attRes.ok) {
-                    const attendance = await attRes.json();
-                    employeeAttendance = attendance;
-                    
-                    attendance.forEach(a => {
-                        if (a.status === 'PRESENT') present++;
-                        else if (a.status === 'ABSENT') absent++;
-                        else if (a.status === 'ON_LEAVE') leave++;
-                        else if (a.status === 'HALF_DAY') halfDay++;
-                    });
+                // FIXED: Use AttendanceEngine API with month context for consistent calculation
+                const res = await auth.apiCall(`/api/dashboard/attendance/${employeeId}?month=${month}&year=${year}`);
+                if (!res || !res.ok) {
+                    console.error('Failed to fetch attendance summary from AttendanceEngine');
+                    return;
                 }
-                
-                // Process approved leaves data
-                if (leaveRes && leaveRes.ok) {
-                    const approvedLeaves = await leaveRes.json();
-                    approvedLeaves.forEach(l => {
-                        if (l.isHalfDay) {
-                            approvedHalfDays++;
-                            totalHalfDayValue += 0.5;
-                        } else {
-                            approvedLeaveDays += l.totalDays || 1;
-                        }
-                    });
-                }
-                
+
+                const data = await res.json();
+                const presentDays = data.presentDays || 0;
+                const absentDays = data.absentDays || 0;
+                const paidLeaveDays = data.paidLeaveDays || 0;
+                const unpaidLeaveDays = data.unpaidLeaveDays || 0;
+
+                console.log('AttendanceEngine data:', { presentDays, absentDays, paidLeaveDays, unpaidLeaveDays });
+
+                // Display the data
                 document.getElementById('attendance-summary-card').style.display = 'block';
-                document.getElementById('att-present').textContent = present;
-                document.getElementById('att-absent').textContent = absent;
-                document.getElementById('att-leave').textContent = approvedLeaveDays > 0 ? approvedLeaveDays : leave;
-                // Show half-days as count(total) format: e.g., "2(1.0)" for 2 half-days = 1.0 days
-                const halfDayDisplay = approvedHalfDays > 0 
-                    ? `${approvedHalfDays}(${totalHalfDayValue.toFixed(1)})` 
-                    : (halfDay > 0 ? `${halfDay}(${(halfDay * 0.5).toFixed(1)})` : '0');
-                document.getElementById('att-half').textContent = halfDayDisplay;
-                
-                // Show helpful note about leaves and absences
+                document.getElementById('att-present').textContent = presentDays.toFixed(1);
+                document.getElementById('att-absent').textContent = absentDays.toFixed(1);
+                document.getElementById('att-paid').textContent = paidLeaveDays.toFixed(1);
+                document.getElementById('att-unpaid').textContent = unpaidLeaveDays.toFixed(1);
+
+                // Update Leave Balance Unpaid
+                const leaveUnpaidEl = document.getElementById('leave-unpaid');
+                if (leaveUnpaidEl && unpaidLeaveDays > 0) {
+                    leaveUnpaidEl.textContent = unpaidLeaveDays.toFixed(1);
+                }
+
+                // Show helpful note
                 const noteEl = document.getElementById('attendance-note');
-                const totalLeaveDays = approvedLeaveDays + totalHalfDayValue;
-                if (absent > 0 && totalLeaveDays === 0) {
-                    noteEl.textContent = `${absent} absence(s) will be deducted from salary as unpaid leave (no approved leave application found)`;
-                } else if (absent > 0 && totalLeaveDays > 0) {
-                    noteEl.textContent = `${totalLeaveDays.toFixed(1)} day(s) covered by approved leave, ${absent} absence(s) will be unpaid`;
-                } else if (totalLeaveDays > 0) {
-                    noteEl.textContent = `${totalLeaveDays.toFixed(1)} day(s) covered by approved leave application`;
+                const totalUnpaid = unpaidLeaveDays + absentDays;
+                if (totalUnpaid > 0) {
+                    noteEl.textContent = `${totalUnpaid.toFixed(1)} day(s) will be deducted from salary (Absent: ${absentDays.toFixed(1)}, Unpaid Leave: ${unpaidLeaveDays.toFixed(1)})`;
+                } else if (paidLeaveDays > 0) {
+                    noteEl.textContent = `${paidLeaveDays.toFixed(1)} day(s) covered by approved leave application`;
                 } else {
                     noteEl.textContent = '';
                 }
-            } catch (e) { console.error('Failed to load attendance', e); }
+            } catch (e) { 
+                console.error('Failed to load attendance from AttendanceEngine', e); 
+            }
         }
         
-        // Date and half-day change handlers for calculation
+        // Date change handlers for calculation
         document.getElementById('start-date').addEventListener('change', updateLeaveCalculation);
         document.getElementById('end-date').addEventListener('change', updateLeaveCalculation);
-        document.getElementById('is-half-day').addEventListener('change', updateLeaveCalculation);
         
-        // Real-time leave calculation
-        function updateLeaveCalculation() {
+        // Toggle half type field visibility
+        document.getElementById('is-half-day').addEventListener('change', function() {
+            document.getElementById('half-type-container').style.display = this.checked ? 'block' : 'none';
+            updateLeaveCalculation();
+        });
+        
+        // Real-time leave calculation with month context detection
+        async function updateLeaveCalculation() {
             const startDate = document.getElementById('start-date').value;
             const endDate = document.getElementById('end-date').value;
             const isHalfDay = document.getElementById('is-half-day').checked;
             
             if (!startDate || !endDate || !selectedEmployee) {
                 document.getElementById('calculation-preview').style.display = 'none';
-                document.getElementById('warning-section').style.display = 'none';
                 return;
             }
             
+            // Parse dates
             const start = new Date(startDate);
             const end = new Date(endDate);
             
-            if (end < start) return;
-            
-            // Calculate days
-            let totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-            if (isHalfDay) {
-                totalDays = 0.5;
+            if (end < start) {
+                document.getElementById('calculation-preview').style.display = 'none';
+                return;
             }
             
-            // Determine paid/unpaid
+            // CRITICAL FIX: Detect if month context has changed
+            const newMonth = start.getMonth() + 1;
+            const newYear = start.getFullYear();
+            
+            if (!currentMonthContext || 
+                currentMonthContext.month !== newMonth || 
+                currentMonthContext.year !== newYear) {
+                // Month changed - reload all data for new month context
+                currentMonthContext = { month: newMonth, year: newYear };
+                console.log(`Month context changed to ${newMonth}/${newYear}, reloading data...`);
+                
+                await loadEmployeeLeaveBalance(selectedEmployee.id, newMonth, newYear);
+                await loadEmployeeAttendance(selectedEmployee.id, newMonth, newYear);
+                showMonthContext(newMonth, newYear);
+            }
+            
+            // Calculate days EXCLUDING Sundays
+            let totalDays = isHalfDay ? 0.5 : countDaysExcludingSundays(startDate, endDate);
+            
+            // Determine paid/unpaid using month-specific balance
             let paidDays = 0;
             let unpaidDays = 0;
             let message = '';
@@ -921,22 +1268,17 @@
                 message = 'Employee is in probation. All leaves will be unpaid.';
                 showProbationWarning = true;
             } else {
-                const availableBalance = employeeLeaveBalance ? (employeeLeaveBalance.availableLeaves || 0) : 0;
-                const maxPaidAtOnce = 3;
-                const maxPaid = Math.min(maxPaidAtOnce, availableBalance);
+                // Calculate based on month-specific available balance
+                const availableBalance = employeeLeaveBalance ? (employeeLeaveBalance.remaining || 0) : 0;
                 
-                if (isHalfDay) {
-                    paidDays = 0.5;
-                    unpaidDays = 0;
-                    message = 'Half day leave - 0.5 day will be deducted.';
-                } else if (totalDays <= maxPaid) {
+                if (totalDays <= availableBalance) {
                     paidDays = totalDays;
                     unpaidDays = 0;
                     message = `All ${totalDays} day(s) will be paid leave.`;
                 } else {
-                    paidDays = maxPaid;
-                    unpaidDays = totalDays - maxPaid;
-                    message = `${paidDays} day(s) paid (max 3), ${unpaidDays} day(s) unpaid.`;
+                    paidDays = availableBalance;
+                    unpaidDays = totalDays - availableBalance;
+                    message = `${paidDays.toFixed(1)} day(s) will be paid (from ${availableBalance.toFixed(1)} available). ${unpaidDays.toFixed(1)} day(s) will be unpaid.`;
                     showExcessWarning = true;
                 }
             }
@@ -945,15 +1287,84 @@
             const salary = selectedEmployee.salary || 0;
             const workingDays = 26;
             const perDaySalary = salary / workingDays;
-            const deduction = unpaidDays * perDaySalary + (isHalfDay ? perDaySalary * 0.5 : 0);
+            const deduction = unpaidDays * perDaySalary;
             
             // Update calculation preview
             document.getElementById('calculation-preview').style.display = 'block';
-            document.getElementById('calc-total').textContent = totalDays;
-            document.getElementById('calc-paid').textContent = paidDays;
-            document.getElementById('calc-unpaid').textContent = unpaidDays;
+            document.getElementById('calc-total').textContent = totalDays.toFixed(1);
+            document.getElementById('calc-paid').textContent = paidDays.toFixed(1);
+            document.getElementById('calc-unpaid').textContent = unpaidDays.toFixed(1);
             document.getElementById('calc-deduction').textContent = '₹' + deduction.toFixed(2);
             document.getElementById('calc-message').textContent = message;
+            
+            // CRITICAL FIX: Calculate leave balance correctly with month-aware data
+            if (employeeLeaveBalance) {
+                // Use API's calculated remaining value (totalEarned - totalUsed till date)
+                const currentRemaining = employeeLeaveBalance.remaining || 0;
+                const currentlyUsed = paidDays; // This application
+                
+                // DEBUG
+                console.log(`Balance Preview: currentRemaining=${currentRemaining}, paidDays=${paidDays}, remainingAfter=${currentRemaining - currentlyUsed}`);
+                
+                // Preview: remaining after this application
+                const remainingAfter = Math.max(0, currentRemaining - currentlyUsed);
+                
+                document.getElementById('paid-leave-balance-card').style.display = 'block';
+                // Show breakdown: Current remaining -> After this application
+                document.getElementById('bal-earned').textContent = currentRemaining.toFixed(1);
+                document.getElementById('bal-used-calc').textContent = currentlyUsed.toFixed(1);
+                document.getElementById('bal-remaining').textContent = remainingAfter.toFixed(1);
+                
+                // CRITICAL FIX: Disable submit if insufficient balance
+                const submitBtn = document.querySelector('#leave-form button[type="submit"]');
+                if (submitBtn) {
+                    if (remainingAfter < 0) {
+                        submitBtn.disabled = true;
+                        submitBtn.style.opacity = '0.5';
+                        submitBtn.title = 'Insufficient paid leave balance';
+                    } else {
+                        submitBtn.disabled = false;
+                        submitBtn.style.opacity = '1';
+                        submitBtn.title = '';
+                    }
+                }
+                
+                // Update probation status
+                const probEl = document.getElementById('bal-probation');
+                const probLabel = probEl.parentElement.querySelector('p:first-child');
+                if (isInProbation) {
+                    const joinDate = selectedEmployee.joiningDate ? new Date(selectedEmployee.joiningDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A';
+                    const probationMonths = selectedEmployee.probationPeriodMonths || 3;
+                    const completionDate = selectedEmployee.joiningDate ? new Date(new Date(selectedEmployee.joiningDate).setMonth(new Date(selectedEmployee.joiningDate).getMonth() + probationMonths)).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A';
+                    probEl.innerHTML = `<div style="font-size: 0.85rem;">⏳ In Progress (${probationMonths} months)</div><div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Joined: ${joinDate}<br>Complete: ${completionDate}</div>`;
+                    probEl.style.color = '#dc2626';
+                    probLabel.textContent = 'Probation Status';
+                } else {
+                    const joinDate = selectedEmployee.joiningDate ? new Date(selectedEmployee.joiningDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A';
+                    const probationMonths = selectedEmployee.probationPeriodMonths || 3;
+                    const completionDate = selectedEmployee.joiningDate ? new Date(new Date(selectedEmployee.joiningDate).setMonth(new Date(selectedEmployee.joiningDate).getMonth() + probationMonths)).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A';
+                    probEl.innerHTML = `<div style="font-size: 0.85rem;">✅ Completed (${probationMonths} months)</div><div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Joined: ${joinDate}<br>Completed: ${completionDate}</div>`;
+                    probEl.style.color = '#15803d';
+                    probLabel.textContent = 'Probation Status';
+                }
+                
+                const balanceNote = document.getElementById('balance-note');
+                if (remainingAfter < 0) {
+                    balanceNote.innerHTML = `❌ <strong>Cannot apply:</strong> Insufficient paid leave balance.<br>Available: ${totalAvailable.toFixed(1)}, Requested: ${totalUsed.toFixed(1)}`;
+                    balanceNote.style.color = '#dc2626';
+                } else if (remainingAfter === 0 && currentlyUsed > 0) {
+                    balanceNote.innerHTML = `⚠️ <strong>Warning:</strong> This will use ALL remaining paid leave balance (${totalAvailable.toFixed(1)} days).`;
+                    balanceNote.style.color = '#f59e0b';
+                } else if (currentlyUsed > 0) {
+                    balanceNote.innerHTML = `✓ <strong>Impact Preview:</strong> This uses ${currentlyUsed.toFixed(1)} day(s).<br>Remaining after approval: <strong>${remainingAfter.toFixed(1)}</strong> day(s)`;
+                    balanceNote.style.color = '#166534';
+                } else {
+                    // Use API's remaining value directly - backend is source of truth
+                    const availableBalance = employeeLeaveBalance.remaining || 0;
+                    balanceNote.textContent = `${availableBalance.toFixed(1)} paid leave day(s) available.`;
+                    balanceNote.style.color = '#166534';
+                }
+            }
             
             // Update warnings
             document.getElementById('warning-section').style.display = (showProbationWarning || showExcessWarning) ? 'block' : 'none';
@@ -976,14 +1387,18 @@
             
             const startDate = document.getElementById('start-date').value;
             const endDate = document.getElementById('end-date').value;
+            const isHalfDay = document.getElementById('is-half-day').checked;
+            const halfType = document.getElementById('half-type').value;
             
             if (new Date(endDate) < new Date(startDate)) {
                 return auth.showNotification('End date cannot be before start date', 'error');
             }
             
-            const totalDays = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) + 1;
-            if (totalDays > 10) {
-                if (!confirm(`You are applying for ${totalDays} days. Excess days will be unpaid. Continue?`)) {
+            // Calculate total days EXCLUDING Sundays
+            let totalDays = isHalfDay ? 0.5 : countDaysExcludingSundays(startDate, endDate);
+            
+            if (totalDays > 10 && !isHalfDay) {
+                if (!confirm(`You are applying for ${totalDays} days (Sundays excluded). Excess days will be unpaid. Continue?`)) {
                     return;
                 }
             }
@@ -998,8 +1413,9 @@
                 startDate: formattedStartDate,
                 endDate: formattedEndDate,
                 reason: document.getElementById('reason').value,
-                isHalfDay: document.getElementById('is-half-day').checked,
-                totalDays: document.getElementById('is-half-day').checked ? 1 : totalDays
+                totalDays: totalDays,
+                isHalfDay: isHalfDay,
+                halfType: isHalfDay ? halfType : null
             };
             
             console.log('Submitting leave request:', requestBody);
@@ -1041,11 +1457,19 @@
         async function approveLeave(id) {
             try {
                 const res = await auth.apiCall(`/api/leaves/approve/${id}?approvedBy=Admin`, { method: 'POST' });
+                console.log('Approve response:', res);
                 if (res && res.ok) {
                     auth.showNotification('Leave approved', 'success');
                     loadLeaves();
+                } else {
+                    const errorText = await res.text();
+                    console.log('Error text:', errorText);
+                    auth.showNotification(errorText || 'Failed to approve leave', 'error');
                 }
-            } catch (e) { auth.showNotification(e.message, 'error'); }
+            } catch (e) {
+                console.error('Approve error:', e);
+                auth.showNotification(e.message, 'error');
+            }
         }
         
         async function rejectLeave(id) {
@@ -1059,6 +1483,106 @@
                 }
             } catch (e) { auth.showNotification(e.message, 'error'); }
         }
+
+        async function cancelLeave(id) {
+            const reason = prompt('Enter cancellation reason (optional):');
+            try {
+                const url = reason 
+                    ? `/api/leaves/cancel/${id}?reason=${encodeURIComponent(reason)}`
+                    : `/api/leaves/cancel/${id}`;
+                const res = await auth.apiCall(url, { method: 'POST' });
+                if (res && res.ok) {
+                    auth.showNotification('Leave cancelled successfully', 'success');
+                    loadLeaves();
+                } else {
+                    const errorText = await res.text();
+                    auth.showNotification(errorText || 'Failed to cancel leave', 'error');
+                }
+            } catch (e) {
+                console.error('Cancel error:', e);
+                auth.showNotification(e.message, 'error');
+            }
+        }
+
+        async function openModifyModal(id) {
+            try {
+                const res = await auth.apiCall(`/api/leaves/${id}`);
+                if (!res || !res.ok) {
+                    auth.showNotification('Failed to fetch leave details', 'error');
+                    return;
+                }
+                const leave = await res.json();
+                
+                // Populate modify modal with current leave data
+                document.getElementById('modify-leave-id').value = leave.id;
+                document.getElementById('modify-start-date').value = leave.startDate;
+                document.getElementById('modify-end-date').value = leave.endDate;
+                document.getElementById('modify-reason').value = leave.reason || '';
+                document.getElementById('modify-is-half-day').checked = leave.isHalfDay || false;
+                document.getElementById('modify-half-type').value = leave.halfType || 'FIRST_HALF';
+                
+                // Show/hide half type field
+                document.getElementById('modify-half-type-container').style.display = leave.isHalfDay ? 'block' : 'none';
+                
+                document.getElementById('modify-leave-modal').classList.add('active');
+            } catch (e) {
+                console.error('Error fetching leave details:', e);
+                auth.showNotification('Failed to load leave details', 'error');
+            }
+        }
+
+        function closeModifyModal() {
+            document.getElementById('modify-leave-modal').classList.remove('active');
+        }
+
+        async function submitModifyLeave() {
+            const leaveId = document.getElementById('modify-leave-id').value;
+            const startDate = document.getElementById('modify-start-date').value;
+            const endDate = document.getElementById('modify-end-date').value;
+            const reason = document.getElementById('modify-reason').value;
+            const isHalfDay = document.getElementById('modify-is-half-day').checked;
+            const halfType = document.getElementById('modify-half-type').value;
+            const modifyReason = prompt('Enter reason for modification (optional):');
+
+            if (!startDate || !endDate) {
+                auth.showNotification('Start date and end date are required', 'error');
+                return;
+            }
+
+            try {
+                const url = modifyReason 
+                    ? `/api/leaves/modify/${leaveId}?reason=${encodeURIComponent(modifyReason)}`
+                    : `/api/leaves/modify/${leaveId}`;
+                
+                const res = await auth.apiCall(url, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        startDate: startDate,
+                        endDate: endDate,
+                        reason: reason,
+                        isHalfDay: isHalfDay,
+                        halfType: halfType
+                    })
+                });
+
+                if (res && res.ok) {
+                    auth.showNotification('Leave modified successfully', 'success');
+                    closeModifyModal();
+                    loadLeaves();
+                } else {
+                    const errorText = await res.text();
+                    auth.showNotification(errorText || 'Failed to modify leave', 'error');
+                }
+            } catch (e) {
+                console.error('Modify error:', e);
+                auth.showNotification(e.message, 'error');
+            }
+        }
+
+        // Toggle half type field visibility
+        document.getElementById('modify-is-half-day').addEventListener('change', function() {
+            document.getElementById('modify-half-type-container').style.display = this.checked ? 'block' : 'none';
+        });
         
         loadLeaves();
     </script>

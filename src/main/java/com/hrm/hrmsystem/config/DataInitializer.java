@@ -251,12 +251,11 @@ public class DataInitializer {
                     employeeUsersCreated++;
                     System.out.println("✓ Created user for employee: " + email + " / " + defaultPassword);
                 } else {
-                    // Update existing user
-                    user.setPassword(encodedPassword);
+                    // Update existing user - but DON'T overwrite password
                     user.setIsActive(true);
                     user.setEmployee(emp);
                     employeeUsersUpdated++;
-                    System.out.println("✓ Updated user for employee: " + email + " / " + defaultPassword);
+                    System.out.println("✓ Updated user for employee: " + email + " (password preserved)");
                 }
                 
                 userRepository.save(user);

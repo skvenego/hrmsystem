@@ -35,48 +35,83 @@
 
             <!-- Content Area -->
             <div class="content-area">
-                <div class="page-header">
-                    <button onclick="openModal()" class="btn-primary">+ Add Department</button>
-                </div>
+                <div class="page-content">
+                    <!-- Stats Cards -->
+                    <div class="stats-grid" style="margin-bottom: 2rem; grid-template-columns: repeat(3, 1fr);">
+                        <div class="stat-card">
+                            <div class="stat-icon blue">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 21h18M5 21V7l8-4 8 4v14M9 21v-6h6v6"/>
+                                </svg>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="stat-departments">0</h3>
+                                <p>Total Departments</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon green">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="stat-employees">0</h3>
+                                <p>Total Employees</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon purple">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                                    <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                                </svg>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="stat-avg">0</h3>
+                                <p>Avg Employees/Dept</p>
+                            </div>
+                        </div>
+                    </div>
 
-            <div class="page-content">
-                <div class="card">
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr><th>ID</th><th>Department Name</th><th>Code</th><th>Employees</th><th>Actions</th></tr>
-                            </thead>
-                            <tbody id="dept-table">
-                                <tr><td colspan="5" style="text-align: center; padding: 2rem;">Loading...</td></tr>
-                            </tbody>
-                        </table>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="font-size: 1.25rem; font-weight: 600; color: #1f2937;">Department List</h2>
+                        <button id="add-dept-btn" class="btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.625rem 1.25rem; border-radius: 8px; font-size: 0.875rem; font-weight: 500; cursor: pointer;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="5" y2="19"></line><line x1="5" x2="19" y1="12" y2="12"></line></svg>
+                            Add Department
+                        </button>
+                    </div>
+
+                    <!-- Department Cards Grid -->
+                    <div id="departments-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem;">
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: #6b7280;">Loading...</div>
                     </div>
                 </div>
-            </div>
             </div>
         </main>
     </div>
 
-    <div id="dept-modal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Add Department</h3>
-                <button onclick="closeModal()" class="modal-close">&times;</button>
+    <div id="dept-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="modal-content" style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="font-size: 1.25rem; font-weight: 600; color: #1f2937;">Add Department</h3>
+                <button onclick="closeModal()" style="background: none; border: none; font-size: 1.5rem; color: #6b7280; cursor: pointer; padding: 0.25rem; border-radius: 4px; line-height: 1;">&times;</button>
             </div>
             <form id="dept-form">
-                <div class="form-group">
-                    <label class="form-label">Department Name</label>
-                    <input type="text" name="name" class="form-input" required>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label" style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Department Name</label>
+                    <input type="text" name="name" class="form-input" required style="width: 100%; padding: 0.625rem 0.875rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.875rem; box-sizing: border-box;">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Department Code</label>
-                    <input type="text" name="code" class="form-input" required>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label" style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Department Code</label>
+                    <input type="text" name="code" class="form-input" required style="width: 100%; padding: 0.625rem 0.875rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.875rem; box-sizing: border-box;">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Description</label>
-                    <textarea name="description" class="form-input" rows="2"></textarea>
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label class="form-label" style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Description</label>
+                    <textarea name="description" class="form-input" rows="3" style="width: 100%; padding: 0.625rem 0.875rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.875rem; box-sizing: border-box; resize: vertical;"></textarea>
                 </div>
-                <button type="submit" class="btn-auth">Save Department</button>
+                <button type="submit" class="btn-auth" style="width: 100%; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s;">Save Department</button>
             </form>
         </div>
     </div>
@@ -104,53 +139,85 @@
         async function loadDepartments() {
             try {
                 console.log('Loading departments...');
-                console.log('Current user:', auth.getCurrentUser());
-                console.log('Token:', localStorage.getItem('token'));
-                
                 const res = await auth.apiCall('/api/departments');
-                console.log('Response:', res);
-                
-                if (!res) {
-                    document.getElementById('dept-table').innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem; color: red;">Authentication failed</td></tr>';
+
+                if (!res || !res.ok) {
+                    document.getElementById('departments-grid').innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: red;">Error loading departments</div>';
                     return;
                 }
-                
-                if (!res.ok) {
-                    const resClone = res.clone();
-                    const errorText = await resClone.text();
-                    console.error('Error response:', errorText);
-                    document.getElementById('dept-table').innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 2rem; color: red;">Error: ${res.status} - ${errorText.substring(0, 100)}</td></tr>`;
-                    return;
-                }
-                
+
                 const data = await res.json();
                 console.log('Department data:', data);
-                
-                const tbody = document.getElementById('dept-table');
+
+                // Update stats
+                const totalDepts = data.length;
+                const totalEmployees = data.reduce((sum, d) => sum + (d.employeeCount || 0), 0);
+                const avgEmployees = totalDepts > 0 ? Math.round(totalEmployees / totalDepts) : 0;
+                document.getElementById('stat-departments').textContent = totalDepts;
+                document.getElementById('stat-employees').textContent = totalEmployees;
+                document.getElementById('stat-avg').textContent = avgEmployees;
+
+                const grid = document.getElementById('departments-grid');
                 if (!data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">No departments</td></tr>';
+                    grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: #6b7280;">No departments found</div>';
                     return;
                 }
-                
-                tbody.innerHTML = data.map(d => `
-                    <tr>
-                        <td>${d.id}</td>
-                        <td>${d.name}</td>
-                        <td>${d.code || '-'}</td>
-                        <td>${d.employeeCount || 0}</td>
-                        <td>
-                            <button onclick="deleteDept(${d.id})" class="btn-small" style="background: #fee2e2; color: #991b1b;">Delete</button>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (e) { 
+
+                const colors = [
+                    { bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', icon: 'briefcase' },
+                    { bg: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', icon: 'users' },
+                    { bg: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', icon: 'code' },
+                    { bg: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', icon: 'trending-up' },
+                    { bg: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', icon: 'star' },
+                    { bg: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', icon: 'heart' }
+                ];
+
+                grid.innerHTML = data.map((d, index) => {
+                    const color = colors[index % colors.length];
+                    return `
+                        <div style="background: white; border-radius: 6px; padding: 0.75rem; box-shadow: 0 1px 2px rgba(0,0,0,0.08); border: 1px solid #e5e7eb; transition: all 0.2s;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div style="width: 32px; height: 32px; border-radius: 6px; background: ${color.bg}; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0;">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M3 21h18M5 21V7l8-4 8 4v14M9 21v-6h6v6"/>
+                                        </svg>
+                                    </div>
+                                    <h3 style="font-size: 0.875rem; font-weight: 600; color: #1f2937; line-height: 1.2;">${d.name}</h3>
+                                </div>
+                                <button onclick="deleteDept(${d.id})" style="background: #fee2e2; color: #dc2626; border: none; padding: 0.25rem; border-radius: 4px; cursor: pointer;" title="Delete">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                </button>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="background: #f3f4f6; color: #6b7280; padding: 0.1rem 0.4rem; border-radius: 9999px; font-size: 0.65rem; font-weight: 500;">${d.code || '-'}</span>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 0.6rem; color: #6b7280;">Employees</div>
+                                    <div style="font-size: 0.9rem; font-weight: 600; color: #1f2937;">${d.employeeCount || 0}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
                 console.error('Load departments error:', e);
-                document.getElementById('dept-table').innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 2rem; color: red;">Error: ${e.message}</td></tr>`;
+                document.getElementById('departments-grid').innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: red;">Error: ${e.message}</div>`;
             }
         }
         
-        function openModal() { document.getElementById('dept-modal').classList.add('active'); }
-        function closeModal() { document.getElementById('dept-modal').classList.remove('active'); }
+        function openModal() { 
+            console.log('openModal called');
+            const modal = document.getElementById('dept-modal');
+            console.log('Modal element:', modal);
+            modal.style.display = 'flex';
+            modal.classList.add('active'); 
+            console.log('Modal display set to flex');
+        }
+        function closeModal() { 
+            const modal = document.getElementById('dept-modal');
+            modal.style.display = 'none';
+            modal.classList.remove('active'); 
+        }
         
         document.getElementById('dept-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -188,6 +255,13 @@
         function logout() { auth.logout(); }
 
         loadDepartments();
+
+        // Add event listener for Add Department button
+        document.getElementById('add-dept-btn')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Add Department button clicked');
+            openModal();
+        });
     </script>
 </body>
 </html>

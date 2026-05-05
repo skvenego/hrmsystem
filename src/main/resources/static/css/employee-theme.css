@@ -645,6 +645,12 @@ textarea.form-control {
 .status-badge.half_day { background: #fef3c7; color: #92400e; }
 .status-badge.half_day::before { background: #f59e0b; }
 
+.status-badge.pending { background: #fef9c3; color: #854d0e; }
+.status-badge.pending::before { background: #eab308; }
+
+.status-badge.off { background: #e5e7eb; color: #374151; }
+.status-badge.off::before { background: #6b7280; }
+
 /* Alerts */
 .alert {
   padding: 1rem 1.25rem;
