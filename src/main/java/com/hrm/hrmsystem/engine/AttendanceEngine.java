@@ -7,6 +7,7 @@ import com.hrm.hrmsystem.repository.AttendanceRepository;
 import com.hrm.hrmsystem.repository.EmployeeRepository;
 import com.hrm.hrmsystem.repository.LeaveRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -31,6 +32,10 @@ public class AttendanceEngine {
     private final AttendanceRepository attendanceRepository;
     private final EmployeeRepository employeeRepository;
 
+    // 🔥 SINGLE SOURCE OF TRUTH CONSTANTS
+    public static final int WORKING_DAYS_PER_MONTH = 26;
+    public static final double LEAVE_ACCRUAL_RATE = 1.5;
+
     /**
      * 🔥 MAIN CALCULATION METHOD
      * Calculates attendance summary for an employee for a specific month
@@ -46,8 +51,9 @@ public class AttendanceEngine {
 
         // Fetch all data upfront to avoid N+1 queries
         // STEP 14: Fix leave fetching - include only leaves that overlap with the calculation month
+        // IMPORTANT: Only count APPROVED leaves - REJECTED leaves are excluded from all calculations
         List<Leave> approvedLeaves = leaveRepository.findByEmployeeId(employeeId).stream()
-                .filter(l -> l.getStatus() == Leave.LeaveStatus.APPROVED)
+                .filter(l -> l.getStatus() == Leave.LeaveStatus.APPROVED) // ONLY APPROVED LEAVES
                 .filter(l -> {
                     // Include leaves that overlap with the calculation month (start to end)
                     LocalDate leaveStart = l.getStartDate();
@@ -79,23 +85,18 @@ public class AttendanceEngine {
             
             // STEP 1: SKIP SUNDAY COMPLETELY
             if (date.getDayOfWeek() == DayOfWeek.SUNDAY) {
-                System.out.println("DEBUG - Skipping Sunday: " + date);
+                continue;
+            }
+
+            // ✅ HARD RULE: salary ignores future completely
+            if (date.isAfter(today)) {
                 continue;
             }
 
             boolean handled = false;
             final LocalDate currentDate = date;
 
-            // 🔥 MODE 1: ACTUAL (FOR SALARY) - ONLY COUNT dates <= TODAY
-            if (date.isAfter(today)) {
-                System.out.println("DEBUG - Skipping future date: " + date);
-                continue;
-            }
-
-            System.out.println("DEBUG - Processing date: " + date);
-
             // STEP 3: CHECK LEAVE (Priority 1) - Leave > Attendance > Unmarked
-            // MODE 1: Only count leaves for dates <= TODAY
             Leave leave = approvedLeaves.stream()
                     .filter(l -> !currentDate.isBefore(l.getStartDate()) && !currentDate.isAfter(l.getEndDate()))
                     .findFirst()
@@ -105,54 +106,64 @@ public class AttendanceEngine {
                 boolean isHalfDay = Boolean.TRUE.equals(leave.getIsHalfDay());
                 double leaveValue = isHalfDay ? 0.5 : 1.0;
 
-                System.out.println("DEBUG - Found leave for date " + currentDate + ": " + leave.getLeaveType() + " (" + leave.getStartDate() + " to " + leave.getEndDate() + ")");
-
-                if (leave.getLeaveType() == Leave.LeaveType.UNPAID) {
-                    // UNPAID LEAVE
-                    result.unpaidLeave += leaveValue;
-                    result.absent += leaveValue;
-                    System.out.println("DEBUG - Added UNPAID leave: " + leaveValue);
+                // ✅ FIX 1: Add fallback for paidDays/unpaidDays
+                // If both are NOT null → use them
+                // If NULL → fallback using leaveType
+                Double frozenPaidDays = leave.getPaidDays();
+                Double frozenUnpaidDays = leave.getUnpaidDays();
+                
+                if (frozenPaidDays != null && frozenUnpaidDays != null && frozenPaidDays + frozenUnpaidDays > 0) {
+                    // Use frozen database values - calculate proportion for this date
+                    double totalFrozenDays = frozenPaidDays + frozenUnpaidDays;
+                    double paidProportion = frozenPaidDays / totalFrozenDays;
+                    double unpaidProportion = frozenUnpaidDays / totalFrozenDays;
+                    
+                    result.paidLeave += leaveValue * paidProportion;
+                    result.unpaidLeave += leaveValue * unpaidProportion;
+                    result.present += leaveValue * paidProportion;  // Paid leave counts as present
+                    result.absent += leaveValue * unpaidProportion;  // Unpaid leave counts as absent
                 } else {
-                    // PAID LEAVE
-                    result.paidLeave += leaveValue;
-                    result.present += leaveValue;  // Paid leave counts as present
-                    System.out.println("DEBUG - Added PAID leave: " + leaveValue);
+                    // ✅ FIX 2: Do NOT skip leave if DB values are null - use fallback
+                    if (Leave.LeaveType.UNPAID.equals(leave.getLeaveType())) {
+                        result.unpaidLeave += leaveValue;
+                        result.absent += leaveValue;  // Unpaid leave counts as absent
+                    } else {
+                        result.paidLeave += leaveValue;
+                        result.present += leaveValue;  // Paid leave counts as present
+                    }
                 }
                 handled = true;
-            } else {
-                System.out.println("DEBUG - No leave found for date: " + currentDate);
             }
 
             // STEP 4: CHECK ATTENDANCE (Priority 2) - only if no leave
             if (!handled) {
                 Attendance att = attendanceMap.get(currentDate);  // STEP 7: Fast lookup
 
-            if (att != null && att.getStatus() != null) {
-                switch (att.getStatus()) {
-                    case PRESENT:
-                    case LATE:
-                        result.present += 1;
-                        break;
-                    case HALF_DAY:
-                        result.present += 0.5;
-                        result.absent += 0.5;
-                        break;
-                    case ABSENT:
-                        result.absent += 1;
-                        result.unpaidLeave += 1;
-                        break;
-                    case PENDING:
-                        // STEP 9: DO NOT COUNT PENDING as absent
-                        break;
-                    case ON_LEAVE:
-                        // Already handled in leave section
-                        break;
-                    default:
-                        result.absent += 1;
-                        result.unpaidLeave += 1;
-                        break;
+                if (att != null && att.getStatus() != null) {
+                    switch (att.getStatus()) {
+                        case PRESENT:
+                        case LATE:
+                            result.present += 1;
+                            break;
+                        case HALF_DAY:
+                            result.present += 0.5;
+                            result.absent += 0.5;
+                            break;
+                        case ABSENT:
+                            result.absent += 1;
+                            break;
+                        case PENDING:
+                            // STEP 9: DO NOT COUNT PENDING as absent
+                            break;
+                        case ON_LEAVE:
+                            // Already handled in leave section
+                            break;
+                        default:
+                            result.absent += 1;
+                            break;
+                    }
+                    handled = true;
                 }
-                handled = true;
             }
 
             // STEP 5: UNMARKED (no attendance record) → ABSENT for payroll
@@ -160,15 +171,13 @@ public class AttendanceEngine {
                 result.absent += 1;
                 result.unpaidLeave += 1;
             }
-            
-            }
         }
 
         return result;
     }
 
     /**
-     * � MODE 2: PLANNED (FOR UI PREVIEW)
+     * �* MODE 2: PLANNED (FOR UI PREVIEW)
      * Used for:
      * - UI display
      * - Leave planning  
@@ -186,9 +195,10 @@ public class AttendanceEngine {
         System.out.println("DEBUG CALCULATE PLANNED - Employee: " + employeeId + ", Month: " + month);
         System.out.println("DEBUG - Date range: " + start + " to " + end);
 
-        // Fetch all approved leaves for the month (including future)
+        // Fetch all approved leaves upfront to avoid N+1 queries
+        // IMPORTANT: Only count APPROVED leaves - REJECTED leaves are excluded from all calculations
         List<Leave> approvedLeaves = leaveRepository.findByEmployeeId(employeeId).stream()
-                .filter(l -> l.getStatus() == Leave.LeaveStatus.APPROVED)
+                .filter(l -> l.getStatus() == Leave.LeaveStatus.APPROVED) // ONLY APPROVED LEAVES
                 .filter(l -> {
                     // Include leaves that overlap with the calculation month
                     LocalDate leaveStart = l.getStartDate();
@@ -215,40 +225,58 @@ public class AttendanceEngine {
 
             final LocalDate currentDate = date;
 
-            // MODE 2: CHECK ALL LEAVES (including future)
+            // MODE 2: CHECK ALL LEAVES (including future) - USE DATABASE VALUES ONLY
             for (Leave leave : approvedLeaves) {
                 if (!currentDate.isBefore(leave.getStartDate()) &&
                     !currentDate.isAfter(leave.getEndDate())) {
 
                     double leaveValue = (leave.getIsHalfDay() != null && leave.getIsHalfDay()) ? 0.5 : 1.0;
 
-                    if (leave.getLeaveType() == Leave.LeaveType.UNPAID) {
-                        result.unpaidLeave += leaveValue;
-                        result.absent += leaveValue;
+                    // ✅ FIX 1: Add fallback for paidDays/unpaidDays
+                    // If both are NOT null → use them
+                    // If NULL → fallback using leaveType
+                    Double frozenPaidDays = leave.getPaidDays();
+                    Double frozenUnpaidDays = leave.getUnpaidDays();
+                    
+                    if (frozenPaidDays != null && frozenUnpaidDays != null && frozenPaidDays + frozenUnpaidDays > 0) {
+                        // Use frozen database values - calculate proportion for this date
+                        double totalFrozenDays = frozenPaidDays + frozenUnpaidDays;
+                        double paidProportion = frozenPaidDays / totalFrozenDays;
+                        double unpaidProportion = frozenUnpaidDays / totalFrozenDays;
+                        
+                        result.paidLeave += leaveValue * paidProportion;
+                        result.unpaidLeave += leaveValue * unpaidProportion;
+                        result.present += leaveValue * paidProportion;  // Paid leave counts as present for UI
+                        result.absent += leaveValue * unpaidProportion;  // Unpaid leave counts as absent for UI
                     } else {
-                        // PAID LEAVE (SICK, CASUAL, etc.)
-                        result.paidLeave += leaveValue;
-                        result.present += leaveValue;  // Paid leave counts as present for UI
+                        // ✅ FIX 2: Do NOT skip leave if DB values are null - use fallback
+                        if (leave.getLeaveType() == Leave.LeaveType.UNPAID) {
+                            result.unpaidLeave += leaveValue;
+                            result.absent += leaveValue;  // Unpaid leave counts as absent for UI
+                            System.out.println("FALLBACK - Unpaid leave (DB values null) for planned: " + leaveValue);
+                        } else {
+                            result.paidLeave += leaveValue;
+                            result.present += leaveValue;  // Paid leave counts as present for UI
+                            System.out.println("FALLBACK - Paid leave (DB values null) for planned: " + leaveValue);
+                        }
                     }
                     break; // Only count one leave per day
                 }
             }
         }
 
-        // MODE 2: PLANNED calculation complete
-
+        // DEBUG: Log result
+        System.out.println("DEBUG - Planned result: " + result);
         return result;
     }
 
     /**
-     * �� SINGLE SOURCE OF TRUTH: Complete cycle leave balance calculation
-     * Calculates earned leaves, used leaves, and unpaid leaves for a given month
      * This is the ONLY place where leave balance calculations should happen
      * 
      * @param employeeId Employee ID
      * @param year Year (e.g., 2026)
      * @param month Month (1-12)
-     * @return LeaveBalanceSummary containing earned, used, and unpaid leaves
+     * @return LeaveBalanceSummary containing used and unpaid leaves only (attendance calculation)
      */
     public LeaveBalanceSummary calculateLeaveBalance(Long employeeId, int year, int month) {
         int cycle = (month <= 6) ? 1 : 2;
@@ -279,27 +307,77 @@ public class AttendanceEngine {
             boolean overlapsCurrentMonth = !leave.getStartDate().isAfter(targetMonthEnd) && 
                                            !leave.getEndDate().isBefore(currentMonthStart);
             
-            if (overlapsCycle || overlapsCurrentMonth) {
-                // Calculate working days in overlap range (exclude Sundays only)
-                boolean isHalfDay = Boolean.TRUE.equals(leave.getIsHalfDay());
+            // ✅ FIXED: Remove double counting - separate cycle and current month logic
+            if (overlapsCycle) {
+                // Calculate working days in cycle overlap range (exclude Sundays only)
+                LocalDate overlapStart = leave.getStartDate().isBefore(cycleStart) ? cycleStart : leave.getStartDate();
+                LocalDate overlapEnd = leave.getEndDate().isAfter(targetMonthEnd) ? targetMonthEnd : leave.getEndDate();
+                double days = countWorkingDays(overlapStart, overlapEnd, Boolean.TRUE.equals(leave.getIsHalfDay()));
                 
-                if (overlapsCycle) {
-                    LocalDate overlapStart = leave.getStartDate().isBefore(cycleStart) ? cycleStart : leave.getStartDate();
-                    LocalDate overlapEnd = leave.getEndDate().isAfter(targetMonthEnd) ? targetMonthEnd : leave.getEndDate();
-                    double days = countWorkingDays(overlapStart, overlapEnd, isHalfDay);
+                // ✅ FIX 1: Add fallback for paidDays/unpaidDays
+                // If both are NOT null → use them
+                // If NULL → fallback using leaveType
+                Double frozenPaidDays = leave.getPaidDays();
+                Double frozenUnpaidDays = leave.getUnpaidDays();
+                
+                if (frozenPaidDays != null && frozenUnpaidDays != null && frozenPaidDays + frozenUnpaidDays > 0) {
+                    // ✅ ADVANCED FIX: Use sequential deduction (HR-style) instead of proportional distribution
+                    // Apply paid days first, then unpaid days sequentially
+                    double remainingPaid = frozenPaidDays;
+                    double remainingUnpaid = frozenUnpaidDays;
+                    double workingDaysToProcess = days;
                     
+                    // Process each working day sequentially
+                    for (int i = 0; i < workingDaysToProcess; i++) {
+                        if (remainingPaid > 0) {
+                            cycleUsedLeaves += 1.0;
+                            remainingPaid--;
+                        } else if (remainingUnpaid > 0) {
+                            cycleUnpaidLeaves += 1.0;
+                            remainingUnpaid--;
+                        }
+                    }
+                } else {
+                    // ✅ FIX 2: Do NOT skip leave if DB values are null - use fallback
                     if (leave.getLeaveType() == Leave.LeaveType.UNPAID) {
                         cycleUnpaidLeaves += days;
                     } else {
                         cycleUsedLeaves += days;
                     }
                 }
+            }
+            
+            if (overlapsCurrentMonth) {
+                // Calculate working days in current month overlap range (exclude Sundays only)
+                LocalDate overlapStart = leave.getStartDate().isBefore(currentMonthStart) ? currentMonthStart : leave.getStartDate();
+                LocalDate overlapEnd = leave.getEndDate().isAfter(targetMonthEnd) ? targetMonthEnd : leave.getEndDate();
+                double days = countWorkingDays(overlapStart, overlapEnd, Boolean.TRUE.equals(leave.getIsHalfDay()));
                 
-                if (overlapsCurrentMonth) {
-                    LocalDate overlapStart = leave.getStartDate().isBefore(currentMonthStart) ? currentMonthStart : leave.getStartDate();
-                    LocalDate overlapEnd = leave.getEndDate().isAfter(targetMonthEnd) ? targetMonthEnd : leave.getEndDate();
-                    double days = countWorkingDays(overlapStart, overlapEnd, isHalfDay);
+                // ✅ FIX 1: Add fallback for paidDays/unpaidDays
+                // If both are NOT null → use them
+                // If NULL → fallback using leaveType
+                Double frozenPaidDays = leave.getPaidDays();
+                Double frozenUnpaidDays = leave.getUnpaidDays();
+                
+                if (frozenPaidDays != null && frozenUnpaidDays != null && frozenPaidDays + frozenUnpaidDays > 0) {
+                    // ✅ ADVANCED FIX: Use sequential deduction (HR-style) instead of proportional distribution
+                    // Apply paid days first, then unpaid days sequentially
+                    double remainingPaid = frozenPaidDays;
+                    double remainingUnpaid = frozenUnpaidDays;
+                    double workingDaysToProcess = days;
                     
+                    // Process each working day sequentially
+                    for (int i = 0; i < workingDaysToProcess; i++) {
+                        if (remainingPaid > 0) {
+                            currentMonthUsedLeaves += 1.0;
+                            remainingPaid--;
+                        } else if (remainingUnpaid > 0) {
+                            currentMonthUnpaidLeaves += 1.0;
+                            remainingUnpaid--;
+                        }
+                    }
+                } else {
+                    // ✅ FIX 2: Do NOT skip leave if DB values are null - use fallback
                     if (leave.getLeaveType() == Leave.LeaveType.UNPAID) {
                         currentMonthUnpaidLeaves += days;
                     } else {
@@ -310,13 +388,18 @@ public class AttendanceEngine {
         }
         
         // ✅ Calculate earned leaves with probation check
-        double earnedLeaves = calculateEarnedLeaves(employeeId, year, month, cycle);
+        // DEPRECATED: This logic has been moved to LeaveBalanceService
+        double earnedLeaves = 0.0;
+        
+        // ✅ CRITICAL FIX: usedLeaves = paid + unpaid (excluding Sundays)
+        double totalUsedLeaves = cycleUsedLeaves + cycleUnpaidLeaves;
+        double totalCurrentMonthUsedLeaves = currentMonthUsedLeaves + currentMonthUnpaidLeaves;
         
         return new LeaveBalanceSummary(
                 earnedLeaves,
-                cycleUsedLeaves,
+                totalUsedLeaves,        // ✅ FIXED: Now includes both paid + unpaid
                 cycleUnpaidLeaves,
-                currentMonthUsedLeaves,
+                totalCurrentMonthUsedLeaves, // ✅ FIXED: Now includes both paid + unpaid
                 currentMonthUnpaidLeaves,
                 cycle
         );
@@ -337,143 +420,11 @@ public class AttendanceEngine {
     
     /**
      * Calculate earned leaves considering probation period
+     * ⚠️ DEPRECATED: Use LeaveBalanceService.calculateEarnedLeaves() instead
+     * Your business rule (15th day logic) is implemented there
      */
     private double calculateEarnedLeaves(Long employeeId, int year, int month, int cycle) {
-        Employee emp = employeeRepository.findById(employeeId).orElse(null);
-        if (emp == null || emp.getJoiningDate() == null) {
-            return 0.0;
-        }
-        
-        LocalDate joiningDate = emp.getJoiningDate();
-        int probationMonths = emp.getProbationPeriodMonths() != null ? emp.getProbationPeriodMonths() : 3;
-        LocalDate probationEnd = joiningDate.plusMonths(probationMonths);
-        LocalDate targetMonthEnd = YearMonth.of(year, month).atEndOfMonth();
-        
-        // Check if probation completed
-        if (!probationEnd.isBefore(targetMonthEnd)) {
-            return 0.0; // Still in probation
-        }
-        
-        // Calculate months in current cycle since probation ended
-        LocalDate cycleStart = (cycle == 1) ? LocalDate.of(year, 1, 1) : LocalDate.of(year, 7, 1);
-        LocalDate effectiveStart = cycleStart.isAfter(probationEnd) ? cycleStart : probationEnd.plusDays(1);
-        
-        int monthsInCycle = 0;
-        YearMonth startYM = YearMonth.from(effectiveStart);
-        YearMonth targetYM = YearMonth.of(year, month);
-        
-        // Calculate months in cycle for earned leaves
-        
-        while (!startYM.isAfter(targetYM)) {
-            monthsInCycle++;
-            startYM = startYM.plusMonths(1);
-        }
-        
-        // Cap at 9 per cycle
-        return Math.min(monthsInCycle * 1.5, 9.0);
-    }
-    
-    /**
-     * 🔥 OPTIMIZED: Calculate attendance across a date range in ONE pass
-     * No monthly loops - single database query for entire range
-     */
-    public AttendanceSummary calculateRange(Long employeeId, LocalDate start, LocalDate end) {
-        AttendanceSummary result = new AttendanceSummary();
-        
-        // Fetch all data in ONE query for entire range
-        List<Attendance> attendances = 
-                attendanceRepository.findByEmployeeIdAndDateBetween(employeeId, start, end);
-        
-        // Fetch all approved leaves
-        List<Leave> approvedLeaves = leaveRepository.findByEmployeeId(employeeId).stream()
-                .filter(l -> l.getStatus() == Leave.LeaveStatus.APPROVED)
-                .toList();
-        
-        LocalDate today = LocalDate.now();
-        
-        for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
-            // Skip Sundays only (Saturday is working day)
-            if (date.getDayOfWeek() == DayOfWeek.SUNDAY) continue;
-            
-            final LocalDate currentDate = date;
-            boolean handled = false;
-            boolean isFuture = date.isAfter(today);
-            
-            // STEP 1: Check for approved leave (includes future approved leaves)
-            for (Leave leave : approvedLeaves) {
-                if (leave.getStartDate() == null || leave.getEndDate() == null) continue;
-                
-                if (!currentDate.isBefore(leave.getStartDate()) && 
-                    !currentDate.isAfter(leave.getEndDate())) {
-                    
-                    boolean isHalfDay = Boolean.TRUE.equals(leave.getIsHalfDay());
-                    double leaveValue = isHalfDay ? 0.5 : 1.0;
-
-                    // Check UNPAID type (everything else is paid)
-                    if (leave.getLeaveType() == Leave.LeaveType.UNPAID) {
-                        result.unpaidLeave += leaveValue;
-                        result.absent += leaveValue;
-                    } else {
-                        result.paidLeave += leaveValue;
-                        // Don't add to present - present = actual attendance only
-                    }
-                    
-                    handled = true;
-                    break;
-                }
-            }
-            
-            // For future dates without approved leave, skip
-            if (isFuture && !handled) continue;
-            
-            // STEP 2: Check attendance record
-            if (!handled) {
-                for (Attendance att : attendances) {
-                    if (att.getDate() != null && att.getDate().equals(currentDate)) {
-                        if (att.getStatus() != null) {
-                            switch (att.getStatus()) {
-                                case PRESENT:
-                                case LATE:
-                                    result.present += 1;
-                                    System.out.println("DEBUG - Counted PRESENT/LATE. Running total: present=" + result.present);
-                                    break;
-                                case HALF_DAY:
-                                    result.present += 0.5;
-                                    result.absent += 0.5;
-                                    break;
-                                case ABSENT:
-                                    result.absent += 1;
-                                    result.unpaidLeave += 1;
-                                    break;
-                                case PENDING:
-                                    // 🔥 DO NOT COUNT (important)
-                                    System.out.println("DEBUG - PENDING status - not counting as absent");
-                                    break;
-                                case ON_LEAVE:
-                                    // already handled in leave section
-                                    break;
-                                default:
-                                    result.absent += 1;
-                                    result.unpaidLeave += 1;
-                                    break;
-                            }
-                        }
-                        handled = true;
-                        break;
-                    }
-                }
-            }
-            
-            // STEP 3: UNMARKED → ABSENT for payroll (only if date is in past)
-            if (!handled) {
-                if (!isFuture) {
-                    result.absent += 1;
-                    // Don't blindly add unpaidLeave
-                }
-            }
-        }
-        
-        return result;
+        throw new IllegalStateException("Use LeaveBalanceService.calculateEarnedLeaves() for leave accrual - AttendanceEngine does not implement the 15th-day probation rule");
     }
     
     /**
@@ -501,7 +452,7 @@ public class AttendanceEngine {
             return Math.max(0, earnedLeaves - usedLeaves);
         }
     }
-
+    
     /**
      * 🔥 SALARY CALCULATION: Calculate salary components based on attendance and employee data
      * This is the single source of truth for salary calculations
@@ -532,11 +483,17 @@ public class AttendanceEngine {
 
         // Calculate leave deduction
         double absentDaysCount = attendanceSummary.absent;
+        double unpaidLeaveDaysCount = attendanceSummary.unpaidLeave;
         BigDecimal absentLeaveDeduction = BigDecimal.valueOf(perDaySalary).multiply(BigDecimal.valueOf(absentDaysCount))
                 .setScale(2, RoundingMode.HALF_UP);
+        BigDecimal unpaidLeaveDeduction = BigDecimal.valueOf(perDaySalary).multiply(BigDecimal.valueOf(unpaidLeaveDaysCount))
+                .setScale(2, RoundingMode.HALF_UP);
 
-        // Total deduction
-        BigDecimal totalDeduction = pf.add(esi).add(incomeTax).add(insurance).add(absentLeaveDeduction);
+        // ✅ TOTAL ATTENDANCE DEDUCTION (separate from other deductions)
+        BigDecimal totalAttendanceDeduction = absentLeaveDeduction.add(unpaidLeaveDeduction);
+
+        // Total deduction (attendance + other deductions)
+        BigDecimal totalDeduction = pf.add(esi).add(incomeTax).add(insurance).add(totalAttendanceDeduction);
 
         // Net salary
         BigDecimal netSalary = grossSalary.subtract(totalDeduction);
@@ -546,21 +503,12 @@ public class AttendanceEngine {
             netSalary = BigDecimal.ZERO;
         }
 
+        // ✅ Use new SalarySummary constructor with only 4 parameters
         return new SalarySummary(
-                basicSalary,
-                hra,
-                da,
-                otherAllowance,
-                grossSalary,
-                pf,
-                esi,
-                incomeTax,
-                insurance,
                 absentLeaveDeduction,
-                totalDeduction,
-                netSalary,
-                perDaySalary,
-                absentDaysCount
+                unpaidLeaveDeduction,
+                absentDaysCount,
+                unpaidLeaveDaysCount
         );
     }
 
@@ -568,39 +516,76 @@ public class AttendanceEngine {
      * DTO for salary calculation result
      */
     public static class SalarySummary {
-        public final BigDecimal basicSalary;
-        public final BigDecimal hra;
-        public final BigDecimal da;
-        public final BigDecimal otherAllowance;
-        public final BigDecimal grossSalary;
-        public final BigDecimal pf;
-        public final BigDecimal esi;
-        public final BigDecimal incomeTax;
-        public final BigDecimal insurance;
-        public final BigDecimal absentLeaveDeduction;
-        public final BigDecimal totalDeduction;
-        public final BigDecimal netSalary;
-        public final double perDaySalary;
-        public final double absentDaysCount;
+        private BigDecimal absentLeaveDeduction;
+        private BigDecimal unpaidLeaveDeduction;
 
-        public SalarySummary(BigDecimal basicSalary, BigDecimal hra, BigDecimal da, BigDecimal otherAllowance,
-                            BigDecimal grossSalary, BigDecimal pf, BigDecimal esi, BigDecimal incomeTax,
-                            BigDecimal insurance, BigDecimal absentLeaveDeduction, BigDecimal totalDeduction,
-                            BigDecimal netSalary, double perDaySalary, double absentDaysCount) {
-            this.basicSalary = basicSalary;
-            this.hra = hra;
-            this.da = da;
-            this.otherAllowance = otherAllowance;
-            this.grossSalary = grossSalary;
-            this.pf = pf;
-            this.esi = esi;
-            this.incomeTax = incomeTax;
-            this.insurance = insurance;
+        private double absentDays;
+        private double unpaidLeaveDays;
+
+        // constructor
+        public SalarySummary(
+                BigDecimal absentLeaveDeduction,
+                BigDecimal unpaidLeaveDeduction,
+                double absentDays,
+                double unpaidLeaveDays
+        ) {
             this.absentLeaveDeduction = absentLeaveDeduction;
-            this.totalDeduction = totalDeduction;
-            this.netSalary = netSalary;
-            this.perDaySalary = perDaySalary;
-            this.absentDaysCount = absentDaysCount;
+            this.unpaidLeaveDeduction = unpaidLeaveDeduction;
+            this.absentDays = absentDays;
+            this.unpaidLeaveDays = unpaidLeaveDays;
         }
+
+        // getters
+        public BigDecimal getAbsentLeaveDeduction() {
+            return absentLeaveDeduction;
+        }
+
+        public BigDecimal getUnpaidLeaveDeduction() {
+            return unpaidLeaveDeduction;
+        }
+
+        public double getAbsentDays() {
+            return absentDays;
+        }
+
+        public double getUnpaidLeaveDays() {
+            return unpaidLeaveDays;
+        }
+    }
+    
+    /**
+     * ✅ STEP 8: Centralize paid/unpaid calculation in AttendanceEngine
+     * Calculate paid and unpaid days for a leave request
+     */
+    public static class PaidUnpaidResult {
+        public final double paidDays;
+        public final double unpaidDays;
+        public final double totalDays;
+        
+        public PaidUnpaidResult(double paidDays, double unpaidDays, double totalDays) {
+            this.paidDays = paidDays;
+            this.unpaidDays = unpaidDays;
+            this.totalDays = totalDays;
+        }
+    }
+    
+
+    
+    /**
+     * ✅ FIX 4: Calculate opening balance for a given month/year
+     * This method centralizes opening balance calculation logic
+     * @param employeeId Employee ID
+     * @param year Year (e.g., 2026)
+     * @param month Month (1-12)
+     * @return Opening balance (remaining leaves from previous month)
+     */
+    public double calculateOpeningBalance(Long employeeId, int year, int month) {
+        // Calculate previous month with proper year transition
+        int prevMonth = (month == 1) ? 12 : month - 1;
+        int prevYear = (month == 1) ? year - 1 : year;
+
+        // Get leave balance summary for previous month
+        LeaveBalanceSummary summary = calculateLeaveBalance(employeeId, prevYear, prevMonth);
+        return summary.getAvailableLeaves();
     }
 }

@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.DayOfWeek;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -30,10 +31,10 @@ public interface LeaveRepository extends JpaRepository<Leave, Long> {
             .filter(l -> l.getLeaveType() != Leave.LeaveType.UNPAID) // Only paid leaves
             .filter(l -> !l.getEndDate().isBefore(start) && !l.getStartDate().isAfter(end)) // Overlaps with range
             .mapToDouble(l -> {
-                // Calculate overlap days
+                // Calculate overlap days - ONLY COUNT WORKING DAYS (exclude Sundays)
                 LocalDate overlapStart = l.getStartDate().isBefore(start) ? start : l.getStartDate();
                 LocalDate overlapEnd = l.getEndDate().isAfter(end) ? end : l.getEndDate();
-                long days = ChronoUnit.DAYS.between(overlapStart, overlapEnd) + 1;
+                double days = countWorkingDays(overlapStart, overlapEnd, l.getIsHalfDay());
                 // Handle half-day: total days would be 0.5 for single day half-day leave
                 return l.getTotalDays() < 1.0 ? l.getTotalDays() : days;
             })
@@ -50,7 +51,7 @@ public interface LeaveRepository extends JpaRepository<Leave, Long> {
             .filter(l -> !l.getStartDate().isAfter(tillDate))
             .mapToDouble(l -> {
                 LocalDate overlapEnd = l.getEndDate().isAfter(tillDate) ? tillDate : l.getEndDate();
-                long days = ChronoUnit.DAYS.between(l.getStartDate(), overlapEnd) + 1;
+                double days = countWorkingDays(l.getStartDate(), overlapEnd, l.getIsHalfDay());
                 // For leaves partially after tillDate, use the overlapping portion
                 if (l.getEndDate().isAfter(tillDate)) {
                     return days;
@@ -58,5 +59,18 @@ public interface LeaveRepository extends JpaRepository<Leave, Long> {
                 return l.getTotalDays();
             })
             .sum();
+    }
+    
+    /**
+     * Count working days between two dates (exclude Sundays only, Saturday is working day)
+     */
+    private static double countWorkingDays(LocalDate start, LocalDate end, Boolean isHalfDay) {
+        if (Boolean.TRUE.equals(isHalfDay)) return 0.5;
+        double count = 0;
+        for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
+            if (d.getDayOfWeek() == DayOfWeek.SUNDAY) continue;
+            count += 1.0;
+        }
+        return count;
     }
 }

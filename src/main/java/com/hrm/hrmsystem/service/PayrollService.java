@@ -2,21 +2,19 @@ package com.hrm.hrmsystem.service;
 
 import com.hrm.hrmsystem.dto.PayrollDTO;
 import com.hrm.hrmsystem.dto.PayslipDTO;
-import com.hrm.hrmsystem.engine.AttendanceEngine;
 import com.hrm.hrmsystem.engine.AttendanceSummary;
 import com.hrm.hrmsystem.model.Employee;
-import com.hrm.hrmsystem.model.Leave;
 import com.hrm.hrmsystem.model.Payroll;
 import com.hrm.hrmsystem.repository.EmployeeRepository;
 import com.hrm.hrmsystem.repository.LeaveRepository;
 import com.hrm.hrmsystem.repository.PayrollRepository;
+import com.hrm.hrmsystem.repository.LeaveRepositoryCustom;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -35,8 +33,9 @@ public class PayrollService {
     private final PayslipService payslipService;
     private final LeaveCalculationService leaveCalculationService;
     private final LeaveService leaveService;
-    private final AttendanceEngine attendanceEngine;
     private final LeaveBalanceService leaveBalanceService;
+    private final UnifiedCalculationService unifiedCalculationService;
+    private final LeaveRepositoryCustom leaveRepositoryCustom;
 
     public PayrollService(PayrollRepository payrollRepository,
                           EmployeeRepository employeeRepository,
@@ -44,16 +43,18 @@ public class PayrollService {
                           PayslipService payslipService,
                           LeaveCalculationService leaveCalculationService,
                           LeaveService leaveService,
-                          AttendanceEngine attendanceEngine,
-                          LeaveBalanceService leaveBalanceService) {
+                          LeaveBalanceService leaveBalanceService,
+                          UnifiedCalculationService unifiedCalculationService,
+                          LeaveRepositoryCustom leaveRepositoryCustom) {
         this.payrollRepository = payrollRepository;
         this.employeeRepository = employeeRepository;
         this.leaveRepository = leaveRepository;
         this.payslipService = payslipService;
         this.leaveCalculationService = leaveCalculationService;
         this.leaveService = leaveService;
-        this.attendanceEngine = attendanceEngine;
         this.leaveBalanceService = leaveBalanceService;
+        this.unifiedCalculationService = unifiedCalculationService;
+        this.leaveRepositoryCustom = leaveRepositoryCustom;
     }
 
     @Transactional
@@ -67,29 +68,18 @@ public class PayrollService {
         Payroll.PayrollStatus statusToUse = existing.map(Payroll::getStatus).orElse(Payroll.PayrollStatus.PENDING);
         java.time.LocalDate paymentDateToUse = existing.map(Payroll::getPaymentDate).orElse(null);
 
-        // 🔥 NEW: Use AttendanceEngine for clean calculation
-        YearMonth yearMonth = YearMonth.of(year, month);
-        
-        // Get opening balance (remaining from previous month)
-        double openingBalance = 0;
-        if (month > 1) {
-            LeaveBalanceService.LeaveBalanceResult prevBalance = 
-                leaveBalanceService.calculate(employeeId, YearMonth.of(year, month - 1));
-            openingBalance = prevBalance.remaining;
-        } else if (year > 2024) {
-            // Previous year December
-            LeaveBalanceService.LeaveBalanceResult prevBalance = 
-                leaveBalanceService.calculate(employeeId, YearMonth.of(year - 1, 12));
-            openingBalance = prevBalance.remaining;
-        }
-        
-        // 🔥 CORE CALCULATION: Single source of truth
-        AttendanceSummary summary = attendanceEngine.calculate(employeeId, yearMonth, openingBalance);
+        // 🔥 DATABASE-FIRST: Use direct database SUM for leave (single source of truth)
+        // Present/Absent from AttendanceEngine, Leave from Database
+        AttendanceSummary summary = unifiedCalculationService.calculateForPayroll(employeeId, year, month);
         
         double presentDays = summary.present;
         double absentDays = summary.absent;
-        double paidLeaveDays = summary.paidLeave;
-        double unpaidLeaveDays = summary.unpaidLeave;
+        
+        // ✅ DATABASE TRUTH: Direct SUM from leaves table - CORRECT MONTH FILTERING
+        LocalDate monthStart = LocalDate.of(year, month, 1);
+        LocalDate monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth());
+        double paidLeaveDays = leaveRepositoryCustom.getMonthlyPaidLeaveDays(employeeId, monthStart, monthEnd);
+        double unpaidLeaveDays = leaveRepositoryCustom.getMonthlyUnpaidLeaveDays(employeeId, monthStart, monthEnd);
         
         log.info("🔥 AttendanceEngine Result for Employee {}: {}", employeeId, summary);
 
@@ -550,42 +540,5 @@ public class PayrollService {
         return payslipService.generatePayslip(employeeId, monthYear);
     }
 
-    /**
-     * Count working days excluding Sundays between two dates
-     */
-    private long countWorkingDaysExcludingSundays(LocalDate startDate, LocalDate endDate) {
-        if (startDate == null || endDate == null || startDate.isAfter(endDate)) {
-            return 0;
-        }
-        long workingDays = 0;
-        LocalDate current = startDate;
-        while (!current.isAfter(endDate)) {
-            if (current.getDayOfWeek() != DayOfWeek.SUNDAY) {
-                workingDays++;
-            }
-            current = current.plusDays(1);
-        }
-        return workingDays;
-    }
 
-    /**
-     * Count days between two dates EXCLUDING Sundays
-     * Sundays are not counted as leave days
-     */
-    private long countDaysExcludingSundays(LocalDate startDate, LocalDate endDate) {
-        if (startDate == null || endDate == null || startDate.isAfter(endDate)) {
-            return 0;
-        }
-        
-        long days = 0;
-        LocalDate current = startDate;
-        while (!current.isAfter(endDate)) {
-            // Only count if NOT Sunday (DayOfWeek.SUNDAY = 7)
-            if (current.getDayOfWeek().getValue() != 7) {
-                days++;
-            }
-            current = current.plusDays(1);
-        }
-        return days;
-    }
 }

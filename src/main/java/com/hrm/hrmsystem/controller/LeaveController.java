@@ -6,6 +6,7 @@ import com.hrm.hrmsystem.model.Employee;
 import com.hrm.hrmsystem.service.LeaveService;
 import com.hrm.hrmsystem.service.EmployeeService;
 import com.hrm.hrmsystem.service.LeaveCalculationService;
+import com.hrm.hrmsystem.service.LeaveBalanceService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.time.YearMonth;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,11 +34,13 @@ public class LeaveController {
     private final LeaveService leaveService;
     private final EmployeeService employeeService;
     private final LeaveCalculationService leaveCalculationService;
+    private final LeaveBalanceService leaveBalanceService;
 
-    public LeaveController(LeaveService leaveService, EmployeeService employeeService, LeaveCalculationService leaveCalculationService) {
+    public LeaveController(LeaveService leaveService, EmployeeService employeeService, LeaveCalculationService leaveCalculationService, LeaveBalanceService leaveBalanceService) {
         this.leaveService = leaveService;
         this.employeeService = employeeService;
         this.leaveCalculationService = leaveCalculationService;
+        this.leaveBalanceService = leaveBalanceService;
     }
 
     @PostMapping("/apply")
@@ -44,12 +48,14 @@ public class LeaveController {
         try {
             // Log incoming request
             System.out.println("=== LEAVE APPLY REQUEST ===");
+            System.out.println("Full DTO: " + dto);
             System.out.println("LeaveType: " + dto.getLeaveType());
             System.out.println("StartDate: " + dto.getStartDate());
             System.out.println("EndDate: " + dto.getEndDate());
             System.out.println("TotalDays: " + dto.getTotalDays());
             System.out.println("IsHalfDay: " + dto.getIsHalfDay());
             System.out.println("Reason: " + dto.getReason());
+            System.out.println("EmployeeId: " + dto.getEmployeeId());
             System.out.println("==========================");
 
             // Validate required fields
@@ -237,5 +243,32 @@ public class LeaveController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting leave records: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/summary/{empId}")
+    public LeaveBalanceService.LeaveBalanceResult getSummary(
+            @PathVariable Long empId,
+            @RequestParam int year,
+            @RequestParam int month
+    ) {
+        return leaveBalanceService.getLeaveSummary(empId, YearMonth.of(year, month));
+    }
+
+    @GetMapping("/summary")
+    public java.util.Map<String, Object> getSummary(
+            @RequestParam Long employeeId) {
+        // Use current month/year for summary
+        java.time.LocalDate today = java.time.LocalDate.now();
+        int year = today.getYear();
+        int month = today.getMonthValue();
+        LeaveBalanceService.LeaveBalanceResult result = 
+                leaveBalanceService.getLeaveSummary(employeeId, java.time.YearMonth.of(year, month));
+        
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("totalEarned", result.earned);
+        response.put("used", result.used);
+        response.put("remaining", result.remaining);
+        
+        return response;
     }
 }

@@ -86,6 +86,36 @@
         let attendanceData = [];
         let filteredEmployees = [];
         
+        // Professional status formatting function
+        function formatStatus(status) {
+            switch(status) {
+                case "PAID_LEAVE": return "Paid Leave";
+                case "UNPAID_LEAVE": return "Unpaid Leave";
+                case "PRESENT": return "Present";
+                case "ABSENT": return "Absent";
+                case "WEEK_OFF": return "Week Off";
+                case "HALF_DAY": return "Half Day";
+                case "PENDING": return "Pending";
+                case "NOT_MARKED": return "Not Marked";
+                default: return status ? status.replace(/_/g, ' ') : "Not Marked";
+            }
+        }
+        
+        // Get professional color for status
+        function getStatusColor(status) {
+            switch(status) {
+                case "PAID_LEAVE": return "#22c55e"; // Green
+                case "UNPAID_LEAVE": return "#ef4444"; // Red
+                case "PRESENT": return "#22c55e"; // Green
+                case "ABSENT": return "#ef4444"; // Red
+                case "WEEK_OFF": return "#6b7280"; // Gray
+                case "HALF_DAY": return "#f59e0b"; // Amber
+                case "PENDING": return "#eab308"; // Yellow
+                case "NOT_MARKED": return "#6b7280"; // Gray
+                default: return "#6b7280"; // Gray
+            }
+        }
+        
         async function loadAllEmployees() {
             try {
                 const res = await auth.apiCall('/api/employees');
@@ -115,9 +145,14 @@
                 }
                 
                 // Load attendance for selected date
-                const res = await auth.apiCall(`/api/attendance/date/${selectedDate}`);
+                const timestamp = new Date().getTime();
+                const res = await auth.apiCall(`/api/attendance/date/${selectedDate}?_t=${timestamp}`);
                 attendanceData = res && res.ok ? await res.json() : [];
                 console.log('Loaded attendance data for date', selectedDate, ':', attendanceData);
+                console.log('Attendance data length:', attendanceData.length);
+                if (attendanceData.length > 0) {
+                    console.log('Sample attendance record:', attendanceData[0]);
+                }
                 
                 const tbody = document.getElementById('attendance-table');
                 
@@ -131,14 +166,20 @@
                     const status = attendance?.status || 'NOT_MARKED';
                     console.log(`Employee ${emp.id} (${emp.firstName}) status:`, status);
                     
+                    // Professional status formatting
+                    const displayStatus = formatStatus(status);
+                    
                     return {
                         employeeId: emp.id,
                         employeeName: `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || 'Unknown',
                         department: deptName,
                         date: selectedDate,
                         status: status,
+                        displayStatus: displayStatus,
                         checkInTime: attendance?.checkInTime || '-',
                         checkOutTime: attendance?.checkOutTime || '-',
+                        workingHours: attendance?.workingHours !== undefined ? attendance.workingHours : '-',
+                        remarks: attendance?.remarks || '-',
                         isFuture: isFutureDate(selectedDate)
                     };
                 });
@@ -169,6 +210,7 @@
             tbody.innerHTML = data.map(a => {
                 const status = a.status || 'NOT_MARKED';
                 const statusClass = status.toLowerCase();
+                const statusColor = getStatusColor(status);
                 const isPresent = status === 'PRESENT';
                 const isAbsent = status === 'ABSENT';
                 const isHalfDay = status === 'HALF_DAY';
@@ -176,6 +218,7 @@
                 const isNotMarked = status === 'NOT_MARKED';
                 const isPaidLeave = status === 'PAID_LEAVE';
                 const isUnpaidLeave = status === 'UNPAID_LEAVE';
+                const isWeekOff = status === 'WEEK_OFF';
                 
                 return `
                     <tr>
@@ -191,19 +234,25 @@
                         </td>
                         <td>${a.date}</td>
                         <td>
-                            <span class="status-badge ${statusClass}" style="
-                                background: ${isPresent ? '#dcfce7' : isAbsent ? '#fee2e2' : isHalfDay ? '#fef3c7' : isPending ? '#fef9c3' : isPaidLeave ? '#dbeafe' : isUnpaidLeave ? '#fee2e2' : '#f3f4f6'};
-                                color: ${isPresent ? '#166534' : isAbsent ? '#991b1b' : isHalfDay ? '#92400e' : isPending ? '#854d0e' : isPaidLeave ? '#1e40af' : isUnpaidLeave ? '#991b1b' : '#6b7280'};
-                                border: 1px solid ${isPresent ? '#86efac' : isAbsent ? '#fca5a5' : isHalfDay ? '#fcd34d' : isPending ? '#fde047' : isPaidLeave ? '#60a5fa' : isUnpaidLeave ? '#fca5a5' : '#d1d5db'};
-                            ">${isPaidLeave || isUnpaidLeave ? `LEAVE ${a.remarks || 'Unknown'} (${isPaidLeave ? 'PAID' : 'UNPAID'})` : status.replace(/_/g, ' ')}</span>
+                            <span class="status-badge" style="
+                                background: ${statusColor}20;
+                                color: ${statusColor};
+                                border: 1px solid ${statusColor}40;
+                                font-weight: 500;
+                                padding: 0.25rem 0.75rem;
+                                border-radius: 0.375rem;
+                                font-size: 0.875rem;
+                            ">${a.displayStatus}</span>
                         </td>
                         <td>${a.checkInTime}</td>
                         <td>${a.checkOutTime}</td>
-                        <td>${isUnpaidLeave ? 'Unpaid Leave' : (isPaidLeave ? 'Paid Leave' : (a.workingHours !== undefined ? a.workingHours + ' hrs' : '-'))}</td>
+                        <td>${isWeekOff ? '-' : (isPaidLeave || isUnpaidLeave ? (isPaidLeave ? 'Paid Leave' : 'Unpaid Leave') : (a.workingHours !== undefined && a.workingHours > 0 ? a.workingHours + ' hrs' : '-'))}</td>
                         <td>
                             ${!a.isFuture ? `
                                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                    ${isPaidLeave || isUnpaidLeave ? `
+                                    ${isWeekOff ? `
+                                        <span style="color: #6b7280; font-size: 0.875rem; font-style: italic;">Week Off</span>
+                                    ` : isPaidLeave || isUnpaidLeave ? `
                                         <span style="color: #6b7280; font-size: 0.875rem; font-style: italic;">On Leave</span>
                                     ` : isPending ? `
                                         <button onclick="resolvePendingAttendance(${a.employeeId}, 'PRESENT', this)" class="btn-toggle" data-status="present" title="Mark Present" style="background: #22c55e; color: white;">

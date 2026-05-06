@@ -203,7 +203,7 @@
         
         loadLeaveBalance();
         
-        // Set min date to today
+        // Set min date to today (business rule: no past date applications)
         document.getElementById('startDate').min = new Date().toISOString().split('T')[0];
         document.getElementById('endDate').min = new Date().toISOString().split('T')[0];
         
@@ -321,20 +321,25 @@
             }
             
             const form = e.target;
+            
+            // DEBUG: Log what we're sending
+            const requestData = {
+                employeeId: user.employeeId,
+                leaveType: document.getElementById('leaveType').value,
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                totalDays: totalDays,
+                reason: document.getElementById('reason').value,
+                isHalfDay: isHalfDay,
+                halfType: halfType,
+                contactNumber: document.getElementById('contact').value
+            };
+            console.log('DEBUG - Sending leave request:', requestData);
+            
             try {
                 const res = await auth.apiCall('/api/leaves/apply', {
                     method: 'POST',
-                    body: JSON.stringify({
-                        employeeId: user.employeeId,
-                        leaveType: document.getElementById('leaveType').value,
-                        startDate: document.getElementById('startDate').value,
-                        endDate: document.getElementById('endDate').value,
-                        totalDays: totalDays,
-                        reason: document.getElementById('reason').value,
-                        isHalfDay: isHalfDay,
-                        halfType: halfType,
-                        contactNumber: document.getElementById('contact').value
-                    })
+                    body: JSON.stringify(requestData)
                 });
                 if (res && res.ok) {
                     const result = await res.json();
@@ -346,8 +351,16 @@
                     form.reset();
                     document.getElementById('leave-preview').style.display = 'none';
                     loadLeaveBalance(); // Refresh balance
+                } else {
+                    // Handle error responses properly
+                    const errorData = await res.json();
+                    const errorMessage = errorData.error || errorData.message || 'Failed to apply leave';
+                    auth.showNotification(errorMessage, 'error');
                 }
-            } catch (e) { auth.showNotification(e.message, 'error'); }
+            } catch (e) { 
+                console.error('Leave application error:', e);
+                auth.showNotification('Failed to apply leave: ' + e.message, 'error'); 
+            }
         });
         
         function logout() { auth.logout(); }

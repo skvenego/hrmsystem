@@ -488,6 +488,30 @@
             } catch (e) {
                 console.error('Failed to load dashboard data:', e);
             }
+            
+            // Load leave summary using new API
+            try {
+                // Use existing user variable from above
+                if (user && user.employeeId) {
+                    const response = await fetch(`/api/leaves/summary?employeeId=${user.employeeId}`, {
+                        headers: getAuthHeaders()
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log("Leave Summary:", data);
+                        
+                        // Update leave summary fields
+                        document.getElementById("my-earned").textContent = (data.totalEarned || 0).toFixed(1);
+                        document.getElementById("my-used").textContent = (data.used || 0).toFixed(1);
+                        document.getElementById("my-remaining").textContent = (data.remaining || 0).toFixed(1);
+                    } else {
+                        console.error("Leave API failed with status:", response.status);
+                    }
+                }
+            } catch (error) {
+                console.error("Leave API Error:", error);
+            }
         }
         
         // Management Dashboard

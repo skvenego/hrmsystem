@@ -1,7 +1,9 @@
 package com.hrm.hrmsystem.service;
 
 import com.hrm.hrmsystem.model.SalaryAdjustment;
+import com.hrm.hrmsystem.model.Employee;
 import com.hrm.hrmsystem.repository.SalaryAdjustmentRepository;
+import com.hrm.hrmsystem.repository.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,6 +23,9 @@ public class SalaryAdjustmentService {
 
     @Autowired
     private PayrollLockService payrollLockService;
+    
+    @Autowired
+    private EmployeeRepository employeeRepository;
 
     /**
      * Create a salary adjustment for a specific month/year
@@ -29,6 +34,14 @@ public class SalaryAdjustmentService {
     public SalaryAdjustment createAdjustment(Long employeeId, Integer month, Integer year, 
                                             BigDecimal amount, String reason, String adjustmentType, 
                                             String remarks) {
+        // ✅ CRITICAL BUG 6: Add validation for amount field (not null, not zero)
+        if (amount == null) {
+            throw new RuntimeException("Amount cannot be null");
+        }
+        if (amount.compareTo(BigDecimal.ZERO) == 0) {
+            throw new RuntimeException("Amount cannot be zero");
+        }
+        
         // Check if payroll is locked for this month/year
         if (!payrollLockService.isPayrollLocked(month, year)) {
             throw new RuntimeException("Payroll is not locked for " + year + "-" + month + 
@@ -37,8 +50,12 @@ public class SalaryAdjustmentService {
 
         String createdBy = getCurrentUser();
         
+        // ✅ CRITICAL BUG 1: Fix employee NULL - fetch employee from repository
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found with ID: " + employeeId));
+        
         SalaryAdjustment adjustment = new SalaryAdjustment(
-                null, // employee will be set
+                employee, // ✅ FIXED: Set employee before saving
                 month,
                 year,
                 amount,
@@ -47,9 +64,6 @@ public class SalaryAdjustmentService {
                 createdBy,
                 remarks
         );
-
-        // Note: Employee needs to be set by the caller or we need to fetch it
-        // This is a simplified version - in production, fetch employee from repository
         
         return salaryAdjustmentRepository.save(adjustment);
     }
@@ -85,6 +99,12 @@ public class SalaryAdjustmentService {
         }
 
         SalaryAdjustment adjustment = adjustmentOpt.get();
+        
+        // ✅ CRITICAL BUG 5: Add validation to markAsApplied() to prevent double application
+        if (Boolean.TRUE.equals(adjustment.getIsApplied())) {
+            throw new RuntimeException("Adjustment already applied with ID: " + adjustmentId);
+        }
+        
         adjustment.setIsApplied(true);
         return salaryAdjustmentRepository.save(adjustment);
     }
@@ -99,8 +119,16 @@ public class SalaryAdjustmentService {
         }
 
         SalaryAdjustment adjustment = adjustmentOpt.get();
-        if (adjustment.getIsApplied()) {
+        
+        // ✅ CRITICAL BUG 4: Fix null check for getIsApplied() using Boolean.TRUE.equals()
+        if (Boolean.TRUE.equals(adjustment.getIsApplied())) {
             throw new RuntimeException("Cannot delete applied adjustment with ID: " + adjustmentId);
+        }
+        
+        // ✅ CRITICAL BUG 3: Add payroll lock check to deleteAdjustment()
+        if (!payrollLockService.isPayrollLocked(adjustment.getMonth(), adjustment.getYear())) {
+            throw new RuntimeException("Cannot delete adjustment when payroll is not locked for " + 
+                    adjustment.getYear() + "-" + adjustment.getMonth());
         }
 
         salaryAdjustmentRepository.delete(adjustment);
@@ -111,7 +139,9 @@ public class SalaryAdjustmentService {
      */
     public BigDecimal getTotalAdjustmentAmount(Long employeeId, Integer month, Integer year) {
         List<SalaryAdjustment> adjustments = getAdjustmentsForEmployee(employeeId, month, year);
+        // ✅ CRITICAL BUG 2: Fix getTotalAdjustmentAmount() to filter applied adjustments only
         return adjustments.stream()
+                .filter(SalaryAdjustment::getIsApplied) // ✅ FIXED: Only include applied adjustments
                 .map(SalaryAdjustment::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
@@ -121,7 +151,8 @@ public class SalaryAdjustmentService {
      */
     private String getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated()) {
+        // ✅ MINOR BUG 8: Fix getCurrentUser() to handle anonymous user properly
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
             return auth.getName();
         }
         return "SYSTEM";

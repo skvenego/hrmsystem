@@ -88,6 +88,9 @@ public class Payslip {
     @Column(name = "absent_leave_deduction", precision = 10, scale = 2)
     private BigDecimal absentLeaveDeduction;
 
+    @Column(name = "unpaid_leave_deduction", precision = 10, scale = 2)
+    private BigDecimal unpaidLeaveDeduction;
+
     @ElementCollection
     @CollectionTable(name = "payslip_absent_dates", joinColumns = @JoinColumn(name = "payslip_id"))
     @Column(name = "absent_date")
@@ -171,6 +174,9 @@ public class Payslip {
     public Double getUnpaidLeaveDays() { return unpaidLeaveDays; }
     public Integer getHalfDays() { return halfDays; }
     public BigDecimal getAbsentLeaveDeduction() { return absentLeaveDeduction; }
+
+    public BigDecimal getUnpaidLeaveDeduction() { return unpaidLeaveDeduction; }
+
     public java.util.List<String> getAbsentDates() { return absentDates; }
     public PayslipStatus getStatus() { return status; }
     public LocalDate getGeneratedDate() { return generatedDate; }
@@ -209,6 +215,9 @@ public class Payslip {
     public void setUnpaidLeaveDays(Double unpaidLeaveDays) { this.unpaidLeaveDays = unpaidLeaveDays; }
     public void setHalfDays(Integer halfDays) { this.halfDays = halfDays; }
     public void setAbsentLeaveDeduction(BigDecimal absentLeaveDeduction) { this.absentLeaveDeduction = absentLeaveDeduction; }
+
+    public void setUnpaidLeaveDeduction(BigDecimal unpaidLeaveDeduction) { this.unpaidLeaveDeduction = unpaidLeaveDeduction; }
+
     public void setAbsentDates(java.util.List<String> absentDates) { this.absentDates = absentDates; }
     public void setStatus(PayslipStatus status) { this.status = status; }
     public void setGeneratedDate(LocalDate generatedDate) { this.generatedDate = generatedDate; }
