@@ -25,7 +25,7 @@ ORDER BY start_date;
 -- If April has balance: Apr portion paid
 -- If May has balance: May portion paid
 -- 
--- Current fix: Set paid=2 (Apr portion only, assuming Apr balance used)
+-- Current fix: Set paid=2 (Apr portion only, assuming Apr balance Used Leaves)
 --              unpaid=2 (May portion - will be deducted from May salary)
 
 UPDATE leaves 
@@ -76,7 +76,7 @@ ORDER BY l.employee_id, l.start_date;
 -- UPDATE leave_balances 
 -- SET 
 --     total_leaves = 0,
---     used_leaves = 0,
+--     Used Leaves_leaves = 0,
 --     available_leaves = 0,
 --     earned_leaves = 0,
 --     updated_at = NOW();
@@ -108,7 +108,7 @@ SELECT * FROM leave_balances WHERE employee_id = 16;
 UPDATE leave_balances 
 SET 
     total_leaves = 6.0,
-    used_leaves = 4.0,
+    Used Leaves_leaves = 4.0,
     available_leaves = 2.0,
     earned_leaves = 6.0,
     updated_at = NOW()
@@ -119,7 +119,7 @@ SELECT
     lb.employee_id,
     CONCAT(e.first_name, ' ', e.last_name) as name,
     lb.total_leaves,
-    lb.used_leaves,
+    lb.Used Leaves_leaves,
     lb.available_leaves,
     lb.earned_leaves
 FROM leave_balances lb

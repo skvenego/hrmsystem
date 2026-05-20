@@ -61,6 +61,7 @@ public class DepartmentService {
                 .orElseThrow(() -> new RuntimeException("Department not found"));
 
         department.setName(dto.getName());
+        department.setCode(dto.getCode());
         department.setDescription(dto.getDescription());
         department.setHeadOfDepartment(dto.getHeadOfDepartment());
 
@@ -77,6 +78,7 @@ public class DepartmentService {
         return DepartmentDTO.builder()
                 .id(department.getId())
                 .name(department.getName())
+                .code(department.getCode())
                 .description(department.getDescription())
                 .headOfDepartment(department.getHeadOfDepartment())
                 .createdDate(department.getCreatedDate())
@@ -87,6 +89,7 @@ public class DepartmentService {
     private Department convertToEntity(DepartmentDTO dto) {
         return Department.builder()
                 .name(dto.getName())
+                .code(dto.getCode())
                 .description(dto.getDescription())
                 .headOfDepartment(dto.getHeadOfDepartment())
                 .build();

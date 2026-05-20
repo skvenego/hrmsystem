@@ -41,22 +41,22 @@ SELECT
     -- Earned leaves by April (4 months × 1.5 = 6.0, capped at 9)
     LEAST(4 * 1.5, 9.0) as earned_by_april,
     
-    -- Used leaves UP TO April (cycle 1, ending on or before April 30)
+    -- Used Leaves UP TO April (cycle 1, ending on or before April 30)
     SUM(CASE 
         WHEN l.end_date <= '2026-04-30' 
              AND l.end_date >= '2026-01-01'  -- Within Cycle 1
              AND l.end_date <= '2026-06-30'  -- Within Cycle 1
         THEN l.paid_days 
         ELSE 0 
-    END) as used_up_to_april,
+    END) as Used Leaves_up_to_april,
     
-    -- Used leaves IN April only (fully within April)
+    -- Used Leaves IN April only (fully within April)
     SUM(CASE 
         WHEN l.start_date >= '2026-04-01' 
              AND l.end_date <= '2026-04-30'
         THEN l.paid_days 
         ELSE 0 
-    END) as used_in_april_only,
+    END) as Used Leaves_in_april_only,
     
     -- Remaining should be: Earned - Used up to April
     LEAST(4 * 1.5, 9.0) - SUM(CASE 
@@ -88,10 +88,10 @@ SELECT
     ps.salary_month,
     ps.salary_year,
     ps.total_earned_leaves,
-    ps.used_leaves,
+    ps.Used Leaves_leaves,
     ps.available_leaves,
-    CONCAT('Stored Used: ', ps.used_leaves, ', Stored Remaining: ', ps.available_leaves) as stored_values,
-    CONCAT('Mismatch: Earned(6.0) - Used(', ps.used_leaves, ') = ', 6.0 - ps.used_leaves, ' but shows ', ps.available_leaves) as mismatch_check
+    CONCAT('Stored Used: ', ps.Used Leaves_leaves, ', Stored Remaining: ', ps.available_leaves) as stored_values,
+    CONCAT('Mismatch: Earned(6.0) - Used(', ps.Used Leaves_leaves, ') = ', 6.0 - ps.Used Leaves_leaves, ' but shows ', ps.available_leaves) as mismatch_check
 FROM payslips ps
 WHERE ps.employee_id = 16
   AND ps.salary_month = 4

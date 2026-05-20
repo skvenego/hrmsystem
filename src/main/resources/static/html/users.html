@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Users - HRM System</title>
+    <link rel="stylesheet" href="../css/hrm-design-system.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar-container"></aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header flex justify-between items-center mb-6">
+                <div class="page-title">
+                    <h1>System Users</h1>
+                    <p>Manage system users (HR, Accountant, Director, Leaves)</p>
+                </div>
+                <div class="flex gap-2 items-center">
+                    <a href="employee-form.html" class="btn-primary flex items-center gap-2">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="5" y2="19"></line><line x1="5" x2="19" y1="12" y2="12"></line></svg>
+                        Add Employee
+                    </a>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <!-- Stats Row -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="card p-4 border-l-4 border-primary-500">
+                        <div class="text-xs text-muted font-bold uppercase mb-1">Total Employees</div>
+                        <div class="text-2xl font-bold text-primary-700" id="stat-total">0</div>
+                    </div>
+                    <div class="card p-4 border-l-4 border-success-500">
+                        <div class="text-xs text-muted font-bold uppercase mb-1">Active Employees</div>
+                        <div class="text-2xl font-bold text-success-700" id="stat-active">0</div>
+                    </div>
+                    <div class="card p-4 border-l-4 border-danger-500">
+                        <div class="text-xs text-muted font-bold uppercase mb-1">Inactive Employees</div>
+                        <div class="text-2xl font-bold text-danger-700" id="stat-inactive">0</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header border-b flex justify-between items-center">
+                        <h3 class="card-title">System User List</h3>
+                        <div class="flex gap-2 items-center">
+                            <div class="search-container">
+                                <input type="text" id="search-input" placeholder="Search employees..." class="form-control" style="min-width: 250px;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Contact Info</th>
+                                    <th>Department</th>
+                                    <th>Designation</th>
+                                    <th>Salary</th>
+                                    <th>Status</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employees-table">
+                                <tr><td colspan="7" class="text-center p-8 text-muted">Loading employees...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script>
+        // Allow Leaves role (read-only) in addition to normal management roles
+        if (!auth.requireManagement() && !auth.hasRole('ROLE_LEAVES')) throw new Error('Management access required');
+        
+        // Load employees
+        async function loadEmployees() {
+            try {
+                const res = await auth.apiCall('/api/employees/system');
+                if (!res || !res.ok) throw new Error('Failed to load');
+                let employees = await res.json();
+                const isReadOnly = auth.hasRole('ROLE_DIRECTOR') || auth.hasRole('ROLE_LEAVES') || auth.hasRole('ROLE_ACCOUNTANT');
+                const isHR = auth.hasRole('ROLE_HR') || auth.hasRole('ROLE_ADMIN');
+
+                if (isReadOnly) {
+                    // Hide Add Employee button
+                    const addBtn = document.querySelector('.header .btn-primary');
+                    if (addBtn) addBtn.style.display = 'none';
+                    
+                    // Hide Actions column header
+                    const headers = document.querySelectorAll('table.data-table th');
+                    if (headers.length > 0) {
+                        headers[headers.length - 1].style.display = 'none';
+                    }
+                }
+
+                // Update stats
+                const total = employees.length;
+                const active = employees.filter(e => e.status === 'ACTIVE').length;
+                const inactive = total - active;
+                document.getElementById('stat-total').textContent = total;
+                document.getElementById('stat-active').textContent = active;
+                document.getElementById('stat-inactive').textContent = inactive;
+
+                const tbody = document.getElementById('employees-table');
+                if (employees.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="${isReadOnly ? 6 : 7}" style="text-align: center; padding: 2rem;">No employees found</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = employees.map(emp => `
+                    <tr>
+                        <td>
+                            <div class="flex items-center gap-3">
+                                <div class="avatar">
+                                    ${(emp.firstName || '?')[0]}${(emp.lastName || '?')[0]}
+                                </div>
+                                <div>
+                                    <div class="font-bold">${emp.firstName} ${emp.lastName}</div>
+                                    <div class="text-xs text-muted">ID: ${emp.id}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="text-sm">
+                                <div>${emp.email || 'N/A'}</div>
+                                <div class="text-xs text-muted">${emp.phone || ''}</div>
+                            </div>
+                        </td>
+                        <td><span class="text-xs font-bold text-primary">${emp.departmentName || emp.department?.name || emp.department || 'N/A'}</span></td>
+                        <td><span class="text-sm">${emp.designation || 'N/A'}</span></td>
+                        <td class="font-bold">${auth.formatCurrency(emp.salary || 0)}</td>
+                        <td><span class="status-badge ${(emp.status || 'ACTIVE').toLowerCase()}">${emp.status || 'Active'}</span></td>
+                        ${isReadOnly ? '' : `
+                        <td class="text-center">
+                            <div class="flex gap-1 justify-center">
+                                <a href="employee-form.html?edit=${emp.id}" class="btn-secondary btn-mini" title="Edit Employee">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                </a>
+                                ${isHR ? `
+                                <button onclick="deleteEmployee(${emp.id}, '${emp.firstName} ${emp.lastName}')" class="btn-mini" title="Delete Permanently"
+                                    style="background: linear-gradient(135deg,#ef4444,#b91c1c); color:#fff; border:none; border-radius:6px; padding:4px 8px; cursor:pointer;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4h6v2"></path></svg>
+                                </button>` : ''}
+                            </div>
+                        </td>
+                        `}
+                    </tr>
+                `).join('');
+            } catch (e) {
+                console.error(e);
+                const isReadOnly = auth.hasRole('ROLE_DIRECTOR') || auth.hasRole('ROLE_LEAVES') || auth.hasRole('ROLE_ACCOUNTANT');
+                document.getElementById('employees-table').innerHTML = `<tr><td colspan="${isReadOnly ? 6 : 7}" style="text-align: center; color: red; padding: 2rem;">Error loading employees</td></tr>`;
+            }
+        }
+        
+        // Delete employee permanently (HR only)
+        async function deleteEmployee(id, name) {
+            if (!confirm(`⚠️ PERMANENT DELETE\n\nAre you sure you want to permanently delete:\n"${name}"\n\nThis will remove ALL their data including attendance, payslips, and leave records. This action CANNOT be undone!`)) return;
+            try {
+                const res = await auth.apiCall(`/api/employees/${id}`, { method: 'DELETE' });
+                if (res && res.ok) {
+                    auth.showNotification(`"${name}" deleted permanently.`, 'success');
+                    loadEmployees();
+                } else {
+                    const err = await res.text();
+                    auth.showNotification('Delete failed: ' + err, 'error');
+                }
+            } catch (e) {
+                auth.showNotification('Error: ' + e.message, 'error');
+            }
+        }
+
+        // No need for logout function - handled by sidebar.js
+        
+        // Search functionality
+        document.getElementById('search-input')?.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            document.querySelectorAll('#employees-table tr').forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(term) ? '' : 'none';
+            });
+        });
+        
+        loadEmployees();
+    </script>
+</body>
+</html>

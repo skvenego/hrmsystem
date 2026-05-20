@@ -20,7 +20,7 @@ SELECT * FROM leave_balances WHERE employee_id = 16;
 UPDATE leave_balances 
 SET 
     total_earned_leaves = 6,
-    used_leaves = 4.0,
+    Used Leaves_leaves = 4.0,
     unpaid_leaves = 0,
     cycle = 1,
     year = 2026
@@ -30,8 +30,8 @@ WHERE employee_id = 16;
 SELECT 
     employee_id,
     total_earned_leaves,
-    used_leaves,
-    (total_earned_leaves - used_leaves) as available_leaves,
+    Used Leaves_leaves,
+    (total_earned_leaves - Used Leaves_leaves) as available_leaves,
     unpaid_leaves,
     cycle,
     year

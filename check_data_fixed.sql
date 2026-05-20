@@ -82,14 +82,14 @@ FROM leaves l
 WHERE l.employee_id = 16
   AND l.status = 'APPROVED';
 
--- 7. SUMMARY: Total used leaves calculation
+-- 7. SUMMARY: Total Used Leaves leaves calculation
 SELECT 
     COUNT(*) as total_approved_leaves,
     SUM(l.paid_days) as sum_paid_days_from_db,
     SUM(
         (DATEDIFF(l.end_date, l.start_date) + 1) - 
         (FLOOR((DATEDIFF(l.end_date, l.start_date) + DAYOFWEEK(l.start_date) - 1) / 7))
-    ) as calculated_used_days
+    ) as calculated_Used Leaves_days
 FROM leaves l
 WHERE l.employee_id = 16
   AND l.status = 'APPROVED'

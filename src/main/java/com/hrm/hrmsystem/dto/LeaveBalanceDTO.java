@@ -9,6 +9,7 @@ public class LeaveBalanceDTO {
     // Simplified leave balance
     private Double totalEarnedLeaves;
     private Double usedLeaves;
+    private Double paidLeaves;
     private Double unpaidLeaves;
     private Integer carriedForwardLeaves;
     private Double availableLeaves;
@@ -28,6 +29,7 @@ public class LeaveBalanceDTO {
     private String probationStatus;
     private String joiningDate;
     private String probationEndDate;
+    private Integer probationMonths;
 
     // Cycle expiry and progress info
     private Boolean cycleExpiryWarning;
@@ -44,6 +46,7 @@ public class LeaveBalanceDTO {
     public String getEmployeeName() { return employeeName; }
     public Double getTotalEarnedLeaves() { return totalEarnedLeaves; }
     public Double getUsedLeaves() { return usedLeaves; }
+    public Double getPaidLeaves() { return paidLeaves; }
     public Double getUnpaidLeaves() { return unpaidLeaves; }
     public Integer getCarriedForwardLeaves() { return carriedForwardLeaves; }
     public Double getAvailableLeaves() { return availableLeaves; }
@@ -72,6 +75,7 @@ public class LeaveBalanceDTO {
     public void setEmployeeName(String employeeName) { this.employeeName = employeeName; }
     public void setTotalEarnedLeaves(Double totalEarnedLeaves) { this.totalEarnedLeaves = totalEarnedLeaves; }
     public void setUsedLeaves(Double usedLeaves) { this.usedLeaves = usedLeaves; }
+    public void setPaidLeaves(Double paidLeaves) { this.paidLeaves = paidLeaves; }
     public void setUnpaidLeaves(Double unpaidLeaves) { this.unpaidLeaves = unpaidLeaves; }
     public void setCarriedForwardLeaves(Integer carriedForwardLeaves) { this.carriedForwardLeaves = carriedForwardLeaves; }
     public void setAvailableLeaves(Double availableLeaves) { this.availableLeaves = availableLeaves; }
@@ -88,6 +92,7 @@ public class LeaveBalanceDTO {
     public void setProbationStatus(String probationStatus) { this.probationStatus = probationStatus; }
     public void setJoiningDate(String joiningDate) { this.joiningDate = joiningDate; }
     public void setProbationEndDate(String probationEndDate) { this.probationEndDate = probationEndDate; }
+    public void setProbationMonths(Integer probationMonths) { this.probationMonths = probationMonths; }
     public void setCycleExpiryWarning(Boolean cycleExpiryWarning) { this.cycleExpiryWarning = cycleExpiryWarning; }
     public void setCycleExpiryMessage(String cycleExpiryMessage) { this.cycleExpiryMessage = cycleExpiryMessage; }
     public void setDaysUntilCycleEnd(Integer daysUntilCycleEnd) { this.daysUntilCycleEnd = daysUntilCycleEnd; }
@@ -104,6 +109,7 @@ public class LeaveBalanceDTO {
         private String employeeName;
         private Double totalEarnedLeaves;
         private Double usedLeaves;
+        private Double paidLeaves;
         private Double unpaidLeaves;
         private Integer carriedForwardLeaves;
         private Double availableLeaves;
@@ -131,6 +137,7 @@ public class LeaveBalanceDTO {
         public Builder employeeName(String employeeName) { this.employeeName = employeeName; return this; }
         public Builder totalEarnedLeaves(Double totalEarnedLeaves) { this.totalEarnedLeaves = totalEarnedLeaves; return this; }
         public Builder usedLeaves(Double usedLeaves) { this.usedLeaves = usedLeaves; return this; }
+        public Builder paidLeaves(Double paidLeaves) { this.paidLeaves = paidLeaves; return this; }
         public Builder unpaidLeaves(Double unpaidLeaves) { this.unpaidLeaves = unpaidLeaves; return this; }
         public Builder carriedForwardLeaves(Integer carriedForwardLeaves) { this.carriedForwardLeaves = carriedForwardLeaves; return this; }
         public Builder availableLeaves(Double availableLeaves) { this.availableLeaves = availableLeaves; return this; }
@@ -160,6 +167,7 @@ public class LeaveBalanceDTO {
             dto.employeeName = this.employeeName;
             dto.totalEarnedLeaves = this.totalEarnedLeaves;
             dto.usedLeaves = this.usedLeaves;
+            dto.paidLeaves = this.paidLeaves;
             dto.unpaidLeaves = this.unpaidLeaves;
             dto.carriedForwardLeaves = this.carriedForwardLeaves;
             dto.availableLeaves = this.availableLeaves;

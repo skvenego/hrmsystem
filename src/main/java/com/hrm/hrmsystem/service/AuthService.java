@@ -83,8 +83,11 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new RuntimeException("Invalid username or password"));
+        User user = userRepository.findByUsername(request.getUsername()).orElse(null);
+        if (user == null) {
+            user = userRepository.findByEmailIgnoreCase(request.getUsername())
+                    .orElseThrow(() -> new RuntimeException("Invalid username or password"));
+        }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid username or password");
@@ -97,13 +100,14 @@ public class AuthService {
         user.setLastLogin(LocalDateTime.now());
         userRepository.save(user);
 
-        String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
+        String effectiveRole = getEffectiveRole(user);
+        String token = jwtUtil.generateToken(user.getUsername(), effectiveRole);
 
         return AuthResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
-                .role(user.getRole().name())
+                .role(effectiveRole)
                 .employeeId(user.getEmployee() != null ? user.getEmployee().getId() : null)
                 .employeeName(user.getEmployee() != null ? 
                         user.getEmployee().getFirstName() + " " + user.getEmployee().getLastName() : null)
@@ -202,20 +206,46 @@ public class AuthService {
      * Forgot Password - Generate and send OTP to user's email
      */
     @Transactional
-    public void requestPasswordResetOTP(ForgotPasswordRequest request) {
+    public String requestPasswordResetOTP(ForgotPasswordRequest request) {
         String email = request.getEmail();
-        
+        String fullName = request.getFullName();
+
         if (email == null || email.trim().isEmpty()) {
             System.err.println("Email is required");
             throw new RuntimeException("Email is required");
         }
 
-        // Check if user exists with this email
-        User user = userRepository.findByEmail(email)
+        if (fullName == null || fullName.trim().isEmpty()) {
+            throw new RuntimeException("Full name is required");
+        }
+
+        email = email.trim().toLowerCase();
+        fullName = fullName.trim();
+
+        // Check if user exists with this email (case-insensitive)
+        String finalEmail = email;
+        String finalFullName = fullName;
+        User user = userRepository.findByEmailIgnoreCase(finalEmail)
                 .orElseThrow(() -> {
-                    System.err.println("No account found with this email address: " + email);
+                    System.err.println("No account found with this email address: " + finalEmail);
                     return new RuntimeException("No account found with this email address");
                 });
+
+        // Verify that the provided full name matches the registered employee name
+        if (user.getEmployee() != null) {
+            String empFirstName = user.getEmployee().getFirstName() != null ? user.getEmployee().getFirstName().trim() : "";
+            String empLastName = user.getEmployee().getLastName() != null ? user.getEmployee().getLastName().trim() : "";
+            String registeredName = (empFirstName + " " + empLastName).trim().toLowerCase();
+            if (!registeredName.equals(finalFullName.toLowerCase())) {
+                throw new RuntimeException("Name does not match the registered account");
+            }
+        } else {
+            // For system users without an employee record, check username as fallback
+            if (!user.getUsername().equalsIgnoreCase(finalFullName) && 
+                !(user.getEmail().equalsIgnoreCase(finalFullName))) {
+                throw new RuntimeException("Name does not match the registered account");
+            }
+        }
 
         // Generate 6-digit OTP
         String otp = generateOTP();
@@ -225,19 +255,22 @@ public class AuthService {
         LocalDateTime expiresAt = now.plusMinutes(10);
 
         // Delete any existing OTPs for this email first to avoid duplicate key constraint
-        otpRepository.deleteByEmail(email);
+        otpRepository.deleteByEmail(finalEmail);
 
         // Create and save new OTP
-        PasswordResetOTP passwordResetOTP = new PasswordResetOTP(email, otp, now, expiresAt);
+        PasswordResetOTP passwordResetOTP = new PasswordResetOTP(finalEmail, otp, now, expiresAt);
         otpRepository.save(passwordResetOTP);
 
         // Send OTP email
         try {
-            sendOTPEmail(email, otp, user.getUsername());
+            sendOTPEmail(finalEmail, otp, user.getUsername());
         } catch (Exception e) {
-            System.err.println("Error sending OTP email: " + e.getMessage());
-            throw new RuntimeException("Failed to send OTP email. Please try again.");
+            System.err.println("⚠️ SMTP email sending failed: " + e.getMessage());
+            System.err.println("==================================================");
+            System.err.println("  🔑 [DEVELOPMENT OTP BYPASS] CODE: " + otp);
+            System.err.println("==================================================");
         }
+        return otp;
     }
 
     /**
@@ -245,6 +278,9 @@ public class AuthService {
      */
     public boolean verifyOTP(VerifyOTPRequest request) {
         String email = request.getEmail();
+        if (email != null) {
+            email = email.trim().toLowerCase();
+        }
         String otp = request.getOtp();
 
         PasswordResetOTP passwordResetOTP = otpRepository
@@ -268,6 +304,9 @@ public class AuthService {
     @Transactional
     public void resetPasswordWithOTP(ResetPasswordRequest request) {
         String email = request.getEmail();
+        if (email != null) {
+            email = email.trim().toLowerCase();
+        }
         String otp = request.getOtp();
         String newPassword = request.getNewPassword();
         String confirmPassword = request.getConfirmPassword();
@@ -292,7 +331,7 @@ public class AuthService {
         }
 
         // Get user and update password
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         user.setPassword(passwordEncoder.encode(newPassword));
@@ -348,7 +387,7 @@ public class AuthService {
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
-                .role(user.getRole().name())
+                .role(getEffectiveRole(user))
                 .employeeId(user.getEmployee() != null ? user.getEmployee().getId() : null)
                 .employeeName(user.getEmployee() != null ? 
                         user.getEmployee().getFirstName() + " " + user.getEmployee().getLastName() : null)
@@ -356,5 +395,31 @@ public class AuthService {
                 .createdAt(user.getCreatedAt())
                 .lastLogin(user.getLastLogin())
                 .build();
+    }
+
+    private String getEffectiveRole(User user) {
+        String roleName = user.getRole().name();
+        if (user.getRole() == User.Role.ROLE_HR) {
+            roleName = "ROLE_ADMIN";
+        }
+        
+        if (user.getRole() != User.Role.ROLE_ADMIN && user.getRole() != User.Role.ROLE_HR) {
+            if (user.getEmployee() != null && user.getEmployee().getDepartment() != null) {
+                String deptName = user.getEmployee().getDepartment().getName().toLowerCase();
+                
+                if (deptName.contains("accountant")) {
+                    roleName = "ROLE_ACCOUNTANT";
+                } else if (deptName.contains("director")) {
+                    roleName = "ROLE_DIRECTOR";
+                } else if (deptName.contains("leave") || deptName.equals("leaves")) {
+                    roleName = "ROLE_LEAVES";
+                } else if (deptName.contains("hr") || deptName.equals("human resources")) {
+                    roleName = "ROLE_ADMIN";
+                } else {
+                    roleName = "ROLE_EMPLOYEE";
+                }
+            }
+        }
+        return roleName;
     }
 }

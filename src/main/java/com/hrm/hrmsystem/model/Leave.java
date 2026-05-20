@@ -70,8 +70,14 @@ public class Leave {
 
     private LocalDate appliedDate;
 
+    @Column(name = "approver_id")
+    private Long approverId;
+
+    @Column(name = "approver_name")
+    private String approverName;
+
     public enum LeaveType {
-        SICK, CASUAL, ANNUAL, MATERNITY, PATERNITY, UNPAID, HALF
+        SICK, CASUAL, ANNUAL, MATERNITY, PATERNITY, UNPAID, HALF, OTHER
     }
 
     public enum LeaveStatus {
@@ -90,7 +96,8 @@ public class Leave {
                  LocalDate endDate, Double totalDays, Double paidDays, Double unpaidDays,
                  Boolean isHalfDay, HalfType halfType, String reason, LeaveStatus status,
                  String approvedBy, String rejectionReason, String cancellationReason, String contactNumber, LocalDate appliedDate,
-                 Double finalPaidDays, Double finalUnpaidDays, Double finalTotalDays, LocalDate frozenAt) {
+                 Double finalPaidDays, Double finalUnpaidDays, Double finalTotalDays, LocalDate frozenAt,
+                 Long approverId, String approverName) {
         this.id = id;
         this.employee = employee;
         this.leaveType = leaveType;
@@ -112,6 +119,8 @@ public class Leave {
         this.finalUnpaidDays = finalUnpaidDays;
         this.finalTotalDays = finalTotalDays;
         this.frozenAt = frozenAt;
+        this.approverId = approverId;
+        this.approverName = approverName;
     }
 
     // Getters
@@ -132,6 +141,8 @@ public class Leave {
     public String getCancellationReason() { return cancellationReason; }
     public String getContactNumber() { return contactNumber; }
     public LocalDate getAppliedDate() { return appliedDate; }
+    public Long getApproverId() { return approverId; }
+    public String getApproverName() { return approverName; }
     
     // FREEZE FIELD GETTERS
     public Double getFinalPaidDays() { return finalPaidDays; }
@@ -157,6 +168,8 @@ public class Leave {
     public void setCancellationReason(String cancellationReason) { this.cancellationReason = cancellationReason; }
     public void setContactNumber(String contactNumber) { this.contactNumber = contactNumber; }
     public void setAppliedDate(LocalDate appliedDate) { this.appliedDate = appliedDate; }
+    public void setApproverId(Long approverId) { this.approverId = approverId; }
+    public void setApproverName(String approverName) { this.approverName = approverName; }
     
     // FREEZE FIELD SETTERS
     public void setFinalPaidDays(Double finalPaidDays) { this.finalPaidDays = finalPaidDays; }
@@ -187,6 +200,8 @@ public class Leave {
         private String cancellationReason;
         private String contactNumber;
         private LocalDate appliedDate;
+        private Long approverId;
+        private String approverName;
         
         // FREEZE FIELDS
         private Double finalPaidDays;
@@ -211,6 +226,8 @@ public class Leave {
         public Builder cancellationReason(String cancellationReason) { this.cancellationReason = cancellationReason; return this; }
         public Builder contactNumber(String contactNumber) { this.contactNumber = contactNumber; return this; }
         public Builder appliedDate(LocalDate appliedDate) { this.appliedDate = appliedDate; return this; }
+        public Builder approverId(Long approverId) { this.approverId = approverId; return this; }
+        public Builder approverName(String approverName) { this.approverName = approverName; return this; }
         
         // FREEZE FIELD BUILDERS
         public Builder finalPaidDays(Double finalPaidDays) { this.finalPaidDays = finalPaidDays; return this; }
@@ -219,7 +236,7 @@ public class Leave {
         public Builder frozenAt(LocalDate frozenAt) { this.frozenAt = frozenAt; return this; }
 
         public Leave build() {
-            return new Leave(id, employee, leaveType, startDate, endDate, totalDays, paidDays, unpaidDays, isHalfDay, halfType, reason, status, approvedBy, rejectionReason, cancellationReason, contactNumber, appliedDate, finalPaidDays, finalUnpaidDays, finalTotalDays, frozenAt);
+            return new Leave(id, employee, leaveType, startDate, endDate, totalDays, paidDays, unpaidDays, isHalfDay, halfType, reason, status, approvedBy, rejectionReason, cancellationReason, contactNumber, appliedDate, finalPaidDays, finalUnpaidDays, finalTotalDays, frozenAt, approverId, approverName);
         }
     }
 }

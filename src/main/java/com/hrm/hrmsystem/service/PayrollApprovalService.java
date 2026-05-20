@@ -15,13 +15,16 @@ public class PayrollApprovalService {
     
     private final PayrollApprovalRepository approvalRepo;
     private final PayrollRepository payrollRepo;
+    private final NotificationService notificationService;
     
     public PayrollApprovalService(
         PayrollApprovalRepository approvalRepo,
-        PayrollRepository payrollRepo
+        PayrollRepository payrollRepo,
+        NotificationService notificationService
     ) {
         this.approvalRepo = approvalRepo;
         this.payrollRepo = payrollRepo;
+        this.notificationService = notificationService;
     }
     
     /**
@@ -41,13 +44,13 @@ public class PayrollApprovalService {
             User.Role.ROLE_ACCOUNTANT
         );
         
-        PayrollApproval directorApproval = new PayrollApproval(
+        PayrollApproval adminApproval = new PayrollApproval(
             payroll, 
-            User.Role.ROLE_DIRECTOR
+            User.Role.ROLE_ADMIN
         );
         
         approvalRepo.save(accountantApproval);
-        approvalRepo.save(directorApproval);
+        approvalRepo.save(adminApproval);
         
         System.out.println("✅ Payroll #" + payroll.getId() + " sent for dual approval");
     }
@@ -86,14 +89,24 @@ public class PayrollApprovalService {
         
         System.out.println("✅ Accountant approved Payroll #" + payrollId);
         
+        if (!payroll.getDirectorApproved()) {
+            try {
+                String title = "Payslip Pending Admin Approval";
+                String msg = "Accountant has approved the payslip for " + payroll.getEmployee().getFirstName() + " (" + payroll.getMonth() + "/" + payroll.getYear() + "). Pending your final approval.";
+                notificationService.sendInAppNotificationToRole(User.Role.ROLE_ADMIN, title, msg, "PAYSLIP_APPROVAL", "/html/admin-approvals.html");
+            } catch (Exception e) {
+                System.err.println("❌ Failed to send in-app notification to admin: " + e.getMessage());
+            }
+        }
+        
         return approval;
     }
     
     /**
-     * Approve payroll by Director
+     * Approve payroll by Admin
      */
     @Transactional
-    public PayrollApproval approveByDirector(
+    public PayrollApproval approveByAdmin(
         Long payrollId, 
         User approver, 
         String comments
@@ -103,7 +116,7 @@ public class PayrollApprovalService {
         
         Optional<PayrollApproval> approvalOpt = approvalRepo.findByPayrollIdAndApproverRole(
             payrollId, 
-            User.Role.ROLE_DIRECTOR
+            User.Role.ROLE_ADMIN
         );
         
         if (approvalOpt.isEmpty()) {
@@ -118,10 +131,20 @@ public class PayrollApprovalService {
         approvalRepo.save(approval);
         
         // Update payroll
-        payroll.setDirectorApproved(true);
+        payroll.setDirectorApproved(true); // Using this field for Admin approval
         checkAndUpdateFinalApproval(payroll);
         
-        System.out.println("✅ Director approved Payroll #" + payrollId);
+        System.out.println("✅ Admin approved Payroll #" + payrollId);
+        
+        if (!payroll.getAccountantApproved()) {
+            try {
+                String title = "Payslip Pending Accountant Approval";
+                String msg = "HR has approved the payslip for " + payroll.getEmployee().getFirstName() + " (" + payroll.getMonth() + "/" + payroll.getYear() + "). Pending your final approval.";
+                notificationService.sendInAppNotificationToRole(User.Role.ROLE_ACCOUNTANT, title, msg, "PAYSLIP_APPROVAL", "/html/accountant-approvals.html");
+            } catch (Exception e) {
+                System.err.println("❌ Failed to send in-app notification to accountant: " + e.getMessage());
+            }
+        }
         
         return approval;
     }
@@ -183,6 +206,17 @@ public class PayrollApprovalService {
             
             System.out.println("✅✅ Payroll #" + payroll.getId() + " FULLY APPROVED!");
             System.out.println("📄 Payslip now available to employee");
+
+            // Send notification to employee
+            try {
+                notificationService.sendPayrollPaymentNotification(payroll);
+                
+                String title = "Payslip Fully Approved";
+                String msg = "Your payslip for " + payroll.getMonth() + "/" + payroll.getYear() + " has been fully approved and processed.";
+                notificationService.sendInAppNotificationToEmployee(payroll.getEmployee(), title, msg, "INFO", "/html/my-payslips.html");
+            } catch (Exception e) {
+                System.err.println("❌ Failed to send payroll notification: " + e.getMessage());
+            }
         }
     }
     
@@ -199,7 +233,7 @@ public class PayrollApprovalService {
             status.append("⏳ PENDING");
         }
         
-        status.append(" | Director: ");
+        status.append(" | Admin: ");
         if (payroll.getDirectorApproved()) {
             status.append("✅ APPROVED");
         } else {

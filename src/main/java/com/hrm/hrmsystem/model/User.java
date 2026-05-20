@@ -1,5 +1,6 @@
 package com.hrm.hrmsystem.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -18,12 +19,13 @@ public class User {
     private String email;
 
     @Column(nullable = false)
+    @JsonIgnore
     private String password;
 
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "employee_id")
     private Employee employee;
 
@@ -35,7 +37,7 @@ public class User {
 
     public enum Role {
         ROLE_ADMIN, ROLE_HR, ROLE_MANAGER, ROLE_EMPLOYEE,
-        ROLE_ACCOUNTANT, ROLE_DIRECTOR
+        ROLE_ACCOUNTANT, ROLE_DIRECTOR, ROLE_LEAVES
     }
 
     // Default Constructor

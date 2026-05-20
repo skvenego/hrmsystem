@@ -3,7 +3,13 @@ package com.hrm.hrmsystem.service;
 import com.hrm.hrmsystem.model.Employee;
 import com.hrm.hrmsystem.model.Leave;
 import com.hrm.hrmsystem.model.Payroll;
+import com.hrm.hrmsystem.model.NotificationPreference;
 import com.hrm.hrmsystem.repository.EmployeeRepository;
+import com.hrm.hrmsystem.repository.NotificationPreferenceRepository;
+import com.hrm.hrmsystem.repository.UserRepository;
+import com.hrm.hrmsystem.repository.AppNotificationRepository;
+import com.hrm.hrmsystem.model.AppNotification;
+import com.hrm.hrmsystem.model.User;
 import com.hrm.hrmsystem.util.EmailUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,6 +26,40 @@ public class NotificationService {
     @Autowired
     private EmployeeRepository employeeRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private NotificationPreferenceRepository preferenceRepository;
+
+    @Autowired
+    private AppNotificationRepository appNotificationRepository;
+
+    /**
+     * Check if email notification is enabled for the employee for a specific category
+     */
+    private boolean shouldSendEmail(Employee employee, String category) {
+        if (employee == null || employee.getId() == null) return false;
+        
+        return userRepository.findByEmployeeId(employee.getId())
+            .flatMap(user -> preferenceRepository.findByUser(user))
+            .map(pref -> {
+                boolean globalEmail = pref.getEmailNotifications() != null && pref.getEmailNotifications();
+                boolean categoryEnabled = true;
+                
+                if ("PAYROLL".equals(category)) {
+                    categoryEnabled = pref.getPayrollUpdates() != null && pref.getPayrollUpdates();
+                } else if ("LEAVE".equals(category)) {
+                    categoryEnabled = pref.getLeaveUpdates() != null && pref.getLeaveUpdates();
+                } else if ("ATTENDANCE".equals(category)) {
+                    categoryEnabled = pref.getAttendanceUpdates() != null && pref.getAttendanceUpdates();
+                }
+                
+                return globalEmail && categoryEnabled;
+            })
+            .orElse(true); // Default to true if no preference record exists
+    }
+
     /**
      * Send payroll payment notification to employee
      */
@@ -27,6 +67,11 @@ public class NotificationService {
         try {
             Employee employee = payroll.getEmployee();
             if (employee == null || employee.getEmail() == null) {
+                return;
+            }
+
+            if (!shouldSendEmail(employee, "PAYROLL")) {
+                System.out.println("⏩ Skipping payroll email for " + employee.getEmail() + " (preference disabled)");
                 return;
             }
 
@@ -77,12 +122,53 @@ public class NotificationService {
     }
 
     /**
+     * Send an in-app notification to a specific user
+     */
+    public void sendInAppNotification(User recipient, String title, String message, String type, String actionLink) {
+        if (recipient == null) return;
+        AppNotification notification = AppNotification.builder()
+                .recipient(recipient)
+                .title(title)
+                .message(message)
+                .type(type)
+                .actionLink(actionLink)
+                .isRead(false)
+                .createdAt(java.time.LocalDateTime.now())
+                .build();
+        appNotificationRepository.save(notification);
+    }
+
+    /**
+     * Send an in-app notification to all users with a specific role
+     */
+    public void sendInAppNotificationToRole(User.Role role, String title, String message, String type, String actionLink) {
+        userRepository.findByRole(role).forEach(user -> 
+            sendInAppNotification(user, title, message, type, actionLink)
+        );
+    }
+
+    /**
+     * Send an in-app notification to an employee
+     */
+    public void sendInAppNotificationToEmployee(Employee employee, String title, String message, String type, String actionLink) {
+        if (employee == null || employee.getId() == null) return;
+        userRepository.findByEmployeeId(employee.getId()).ifPresent(user -> 
+            sendInAppNotification(user, title, message, type, actionLink)
+        );
+    }
+
+    /**
      * Send leave approval/rejection notification
      */
     public void sendLeaveStatusNotification(Leave leave, boolean approved) {
         try {
             Employee employee = leave.getEmployee();
             if (employee == null || employee.getEmail() == null) {
+                return;
+            }
+
+            if (!shouldSendEmail(employee, "LEAVE")) {
+                System.out.println("⏩ Skipping leave status email for " + employee.getEmail() + " (preference disabled)");
                 return;
             }
 
@@ -104,7 +190,7 @@ public class NotificationService {
                 "<p><strong>Leave Type:</strong> %s</p>" +
                 "<p><strong>From Date:</strong> %s</p>" +
                 "<p><strong>To Date:</strong> %s</p>" +
-                "<p><strong>Total Days:</strong> %d</p>" +
+                "<p><strong>Total Days:</strong> %s</p>" +
                 "<p><strong>Reason:</strong> %s</p>" +
                 "</div>" +
                 "%s" +
@@ -119,7 +205,7 @@ public class NotificationService {
                 leave.getLeaveType(),
                 leave.getStartDate().format(formatter),
                 leave.getEndDate().format(formatter),
-                leave.getTotalDays(),
+                String.valueOf(leave.getTotalDays()),
                 leave.getReason() != null ? leave.getReason() : "N/A",
                 approved ? "<p style='color: #10b981;'>Enjoy your time off!</p>" : ""
             );
@@ -160,7 +246,7 @@ public class NotificationService {
                 "<p><strong>Leave Type:</strong> %s</p>" +
                 "<p><strong>From Date:</strong> %s</p>" +
                 "<p><strong>To Date:</strong> %s</p>" +
-                "<p><strong>Total Days:</strong> %d</p>" +
+                "<p><strong>Total Days:</strong> %s</p>" +
                 "<p><strong>Reason:</strong> %s</p>" +
                 "</div>" +
                 "<p>Please review and take necessary action.</p>" +
@@ -171,7 +257,7 @@ public class NotificationService {
                 leave.getLeaveType(),
                 leave.getStartDate().format(formatter),
                 leave.getEndDate().format(formatter),
-                leave.getTotalDays(),
+                String.valueOf(leave.getTotalDays()),
                 leave.getReason() != null ? leave.getReason() : "N/A"
             );
 
@@ -186,7 +272,12 @@ public class NotificationService {
      */
     public void sendAttendanceRegularizationNotification(Employee employee, String date, String status) {
         try {
-            if (employee.getEmail() == null) {
+            if (employee == null || employee.getEmail() == null) {
+                return;
+            }
+
+            if (!shouldSendEmail(employee, "ATTENDANCE")) {
+                System.out.println("⏩ Skipping attendance email for " + employee.getEmail() + " (preference disabled)");
                 return;
             }
 
@@ -210,6 +301,57 @@ public class NotificationService {
             emailUtil.sendHtmlEmail(toEmail, subject, htmlBody);
         } catch (Exception e) {
             System.err.println("Error sending attendance notification: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Send leave modification notification to employee
+     */
+    public void sendLeaveModificationNotification(Leave leave, String reason) {
+        try {
+            Employee employee = leave.getEmployee();
+            if (employee == null || employee.getEmail() == null) {
+                return;
+            }
+
+            if (!shouldSendEmail(employee, "LEAVE")) {
+                System.out.println("⏩ Skipping leave status email for " + employee.getEmail() + " (preference disabled)");
+                return;
+            }
+
+            String toEmail = employee.getEmail();
+            String subject = "Leave Application Modified - " + leave.getLeaveType();
+            
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy");
+            
+            String htmlBody = String.format(
+                "<html><body>" +
+                "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>" +
+                "<h2 style='color: #4f46e5;'>📝 Leave Application Modified</h2>" +
+                "<p>Dear %s,</p>" +
+                "<p>Your leave application has been <strong>modified</strong> by the administrator.</p>" +
+                "<div style='background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;'>" +
+                "<h3>Updated Leave Details:</h3>" +
+                "<p><strong>Leave Type:</strong> %s</p>" +
+                "<p><strong>From Date:</strong> %s</p>" +
+                "<p><strong>To Date:</strong> %s</p>" +
+                "<p><strong>Total Days:</strong> %s</p>" +
+                "<p><strong>Reason/Remarks:</strong> %s</p>" +
+                "</div>" +
+                "<p style='color: #6b7280; font-size: 14px;'>This is an automated notification. Please contact HR for any queries.</p>" +
+                "</div>" +
+                "</body></html>",
+                employee.getFirstName(),
+                leave.getLeaveType(),
+                leave.getStartDate().format(formatter),
+                leave.getEndDate().format(formatter),
+                String.valueOf(leave.getTotalDays()),
+                reason != null ? reason : "Leave details modified"
+            );
+
+            emailUtil.sendHtmlEmail(toEmail, subject, htmlBody);
+        } catch (Exception e) {
+            System.err.println("Error sending leave modification notification: " + e.getMessage());
         }
     }
 

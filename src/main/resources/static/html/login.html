@@ -87,7 +87,7 @@
                 </button>
             </form>
 
-            <div class="auth-footer">
+            <div class="auth-footer" style="display: none;">
                 <p>Don't have an account? <a href="register.html">Sign up</a></p>
             </div>
 
@@ -105,7 +105,7 @@
             </div>
 
             <!-- Test Accounts Section -->
-            <div style="margin-top: 2rem; padding: 1rem; background: #f3f4f6; border-radius: 8px; border: 1px dashed #9ca3af;">
+            <div style="display: none; margin-top: 2rem; padding: 1rem; background: #f3f4f6; border-radius: 8px; border: 1px dashed #9ca3af;">
                 <p style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.75rem; text-align: center; font-weight: 600;">TEST ACCOUNTS (Click to auto-fill)</p>
                 
                 <div style="display: grid; gap: 0.5rem;">
@@ -120,10 +120,6 @@
                     <div onclick="fillCredentials('accountant', 'Sachin@123')" class="test-account-row">
                         <span><strong>Accountant</strong> (Payroll)</span>
                         <span style="color: #6b7280;">accountant / Sachin@123</span>
-                    </div>
-                    <div onclick="fillCredentials('employee1', 'Sachin@123')" class="test-account-row">
-                        <span><strong>Employee</strong> (Limited)</span>
-                        <span style="color: #6b7280;">employee1 / Sachin@123</span>
                     </div>
                 </div>
             </div>

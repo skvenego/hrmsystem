@@ -13,7 +13,12 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
+import java.util.Base64;
 
 @Component
 public class EmailUtil {
@@ -21,29 +26,74 @@ public class EmailUtil {
     private static final Logger log = LoggerFactory.getLogger(EmailUtil.class);
 
     private final JavaMailSender mailSender;
+    private final HttpClient httpClient = HttpClient.newHttpClient();
 
     public EmailUtil(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
 
     @Value("${spring.mail.username}")
-    private String fromEmail;
+    private String smtpUsername;
+
+    @Value("${spring.mail.from:}")
+    private String senderEmail;
+
+    @Value("${spring.mail.password:}")
+    private String smtpPassword;
+
+    /**
+     * Resolve the From address: prefer spring.mail.from, fallback to spring.mail.username.
+     */
+    private String getFromAddress() {
+        if (senderEmail != null && !senderEmail.trim().isEmpty() && !senderEmail.contains("${")) {
+            return senderEmail.trim();
+        }
+        return (smtpUsername != null && !smtpUsername.trim().isEmpty()) ? smtpUsername.trim() : "noreply@hrmsystem.com";
+    }
+
+    /**
+     * Check if a valid, non-empty SMTP login is configured.
+     */
+    private boolean isMailConfigured() {
+        if (smtpPassword != null && smtpPassword.trim().startsWith("xkeysib-")) {
+            return true;
+        }
+        if (smtpUsername == null) return false;
+        String trimmed = smtpUsername.trim();
+        return !trimmed.isEmpty() &&
+               !trimmed.contains("${") &&
+               !trimmed.equalsIgnoreCase("your-email@gmail.com") &&
+               !trimmed.equalsIgnoreCase("change-me");
+    }
+
+    private boolean isBrevoRestApi() {
+        return smtpPassword != null && smtpPassword.trim().startsWith("xkeysib-");
+    }
 
     /**
      * Send a simple text email
      */
     public void sendSimpleEmail(String toEmail, String subject, String body) {
+        System.out.println("EMAIL = [" + toEmail + "]");
+        if (!isMailConfigured()) {
+            log.info("📢 [SMTP SIMULATION] Simple email simulated to: {} | Subject: {}", toEmail.trim(), subject);
+            return;
+        }
+        if (isBrevoRestApi()) {
+            sendHtmlEmail(toEmail, subject, "<p>" + body.replace("\n", "<br>") + "</p>");
+            return;
+        }
         try {
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromEmail);
-            message.setTo(toEmail);
+            message.setFrom(getFromAddress());
+            message.setTo(toEmail.trim());
             message.setSubject(subject);
             message.setText(body);
             
             mailSender.send(message);
-            log.info("Simple email sent to: {}", toEmail);
+            log.info("Simple email sent to: {}", toEmail.trim());
         } catch (Exception e) {
-            log.error("Error sending email to {}: {}", toEmail, e.getMessage());
+            log.error("Error sending email to {}: {}", toEmail.trim(), e.getMessage());
         }
     }
 
@@ -51,19 +101,52 @@ public class EmailUtil {
      * Send HTML email
      */
     public void sendHtmlEmail(String toEmail, String subject, String htmlBody) {
+        System.out.println("EMAIL = [" + toEmail + "]");
+        if (!isMailConfigured()) {
+            log.info("📢 [SMTP SIMULATION] HTML email simulated to: {} | Subject: {}", toEmail.trim(), subject);
+            return;
+        }
+        if (isBrevoRestApi()) {
+            try {
+                String json = "{"
+                        + "\"sender\":{\"name\":\"HRM System\",\"email\":\"" + getFromAddress() + "\"},"
+                        + "\"to\":[{\"email\":\"" + toEmail.trim() + "\"}],"
+                        + "\"subject\":\"" + escapeJson(subject) + "\","
+                        + "\"htmlContent\":\"" + escapeJson(htmlBody) + "\""
+                        + "}";
+
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create("https://api.brevo.com/v3/smtp/email"))
+                        .header("accept", "application/json")
+                        .header("api-key", smtpPassword.trim())
+                        .header("content-type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(json))
+                        .build();
+
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                    log.info("HTML email sent successfully to {} via Brevo HTTP API", toEmail.trim());
+                } else {
+                    log.error("Failed to send HTML email to {}. Status: {}, Response: {}", toEmail.trim(), response.statusCode(), response.body());
+                }
+            } catch (Exception e) {
+                log.error("Error sending HTML email via Brevo REST API to {}: {}", toEmail.trim(), e.getMessage(), e);
+            }
+            return;
+        }
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
+            helper.setFrom(getFromAddress());
+            helper.setTo(toEmail.trim());
             helper.setSubject(subject);
             helper.setText(htmlBody, true);
             
             mailSender.send(message);
-            log.info("HTML email sent to: {}", toEmail);
-        } catch (MessagingException e) {
-            log.error("Error sending HTML email to {}: {}", toEmail, e.getMessage());
+            log.info("HTML email sent to: {}", toEmail.trim());
+        } catch (Exception e) {
+            log.error("Error sending HTML email to {}: {}", toEmail.trim(), e.getMessage());
         }
     }
 
@@ -71,21 +154,98 @@ public class EmailUtil {
      * Send email with attachment
      */
     public void sendEmailWithAttachment(String toEmail, String subject, String body, byte[] attachment, String filename) {
+        System.out.println("EMAIL = [" + toEmail + "]");
+        if (!isMailConfigured()) {
+            log.info("📢 [SMTP SIMULATION] Email with attachment simulated to: {} | Subject: {} | File: {}", toEmail.trim(), subject, filename);
+            return;
+        }
+        if (isBrevoRestApi()) {
+            try {
+                String base64Content = Base64.getEncoder().encodeToString(attachment);
+                String json = "{"
+                        + "\"sender\":{\"name\":\"HRM System\",\"email\":\"" + getFromAddress() + "\"},"
+                        + "\"to\":[{\"email\":\"" + toEmail.trim() + "\"}],"
+                        + "\"subject\":\"" + escapeJson(subject) + "\","
+                        + "\"htmlContent\":\"" + escapeJson(body) + "\","
+                        + "\"attachment\":[{"
+                        + "\"content\":\"" + base64Content + "\","
+                        + "\"name\":\"" + escapeJson(filename) + "\""
+                        + "}]"
+                        + "}";
+
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create("https://api.brevo.com/v3/smtp/email"))
+                        .header("accept", "application/json")
+                        .header("api-key", smtpPassword.trim())
+                        .header("content-type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(json))
+                        .build();
+
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                    log.info("Email with attachment sent successfully to {} via Brevo HTTP API", toEmail.trim());
+                } else {
+                    log.error("Failed to send email with attachment to {}. Status: {}, Response: {}", toEmail.trim(), response.statusCode(), response.body());
+                }
+            } catch (Exception e) {
+                log.error("Error sending email with attachment via Brevo REST API to {}: {}", toEmail.trim(), e.getMessage(), e);
+            }
+            return;
+        }
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
+            helper.setFrom(getFromAddress());
+            helper.setTo(toEmail.trim());
             helper.setSubject(subject);
             helper.setText(body, true);
             helper.addAttachment(filename, () -> new java.io.ByteArrayInputStream(attachment));
             
             mailSender.send(message);
-            log.info("Email with attachment sent to: {}", toEmail);
-        } catch (MessagingException e) {
-            log.error("Error sending email with attachment to {}: {}", toEmail, e.getMessage());
+            log.info("Email with attachment sent to: {}", toEmail.trim());
+        } catch (Exception e) {
+            log.error("Error sending email with attachment to {}: {}", toEmail.trim(), e.getMessage());
         }
+    }
+
+    private String escapeJson(String string) {
+        if (string == null || string.isEmpty()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < string.length(); i++) {
+            char c = string.charAt(i);
+            switch (c) {
+                case '\\':
+                case '"':
+                    sb.append('\\').append(c);
+                    break;
+                case '\b':
+                    sb.append("\\b");
+                    break;
+                case '\t':
+                    sb.append("\\t");
+                    break;
+                case '\n':
+                    sb.append("\\n");
+                    break;
+                case '\f':
+                    sb.append("\\f");
+                    break;
+                case '\r':
+                    sb.append("\\r");
+                    break;
+                default:
+                    if (c < ' ') {
+                        String t = "000" + Integer.toHexString(c);
+                        sb.append("\\u").append(t.substring(t.length() - 4));
+                    } else {
+                        sb.append(c);
+                    }
+            }
+        }
+        return sb.toString();
     }
 
     /**

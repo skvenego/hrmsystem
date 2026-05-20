@@ -44,13 +44,13 @@ SELECT
              AND l.end_date <= '2026-06-30'  -- Within Cycle 1
         THEN l.paid_days 
         ELSE 0 
-    END) as used_leaves_up_to_april,
+    END) as Used Leaves_leaves_up_to_april,
     SUM(CASE 
         WHEN l.start_date >= '2026-04-01' 
              AND l.end_date <= '2026-04-30'  -- Fully within April
         THEN l.paid_days 
         ELSE 0 
-    END) as used_leaves_in_april_only,
+    END) as Used Leaves_leaves_in_april_only,
     6.0 as earned_by_april,
     6.0 - SUM(CASE 
         WHEN l.end_date <= '2026-04-30' 
@@ -70,7 +70,7 @@ SELECT
     ps.salary_month,
     ps.salary_year,
     ps.total_earned_leaves,
-    ps.used_leaves,
+    ps.Used Leaves_leaves,
     ps.available_leaves,
     ps.paid_leave_days,
     ps.unpaid_leave_days

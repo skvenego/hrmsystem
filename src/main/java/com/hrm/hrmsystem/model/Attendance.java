@@ -30,10 +30,17 @@ public class Attendance {
     @Enumerated(EnumType.STRING)
     private AttendanceStatus status;
 
+    @Enumerated(EnumType.STRING)
+    private HalfType halfType;
+
     private String remarks;
 
     public enum AttendanceStatus {
         PRESENT, ABSENT, HALF_DAY, LATE, ON_LEAVE, PENDING
+    }
+
+    public enum HalfType {
+        FIRST_HALF, SECOND_HALF
     }
 
     // Default Constructor
@@ -63,6 +70,7 @@ public class Attendance {
     public Double getWorkingHours() { return workingHours; }
     public Double getOvertimeHours() { return overtimeHours; }
     public AttendanceStatus getStatus() { return status; }
+    public HalfType getHalfType() { return halfType; }
     public String getRemarks() { return remarks; }
 
     // Setters
@@ -74,6 +82,7 @@ public class Attendance {
     public void setWorkingHours(Double workingHours) { this.workingHours = workingHours; }
     public void setOvertimeHours(Double overtimeHours) { this.overtimeHours = overtimeHours; }
     public void setStatus(AttendanceStatus status) { this.status = status; }
+    public void setHalfType(HalfType halfType) { this.halfType = halfType; }
     public void setRemarks(String remarks) { this.remarks = remarks; }
 
     // Builder
@@ -90,6 +99,7 @@ public class Attendance {
         private Double workingHours;
         private Double overtimeHours;
         private AttendanceStatus status;
+        private HalfType halfType;
         private String remarks;
 
         public Builder id(Long id) { this.id = id; return this; }
@@ -100,10 +110,13 @@ public class Attendance {
         public Builder workingHours(Double workingHours) { this.workingHours = workingHours; return this; }
         public Builder overtimeHours(Double overtimeHours) { this.overtimeHours = overtimeHours; return this; }
         public Builder status(AttendanceStatus status) { this.status = status; return this; }
+        public Builder halfType(HalfType halfType) { this.halfType = halfType; return this; }
         public Builder remarks(String remarks) { this.remarks = remarks; return this; }
 
         public Attendance build() {
-            return new Attendance(id, employee, date, checkInTime, checkOutTime, workingHours, overtimeHours, status, remarks);
+            Attendance attendance = new Attendance(id, employee, date, checkInTime, checkOutTime, workingHours, overtimeHours, status, remarks);
+            attendance.setHalfType(halfType);
+            return attendance;
         }
     }
 }

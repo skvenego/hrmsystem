@@ -4,38 +4,85 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Accountant Approvals - HRM System</title>
-    <link rel="stylesheet" href="../css/employee-theme.css">
-    <link rel="stylesheet" href="../css/pages.css">
+    <link rel="stylesheet" href="../css/hrm-design-system.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-layout">
+    <div class="dashboard">
         <!-- Sidebar -->
-        <aside class="sidebar"></aside>
+        <aside class="sidebar" id="sidebar-container"></aside>
 
         <!-- Main Content -->
         <main class="main-content">
             <!-- Header -->
-            <header class="top-header">
+            <header class="header flex justify-between items-center mb-6">
                 <div class="page-title">
-                    <div class="page-title-icon">
-                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                        </svg>
-                    </div>
-                    <h1>Pending Approvals</h1>
+                    <h1>Accountant Approvals</h1>
+                    <p>Review pending approvals or browse historically approved payroll records</p>
                 </div>
-                <span class="badge-warning">Accountant View</span>
+                <div class="flex gap-2 items-center">
+                    <span class="badge-accountant" style="background: #fef3c7; color: #92400e; padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Accountant View
+                    </span>
+                    <button class="btn-danger flex items-center gap-2" onclick="auth.logout()">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                        Logout
+                    </button>
+                </div>
+            </header>
 
             <div class="page-content">
-                <div class="card">
-                    <div class="table-container">
-                        <table class="data-table">
+                <div class="card p-0 overflow-hidden shadow-sm border border-gray-100">
+                    <!-- Filter Row -->
+                    <div class="card-header border-b border-gray-100 flex justify-between items-center" style="padding: 1.25rem 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; background: #f9fafb;">
+                        <h3 class="card-title font-semibold text-gray-700" style="margin: 0; font-size: 1.1rem;">Approval Records</h3>
+                        <div class="flex gap-2 items-center" style="display: flex; gap: 0.75rem; align-items: center;">
+                            <select id="month-filter" class="form-control" style="padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #d1d5db; font-size: 0.875rem; background: white;" onchange="renderFilteredApprovals()">
+                                <option value="ALL">All Months</option>
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                            <select id="year-filter" class="form-control" style="padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #d1d5db; font-size: 0.875rem; background: white;" onchange="renderFilteredApprovals()">
+                                <option value="ALL">All Years</option>
+                                <option value="2026">2026</option>
+                                <option value="2025">2025</option>
+                                <option value="2024">2024</option>
+                            </select>
+                            <select id="status-filter" class="form-control" style="padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #d1d5db; font-size: 0.875rem; background: white;" onchange="renderFilteredApprovals()">
+                                <option value="ALL">All Statuses</option>
+                                <option value="PENDING_APPROVAL">Pending Approval</option>
+                                <option value="APPROVED_PAID">Approved & Paid History</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Table Container -->
+                    <div class="table-container dashboard-table-scroll">
+                        <table class="data-table w-full text-left border-collapse">
                             <thead>
-                                <tr><th>Employee</th><th>Month</th><th>Net Salary</th><th>Status</th><th>Actions</th></tr>
+                                <tr class="bg-gray-50 border-b border-gray-200">
+                                    <th class="p-4 font-semibold text-gray-700">Employee</th>
+                                    <th class="p-4 font-semibold text-gray-700">Month/Year</th>
+                                    <th class="p-4 font-semibold text-gray-700">Net Salary</th>
+                                    <th class="p-4 font-semibold text-gray-700">Status</th>
+                                    <th class="p-4 font-semibold text-gray-700 text-center">Actions</th>
+                                </tr>
                             </thead>
-                            <tbody id="approvals-table">
-                                <tr><td colspan="5" style="text-align: center; padding: 2rem;">Loading...</td></tr>
+                            <tbody id="approvals-table" class="divide-y divide-gray-100">
+                                <tr>
+                                    <td colspan="5" class="text-center p-8 text-gray-500">Loading approvals...</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -43,7 +90,7 @@
             </div>
         </main>
     </div>
-    
+
     <!-- Payroll Detail Modal -->
     <div id="detail-modal" class="modal">
         <div class="modal-content">
@@ -55,96 +102,137 @@
                 <!-- Content loaded dynamically -->
             </div>
             <div class="modal-actions">
-                <button onclick="approve(currentPayrollId)" class="btn btn-approve" style="flex: 1;">Approve Payroll</button>
-                <button onclick="reject(currentPayrollId)" class="btn btn-reject" style="flex: 1;">Reject</button>
-                <button onclick="closeModal()" class="btn btn-secondary">Close</button>
+                <button onclick="approve(currentPayrollId)" class="btn-success" style="flex: 1; padding: 0.5rem 1rem;">Approve Payroll</button>
+                <button onclick="reject(currentPayrollId)" class="btn-danger" style="flex: 1; padding: 0.5rem 1rem;">Reject</button>
+                <button onclick="closeModal()" class="btn-secondary" style="padding: 0.5rem 1rem;">Close</button>
             </div>
         </div>
     </div>
 
-    <script src="../js/auth.js?v=4"></script>
-    <script src="../js/sidebar.js?v=4"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/sidebar.js"></script>
     <script>
         if (!auth.requireAuth()) throw new Error('Auth required');
-        
+
         let currentPayrollId = null;
-        
+        let allApprovals = [];
+
         async function loadApprovals() {
             try {
-                // Load all payrolls and filter for PENDING_APPROVAL status
                 const res = await auth.apiCall('/api/payroll/list?t=' + Date.now());
-                const data = res && res.ok ? await res.json() : [];
-                
-                const tbody = document.getElementById('approvals-table');
-                
-                // Filter for PENDING_APPROVAL status only
-                const pendingApprovals = data.filter(p => p.status === 'PENDING_APPROVAL');
-                
-                if (!pendingApprovals || pendingApprovals.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">No pending approvals</td></tr>';
-                    return;
-                }
-                
-                tbody.innerHTML = pendingApprovals.map(a => `
-                    <tr>
-                        <td><strong>${a.employeeName || 'Unknown'}</strong><br><small>${a.designation || ''}</small></td>
-                        <td>${a.month}/${a.year}</td>
-                        <td><strong>${auth.formatCurrency(a.netSalary || 0)}</strong></td>
-                        <td><span class="status-badge pending-approval">Pending Approval</span></td>
-                        <td>
-                            <button onclick="viewDetails(${a.id})" class="btn-small" style="background: #dbeafe; color: #1e40af;">View</button>
-                            <button onclick="approve(${a.id})" class="btn-small" style="background: #dcfce7; color: #166534;">Approve</button>
-                            <button onclick="reject(${a.id})" class="btn-small" style="background: #fee2e2; color: #991b1b;">Reject</button>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (e) { 
+                allApprovals = res && res.ok ? await res.json() : [];
+                renderFilteredApprovals();
+            } catch (e) {
                 console.error(e);
                 auth.showNotification('Failed to load approvals', 'error');
             }
         }
-        
+
+        function renderFilteredApprovals() {
+            const tbody = document.getElementById('approvals-table');
+            const monthVal = document.getElementById('month-filter').value;
+            const yearVal = document.getElementById('year-filter').value;
+            const statusVal = document.getElementById('status-filter').value;
+
+            let filtered = allApprovals;
+
+            // Apply Month Filter
+            if (monthVal !== 'ALL') {
+                filtered = filtered.filter(p => p.month === parseInt(monthVal));
+            }
+
+            // Apply Year Filter
+            if (yearVal !== 'ALL') {
+                filtered = filtered.filter(p => p.year === parseInt(yearVal));
+            }
+
+            // Apply Status Filter
+            if (statusVal === 'PENDING_APPROVAL') {
+                filtered = filtered.filter(p => p.status === 'PENDING_APPROVAL');
+            } else if (statusVal === 'APPROVED_PAID') {
+                filtered = filtered.filter(p => p.status === 'APPROVED' || p.status === 'PAID');
+            } else {
+                // ALL status - show PENDING_APPROVAL, APPROVED, and PAID (skip draft PENDING)
+                filtered = filtered.filter(p => p.status !== 'PENDING');
+            }
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 3rem; color: #6b7280;">No payroll records match the criteria</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(a => {
+                const isPendingApproval = a.status === 'PENDING_APPROVAL';
+                const statusBadge = a.status === 'PAID' 
+                    ? '<span class="status-badge active bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">✅ Paid</span>'
+                    : a.status === 'APPROVED'
+                        ? '<span class="status-badge active bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">✅ Approved</span>'
+                        : '<span class="status-badge pending bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-medium">⏳ Pending Approval</span>';
+
+                let actionButtons = '';
+                if (isPendingApproval) {
+                    actionButtons = `
+                        <button onclick="viewDetails(${a.id})" class="btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">View</button>
+                        <button onclick="approve(${a.id})" class="btn-success" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Approve</button>
+                        <button onclick="reject(${a.id})" class="btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Reject</button>
+                    `;
+                } else {
+                    actionButtons = `
+                        <button onclick="viewDetails(${a.id})" class="btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">View Details</button>
+                    `;
+                }
+
+                return `
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="p-4">
+                            <strong class="text-gray-800">${a.employeeName || 'Unknown'}</strong><br>
+                            <small class="text-gray-500">${a.designation || ''}</small>
+                        </td>
+                        <td class="p-4 text-gray-600">${a.month}/${a.year}</td>
+                        <td class="p-4 font-bold text-gray-800">${auth.formatCurrency(a.netSalary || 0)}</td>
+                        <td class="p-4">${statusBadge}</td>
+                        <td class="p-4">
+                            <div class="flex gap-2 justify-center">
+                                ${actionButtons}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
         function viewDetails(id) {
             currentPayrollId = id;
-            // Load all payrolls and find the one with matching ID
             auth.apiCall('/api/payroll/list?t=' + Date.now()).then(res => {
                 if (res && res.ok) return res.json();
                 throw new Error('Failed to load payroll details');
             }).then(data => {
                 const p = data.find(payroll => payroll.id === id);
                 if (!p) throw new Error('Payroll not found');
-                
-                // Debug logging
-                console.log('DEBUG Payroll data:', p);
-                console.log('DEBUG - absentLeaveDeduction:', p.absentLeaveDeduction, 'otherDeductions:', p.otherDeductions);
-                console.log('DEBUG - unpaidLeaveDays:', p.unpaidLeaveDays, 'absentDays:', p.absentDays, 'halfDays:', p.halfDays);
-                console.log('DEBUG - totalDeductions:', p.totalDeductions, 'netSalary:', p.netSalary);
-                
+
                 const modal = document.getElementById('detail-modal');
                 const content = document.getElementById('modal-content-body');
                 const actionsDiv = document.querySelector('.modal-actions');
-                
-                // Check if still pending approval
+
                 const isPendingApproval = p.status === 'PENDING_APPROVAL';
-                
-                // Update modal actions based on status
+
                 if (actionsDiv) {
                     if (isPendingApproval) {
                         actionsDiv.innerHTML = `
-                            <button onclick="approve(currentPayrollId)" class="btn btn-approve" style="flex: 1;">Approve Payroll</button>
-                            <button onclick="reject(currentPayrollId)" class="btn btn-reject" style="flex: 1;">Reject</button>
-                            <button onclick="closeModal()" class="btn btn-secondary">Close</button>
+                            <button onclick="approve(currentPayrollId)" class="btn-success" style="flex: 1; padding: 0.5rem 1rem;">Approve Payroll</button>
+                            <button onclick="reject(currentPayrollId)" class="btn-danger" style="flex: 1; padding: 0.5rem 1rem;">Reject</button>
+                            <button onclick="closeModal()" class="btn-secondary" style="padding: 0.5rem 1rem;">Close</button>
                         `;
                     } else {
                         actionsDiv.innerHTML = `
                             <div style="flex: 1; text-align: center; padding: 0.5rem; background: #f3f4f6; border-radius: 6px;">
                                 <span style="font-weight: 600; color: #6b7280;">Status: ${p.status || 'Unknown'}</span>
                             </div>
-                            <button onclick="closeModal()" class="btn btn-secondary">Close</button>
+                            <button onclick="closeModal()" class="btn-secondary" style="padding: 0.5rem 1rem;">Close</button>
                         `;
                     }
                 }
-                
+
                 content.innerHTML = `
                     <div class="detail-grid">
                         <div class="detail-section">
@@ -160,9 +248,10 @@
                             <h4>Attendance & Leave Summary</h4>
                             <div class="detail-row"><span>Present Days:</span><strong>${p.presentDays || 0}</strong></div>
                             <div class="detail-row"><span>Absent Days:</span><strong style="color: #dc2626;">${p.absentDays || 0}</strong></div>
+                            <div style="font-size: 0.65rem; color: #ef4444; font-weight: 500; margin-top: -4px; margin-bottom: 8px;">⚠️ Salary will be double deducted if not approved by admin</div>
                             <div class="detail-row"><span>Half Days:</span><strong>${p.halfDays || 0}</strong></div>
-                            <div class="detail-row"><span>Paid Leave Days:</span><strong style="color: #16a34a;">${p.paidLeaveDays || 0}</strong></div>
-                            <div class="detail-row"><span>Unpaid Leave Days:</span><strong style="color: #dc2626;">${p.unpaidLeaveDays || 0}</strong></div>
+                            <div class="detail-row"><span>Paid used:</span><strong>${p.paidLeaveDays || 0}</strong></div>
+                            <div class="detail-row"><span>Unpaid used:</span><strong style="color: #dc2626;">${p.unpaidLeaveDays || 0}</strong></div>
                         </div>
                         
                         <div class="detail-section" style="background: #f0fdf4; border: 1px solid #86efac;">
@@ -201,6 +290,7 @@
                                     let html = '';
                                     if ((p.absentDays || 0) > 0) {
                                         html += `<div class="detail-row"><span>Absent Days (${p.absentDays} days):</span><span style="color: #dc2626;">-${auth.formatCurrency(absentDeduction)}</span></div>`;
+                                        html += `<div style="font-size: 0.65rem; color: #ef4444; font-weight: 500; margin-top: -2px; margin-bottom: 4px; text-align: right;">⚠️ Salary will be double deducted if not approved by admin</div>`;
                                     }
                                     if ((p.unpaidLeaveDays || 0) > 0) {
                                         html += `<div class="detail-row"><span>Unpaid Leaves (${p.unpaidLeaveDays} days):</span><span style="color: #dc2626;">-${auth.formatCurrency(unpaidDeduction)}</span></div>`;
@@ -278,8 +368,6 @@
             }
         }
         
-        function logout() { auth.logout(); }
-        
         // Close modal when clicking outside
         window.onclick = function(event) {
             const modal = document.getElementById('detail-modal');
@@ -291,35 +379,125 @@
         loadApprovals();
     </script>
     <style>
-        .badge-warning { background: #fef3c7; color: #92400e; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
-        .status-badge.pending-approval { background: #fef3c7; color: #92400e; }
-        
+        .badge-accountant {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
         /* Modal Styles */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 1rem; }
-        .modal-content { background: white; border-radius: 12px; max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; }
-        .modal-header h2 { margin: 0; font-size: 1.25rem; }
-        .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; }
-        .close-btn:hover { color: #374151; }
-        
-        .detail-grid { padding: 1.5rem; display: grid; gap: 1.5rem; }
-        .detail-section { background: #f9fafb; padding: 1rem; border-radius: 8px; }
-        .detail-section h4 { margin: 0 0 0.75rem 0; font-size: 0.875rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
-        .detail-row { display: flex; justify-content: space-between; padding: 0.375rem 0; font-size: 0.875rem; }
-        .detail-row.total { border-top: 1px solid #d1d5db; margin-top: 0.5rem; padding-top: 0.5rem; font-size: 1rem; }
-        .detail-section.earnings { background: #f0fdf4; border: 1px solid #86efac; }
-        .detail-section.deductions { background: #fef2f2; border: 1px solid #fca5a5; }
-        .detail-section.net-salary { background: #eff6ff; border: 1px solid #93c5fd; text-align: center; }
-        .net-amount { font-size: 1.75rem; font-weight: 700; color: #1e40af; }
-        
-        .modal-actions { display: flex; gap: 0.5rem; padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; background: #f9fafb; }
-        .btn { padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-weight: 500; }
-        .btn-approve { background: #dcfce7; color: #166534; }
-        .btn-approve:hover { background: #bbf7d0; }
-        .btn-reject { background: #fee2e2; color: #991b1b; }
-        .btn-reject:hover { background: #fecaca; }
-        .btn-secondary { background: #f3f4f6; color: #374151; }
-        .btn-secondary:hover { background: #e5e7eb; }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+        .close-btn:hover {
+            color: #374151;
+        }
+
+        .detail-grid {
+            padding: 1.5rem;
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .detail-section {
+            background: #f9fafb;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .detail-section h4 {
+            margin: 0 0 0.75rem 0;
+            font-size: 0.875rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.375rem 0;
+            font-size: 0.875rem;
+        }
+
+        .detail-row.total {
+            border-top: 1px solid #d1d5db;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .detail-section.earnings {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+        }
+
+        .detail-section.deductions {
+            background: #fef2f2;
+            border: 1px solid #fca5a5;
+        }
+
+        .detail-section.net-salary {
+            background: #eff6ff;
+            border: 1px solid #93c5fd;
+            text-align: center;
+        }
+
+        .net-amount {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1e40af;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
     </style>
 </body>
 </html>

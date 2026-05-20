@@ -12,7 +12,7 @@ SELECT
     lb.year,
     lb.cycle,
     lb.total_leaves as total_earned,
-    lb.used_leaves as used,
+    lb.Used Leaves_leaves as Used Leaves,
     lb.remaining_leaves as remaining,
     lb.unpaid_leaves as unpaid,
     lb.updated_at
@@ -82,7 +82,7 @@ WHERE p.employee_id = 16
   AND p.month = 4 
   AND p.year = 2026;
 
--- 6. Calculate used leaves manually (excluding Sundays)
+-- 6. Calculate Used Leaves leaves manually (excluding Sundays)
 -- This should match what the Java code calculates
 SELECT 
     l.id,

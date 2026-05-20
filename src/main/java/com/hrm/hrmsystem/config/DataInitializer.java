@@ -6,6 +6,7 @@ import com.hrm.hrmsystem.model.User;
 import com.hrm.hrmsystem.repository.DepartmentRepository;
 import com.hrm.hrmsystem.repository.EmployeeRepository;
 import com.hrm.hrmsystem.repository.UserRepository;
+import com.hrm.hrmsystem.service.ShiftService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +23,14 @@ import java.util.Set;
 
 @Configuration
 public class DataInitializer {
+
+    @Bean
+    @Order(0)
+    CommandLineRunner initShifts(ShiftService shiftService) {
+        return args -> {
+            shiftService.initializeDefaultShifts();
+        };
+    }
 
     @Bean
     @Order(1)
@@ -45,8 +54,7 @@ public class DataInitializer {
             }
             
             // Initialize sample employees if none exist
-            if (employeeRepository.count() == 0) {
-                System.out.println("Creating sample employees...");
+            if (false) { // Disabled dummy employee generation
                 
                 Department itDept = departmentRepository.findByName("IT").orElse(null);
                 Department hrDept = departmentRepository.findByName("HR").orElse(null);
@@ -56,7 +64,7 @@ public class DataInitializer {
                 
                 Employee emp1 = Employee.builder()
                     .firstName("John").lastName("Doe")
-                    .email("john.doe@example.com").phone("1234567890")
+                    .email("john.doe@example.com").phone("9876543210")
                     .department(itDept).designation("Software Engineer")
                     .joiningDate(LocalDate.of(2024, 1, 15))
                     .salary(new BigDecimal("75000.00"))
@@ -70,7 +78,7 @@ public class DataInitializer {
                 
                 Employee emp2 = Employee.builder()
                     .firstName("Jane").lastName("Smith")
-                    .email("jane.smith@example.com").phone("0987654321")
+                    .email("jane.smith@example.com").phone("8765432109")
                     .department(hrDept).designation("HR Manager")
                     .joiningDate(LocalDate.of(2023, 6, 20))
                     .salary(new BigDecimal("85000.00"))
@@ -84,7 +92,7 @@ public class DataInitializer {
                 
                 Employee emp3 = Employee.builder()
                     .firstName("Mike").lastName("Johnson")
-                    .email("mike.johnson@example.com").phone("1122334455")
+                    .email("mike.johnson@example.com").phone("7654321098")
                     .department(salesDept).designation("Sales Executive")
                     .joiningDate(LocalDate.of(2024, 3, 10))
                     .salary(new BigDecimal("65000.00"))
@@ -98,7 +106,7 @@ public class DataInitializer {
                 
                 Employee emp4 = Employee.builder()
                     .firstName("Sarah").lastName("Williams")
-                    .email("sarah.williams@example.com").phone("5566778899")
+                    .email("sarah.williams@example.com").phone("6543210987")
                     .department(designDept).designation("UI/UX Designer")
                     .joiningDate(LocalDate.of(2024, 2, 5))
                     .salary(new BigDecimal("70000.00"))
@@ -129,8 +137,8 @@ public class DataInitializer {
             } else {
                 System.out.println("Employees already exist (" + employeeRepository.count() + " records)");
                 
-                // Fix existing employees with NULL salary components
-                System.out.println("Checking and fixing NULL salary components...");
+                // Fix existing employees with NULL salary components or invalid phone numbers
+                System.out.println("Checking and fixing NULL salary components or invalid phone numbers...");
                 List<Employee> allEmployees = employeeRepository.findAll();
                 int fixedCount = 0;
                 
@@ -147,15 +155,32 @@ public class DataInitializer {
                         needsUpdate = true;
                     }
                     
+                    // Fix invalid phone numbers
+                    String phone = emp.getPhone();
+                    if (phone == null || !phone.matches("^[6-9][0-9]{9}$")) {
+                        String newPhone = "9876543210";
+                        if (phone != null && phone.length() == 10 && phone.substring(1).matches("[0-9]{9}")) {
+                            newPhone = "9" + phone.substring(1);
+                        } else if (phone != null) {
+                            String digits = phone.replaceAll("[^0-9]", "");
+                            if (digits.length() >= 9) {
+                                newPhone = "9" + digits.substring(digits.length() - 9);
+                            }
+                        }
+                        emp.setPhone(newPhone);
+                        needsUpdate = true;
+                        System.out.println("Fixed invalid phone '" + phone + "' for: " + emp.getEmail() + " to '" + newPhone + "'");
+                    }
+                    
                     if (needsUpdate) {
                         employeeRepository.save(emp);
                         fixedCount++;
-                        System.out.println("Fixed salary components for: " + emp.getEmail());
+                        System.out.println("Fixed employee details for: " + emp.getEmail());
                     }
                 }
                 
                 if (fixedCount > 0) {
-                    System.out.println("✓ Fixed " + fixedCount + " employees with NULL salary components");
+                    System.out.println("✓ Fixed " + fixedCount + " employees with NULL salary or invalid phone numbers");
                 }
             }
         };
@@ -169,44 +194,66 @@ public class DataInitializer {
             String defaultPassword = "Sachin@123";
             String encodedPassword = passwordEncoder.encode(defaultPassword);
             
+            // Enforce that username is always equal to email for all users in DB
+            List<User> allUsers = userRepository.findAll();
+            for (User u : allUsers) {
+                if (u.getEmail() != null && !u.getEmail().isEmpty() && !u.getEmail().equalsIgnoreCase(u.getUsername())) {
+                    System.out.println("Enforcing username = email: changing username '" + u.getUsername() + "' to '" + u.getEmail().toLowerCase() + "'");
+                    u.setUsername(u.getEmail().toLowerCase());
+                    userRepository.save(u);
+                }
+            }
+            
             // Create or update admin user
-            User admin = userRepository.findByUsername("admin")
-                .orElse(User.builder()
-                    .username("admin")
+            User admin = userRepository.findByEmail("admin@hrmsystem.com").orElse(null);
+            if (admin == null) {
+                admin = User.builder()
+                    .username("admin@hrmsystem.com")
                     .email("admin@hrmsystem.com")
                     .role(User.Role.ROLE_ADMIN)
+                    .password(encodedPassword)
                     .createdAt(LocalDateTime.now())
-                    .build());
-            admin.setPassword(encodedPassword);
+                    .build();
+                System.out.println("✓ Created admin user (admin@hrmsystem.com / " + defaultPassword + ")");
+            } else {
+                System.out.println("✓ Admin user exists (password preserved)");
+            }
             admin.setIsActive(true);
             userRepository.save(admin);
-            System.out.println("✓ Created/updated admin user (admin / " + defaultPassword + ")");
             
             // Create or update hradmin user
-            User hrAdmin = userRepository.findByUsername("hradmin")
-                .orElse(User.builder()
-                    .username("hradmin")
+            User hrAdmin = userRepository.findByEmail("hradmin@hrmsystem.com").orElse(null);
+            if (hrAdmin == null) {
+                hrAdmin = User.builder()
+                    .username("hradmin@hrmsystem.com")
                     .email("hradmin@hrmsystem.com")
                     .role(User.Role.ROLE_HR)
+                    .password(encodedPassword)
                     .createdAt(LocalDateTime.now())
-                    .build());
-            hrAdmin.setPassword(encodedPassword);
+                    .build();
+                System.out.println("✓ Created hradmin user (hradmin@hrmsystem.com / " + defaultPassword + ")");
+            } else {
+                System.out.println("✓ HRAdmin user exists (password preserved)");
+            }
             hrAdmin.setIsActive(true);
             userRepository.save(hrAdmin);
-            System.out.println("✓ Created/updated hradmin user (hradmin / " + defaultPassword + ")");
             
             // Create or update accountant user
-            User accountant = userRepository.findByUsername("accountant")
-                .orElse(User.builder()
-                    .username("accountant")
+            User accountant = userRepository.findByEmail("accountant@hrmsystem.com").orElse(null);
+            if (accountant == null) {
+                accountant = User.builder()
+                    .username("accountant@hrmsystem.com")
                     .email("accountant@hrmsystem.com")
                     .role(User.Role.ROLE_ACCOUNTANT)
+                    .password(encodedPassword)
                     .createdAt(LocalDateTime.now())
-                    .build());
-            accountant.setPassword(encodedPassword);
+                    .build();
+                System.out.println("✓ Created accountant user (accountant@hrmsystem.com / " + defaultPassword + ")");
+            } else {
+                System.out.println("✓ Accountant user exists (password preserved)");
+            }
             accountant.setIsActive(true);
             userRepository.save(accountant);
-            System.out.println("✓ Created/updated accountant user (accountant / " + defaultPassword + ")");
             
             // Create users for ALL employees - using email as username
             List<Employee> allEmployees = employeeRepository.findAll();
@@ -240,8 +287,8 @@ public class DataInitializer {
                 if (user == null) {
                     // Create new user with email as username
                     user = User.builder()
-                        .username(email)  // Email is the username
-                        .email(email)
+                        .username(emailLower)  // Email is the username
+                        .email(emailLower)
                         .password(encodedPassword)  // Default password
                         .role(User.Role.ROLE_EMPLOYEE)
                         .employee(emp)
@@ -249,13 +296,13 @@ public class DataInitializer {
                         .createdAt(LocalDateTime.now())
                         .build();
                     employeeUsersCreated++;
-                    System.out.println("✓ Created user for employee: " + email + " / " + defaultPassword);
+                    System.out.println("✓ Created user for employee: " + emailLower + " / " + defaultPassword);
                 } else {
                     // Update existing user - but DON'T overwrite password
                     user.setIsActive(true);
                     user.setEmployee(emp);
                     employeeUsersUpdated++;
-                    System.out.println("✓ Updated user for employee: " + email + " (password preserved)");
+                    System.out.println("✓ Updated user for employee: " + emailLower + " (password preserved)");
                 }
                 
                 userRepository.save(user);
@@ -263,9 +310,9 @@ public class DataInitializer {
             }
             
             System.out.println("✓ User initialization complete!");
-            System.out.println("  - Admin: admin / " + defaultPassword);
-            System.out.println("  - HR Admin: hradmin / " + defaultPassword);
-            System.out.println("  - Accountant: accountant / " + defaultPassword);
+            System.out.println("  - Admin: admin@hrmsystem.com / " + defaultPassword);
+            System.out.println("  - HR Admin: hradmin@hrmsystem.com / " + defaultPassword);
+            System.out.println("  - Accountant: accountant@hrmsystem.com / " + defaultPassword);
             System.out.println("  - Employees: " + employeeUsersCreated + " created, " + employeeUsersUpdated + " updated (email / " + defaultPassword + ")");
             System.out.println("  NOTE: Employees can change their password after first login");
         };

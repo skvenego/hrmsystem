@@ -64,6 +64,12 @@ public class Payroll {
     @Column(precision = 12, scale = 2)
     private BigDecimal netSalary;
 
+    @Column(precision = 12, scale = 2)
+    private BigDecimal unpaidLeaveDeduction;
+
+    @Column(precision = 12, scale = 2)
+    private BigDecimal absentDeduction;
+
     private LocalDate paymentDate;
 
     @Enumerated(EnumType.STRING)
@@ -135,6 +141,8 @@ public class Payroll {
     public BigDecimal getGrossSalary() { return grossSalary; }
     public BigDecimal getTotalDeductions() { return totalDeductions; }
     public BigDecimal getNetSalary() { return netSalary; }
+    public BigDecimal getUnpaidLeaveDeduction() { return unpaidLeaveDeduction; }
+    public BigDecimal getAbsentDeduction() { return absentDeduction; }
     public LocalDate getPaymentDate() { return paymentDate; }
     public PayrollStatus getStatus() { return status; }
     public Boolean getAccountantApproved() { return accountantApproved; }
@@ -163,6 +171,8 @@ public class Payroll {
     public void setGrossSalary(BigDecimal grossSalary) { this.grossSalary = grossSalary; }
     public void setTotalDeductions(BigDecimal totalDeductions) { this.totalDeductions = totalDeductions; }
     public void setNetSalary(BigDecimal netSalary) { this.netSalary = netSalary; }
+    public void setUnpaidLeaveDeduction(BigDecimal unpaidLeaveDeduction) { this.unpaidLeaveDeduction = unpaidLeaveDeduction; }
+    public void setAbsentDeduction(BigDecimal absentDeduction) { this.absentDeduction = absentDeduction; }
     public void setPaymentDate(LocalDate paymentDate) { this.paymentDate = paymentDate; }
     public void setStatus(PayrollStatus status) { this.status = status; }
     public void setAccountantApproved(Boolean accountantApproved) { this.accountantApproved = accountantApproved; }
@@ -192,6 +202,8 @@ public class Payroll {
         private BigDecimal grossSalary;
         private BigDecimal totalDeductions;
         private BigDecimal netSalary;
+        private BigDecimal unpaidLeaveDeduction;
+        private BigDecimal absentDeduction;
         private LocalDate paymentDate;
         private PayrollStatus status;
 
@@ -211,12 +223,17 @@ public class Payroll {
         public Builder grossSalary(BigDecimal grossSalary) { this.grossSalary = grossSalary; return this; }
         public Builder totalDeductions(BigDecimal totalDeductions) { this.totalDeductions = totalDeductions; return this; }
         public Builder netSalary(BigDecimal netSalary) { this.netSalary = netSalary; return this; }
+        public Builder unpaidLeaveDeduction(BigDecimal unpaidLeaveDeduction) { this.unpaidLeaveDeduction = unpaidLeaveDeduction; return this; }
+        public Builder absentDeduction(BigDecimal absentDeduction) { this.absentDeduction = absentDeduction; return this; }
         public Builder paymentDate(LocalDate paymentDate) { this.paymentDate = paymentDate; return this; }
         public Builder status(PayrollStatus status) { this.status = status; return this; }
 
         public Payroll build() {
-            return new Payroll(id, employee, month, year, basicSalary, hra, da, ta, otherAllowances,
+            Payroll payroll = new Payroll(id, employee, month, year, basicSalary, hra, da, ta, otherAllowances,
                     providentFund, tax, insurance, otherDeductions, grossSalary, totalDeductions, netSalary, paymentDate, status);
+            payroll.setUnpaidLeaveDeduction(unpaidLeaveDeduction);
+            payroll.setAbsentDeduction(absentDeduction);
+            return payroll;
         }
     }
 }

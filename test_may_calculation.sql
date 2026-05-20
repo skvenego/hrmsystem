@@ -18,7 +18,7 @@ ORDER BY start_date;
 -- May 2026: 5 months since probation ended
 -- Earned: 5 × 1.5 = 7.5
 
--- Used leaves by end of May 2026:
+-- Used Leaves by end of May 2026:
 -- Leave 4: Apr 26-27 (2 paid) - ends before May 31
 -- Leave 5: Apr 29-May 2 (3 paid, 1 unpaid) - ends May 2, counts
 -- Leave 6: May 4-6 (0.5 paid, 2.5 unpaid) - ends May 6, counts

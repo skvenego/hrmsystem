@@ -20,4 +20,6 @@ public interface PayrollRepository extends JpaRepository<Payroll, Long> {
     List<Payroll> findByMonthAndYear(Integer month, Integer year);
 
     List<Payroll> findByStatus(Payroll.PayrollStatus status);
+
+    void deleteByEmployeeId(Long employeeId);
 }

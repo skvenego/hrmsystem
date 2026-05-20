@@ -1,10 +1,12 @@
 package com.hrm.hrmsystem.controller;
 
 import com.hrm.hrmsystem.model.*;
+import com.hrm.hrmsystem.repository.UserRepository;
 import com.hrm.hrmsystem.service.PayrollApprovalService;
 import com.hrm.hrmsystem.service.PayrollService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -19,13 +21,16 @@ public class PayrollApprovalController {
 
     private final PayrollApprovalService approvalService;
     private final PayrollService payrollService;
+    private final UserRepository userRepository;
 
     public PayrollApprovalController(
         PayrollApprovalService approvalService,
-        PayrollService payrollService
+        PayrollService payrollService,
+        UserRepository userRepository
     ) {
         this.approvalService = approvalService;
         this.payrollService = payrollService;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -68,13 +73,13 @@ public class PayrollApprovalController {
     }
 
     /**
-     * Get pending approvals for Director
+     * Get pending approvals for Admin
      */
-    @GetMapping("/pending/director")
-    public ResponseEntity<?> getPendingApprovalsForDirector() {
+    @GetMapping("/pending/admin")
+    public ResponseEntity<?> getPendingApprovalsForAdmin() {
         try {
             List<PayrollApproval> pendingApprovals = approvalService.getPendingApprovalsForRole(
-                User.Role.ROLE_DIRECTOR
+                User.Role.ROLE_ADMIN
             );
 
             List<Map<String, Object>> response = pendingApprovals.stream().map(approval -> {
@@ -98,6 +103,15 @@ public class PayrollApprovalController {
             return ResponseEntity.internalServerError()
                 .body(Map.of("error", e.getMessage()));
         }
+    }
+
+    /**
+     * Get pending approvals for Director (Legacy/View)
+     */
+    @GetMapping("/pending/director")
+    public ResponseEntity<?> getPendingApprovalsForDirector() {
+        // Now same as admin for viewing, or could be empty if no role needed
+        return getPendingApprovalsForAdmin();
     }
 
     /**
@@ -136,27 +150,27 @@ public class PayrollApprovalController {
     }
 
     /**
-     * Approve by Director
+     * Approve by Admin
      */
-    @PostMapping("/{id}/director/approve")
-    public ResponseEntity<?> approveByDirector(
+    @PostMapping("/{id}/admin/approve")
+    public ResponseEntity<?> approveByAdmin(
         @PathVariable Long id,
         @RequestBody(required = false) Map<String, String> requestBody
     ) {
         try {
-            User currentUser = getCurrentUser(); // You need to implement this
+            User currentUser = getCurrentUser();
             
-            if (currentUser.getRole() != User.Role.ROLE_DIRECTOR) {
+            if (currentUser.getRole() != User.Role.ROLE_ADMIN && currentUser.getRole() != User.Role.ROLE_HR) {
                 return ResponseEntity.status(403)
-                    .body(Map.of("error", "Only Director can approve"));
+                    .body(Map.of("error", "Only Admin can authorize"));
             }
 
             String comments = requestBody != null ? requestBody.get("comments") : "";
             
-            PayrollApproval approval = approvalService.approveByDirector(id, currentUser, comments);
+            PayrollApproval approval = approvalService.approveByAdmin(id, currentUser, comments);
             
             return ResponseEntity.ok(Map.of(
-                "message", "Payroll approved successfully",
+                "message", "Payroll authorized successfully",
                 "status", "FINAL_APPROVED"
             ));
         } catch (RuntimeException e) {
@@ -166,6 +180,17 @@ public class PayrollApprovalController {
             return ResponseEntity.internalServerError()
                 .body(Map.of("error", e.getMessage()));
         }
+    }
+
+    /**
+     * Approve by Director (Legacy)
+     */
+    @PostMapping("/{id}/director/approve")
+    public ResponseEntity<?> approveByDirector(
+        @PathVariable Long id,
+        @RequestBody(required = false) Map<String, String> requestBody
+    ) {
+        return approveByAdmin(id, requestBody);
     }
 
     /**
@@ -204,25 +229,25 @@ public class PayrollApprovalController {
     }
 
     /**
-     * Reject by Director
+     * Reject by Admin
      */
-    @PostMapping("/{id}/director/reject")
-    public ResponseEntity<?> rejectByDirector(
+    @PostMapping("/{id}/admin/reject")
+    public ResponseEntity<?> rejectByAdmin(
         @PathVariable Long id,
         @RequestBody Map<String, String> requestBody
     ) {
         try {
             User currentUser = getCurrentUser();
             
-            if (currentUser.getRole() != User.Role.ROLE_DIRECTOR) {
+            if (currentUser.getRole() != User.Role.ROLE_ADMIN && currentUser.getRole() != User.Role.ROLE_HR) {
                 return ResponseEntity.status(403)
-                    .body(Map.of("error", "Only Director can reject"));
+                    .body(Map.of("error", "Only Admin can reject"));
             }
 
             String reason = requestBody.get("reason");
             
             PayrollApproval approval = approvalService.rejectApproval(
-                id, currentUser, User.Role.ROLE_DIRECTOR, reason
+                id, currentUser, User.Role.ROLE_ADMIN, reason
             );
             
             return ResponseEntity.ok(Map.of(
@@ -236,6 +261,17 @@ public class PayrollApprovalController {
             return ResponseEntity.internalServerError()
                 .body(Map.of("error", e.getMessage()));
         }
+    }
+
+    /**
+     * Reject by Director (Legacy)
+     */
+    @PostMapping("/{id}/director/reject")
+    public ResponseEntity<?> rejectByDirector(
+        @PathVariable Long id,
+        @RequestBody Map<String, String> requestBody
+    ) {
+        return rejectByAdmin(id, requestBody);
     }
 
     /**
@@ -259,19 +295,13 @@ public class PayrollApprovalController {
 
     /**
      * Helper method to get current authenticated user
-     * TODO: Implement proper authentication
      */
     private User getCurrentUser() {
-        // This is a placeholder - in production, use @AuthenticationPrincipal
-        // or SecurityContextHolder to get actual logged-in user
-        
-        // For testing purposes, return a dummy user
-        User user = new User();
-        user.setId(1L);
-        user.setUsername("test");
-        user.setEmail("test@example.com");
-        user.setRole(User.Role.ROLE_ACCOUNTANT); // Change based on testing needs
-        
-        return user;
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getName() != null) {
+            return userRepository.findByUsername(auth.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        }
+        throw new RuntimeException("User not authenticated");
     }
 }

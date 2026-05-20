@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Documents - HRM System</title>
+    <link rel="stylesheet" href="../css/hrm-design-system.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Design tokens matching hrm-design-system.css & settings.html */
+        :root {
+            --primary: #1e3a5f;
+            --primary-light: #2c5282;
+            --accent: #d4af37;
+            --accent-light: #f0d878;
+            --success: #059669;
+            --success-light: #d1fae5;
+            --warning: #d97706;
+            --warning-light: #fef3c7;
+            --danger: #dc2626;
+            --danger-light: #fee2e2;
+            --info: #2563eb;
+            --info-light: #dbeafe;
+            
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            
+            --radius-sm: 0.375rem;
+            --radius: 0.5rem;
+            --radius-md: 0.75rem;
+            --radius-lg: 1rem;
+            --radius-xl: 1.25rem;
+            
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Page Layout & Container Alignment */
+        .page-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Card Container styling */
+        .card {
+            background: #ffffff;
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--gray-200);
+            box-shadow: var(--shadow);
+            padding: 1.75rem;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-title-section {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--gray-100);
+            padding-bottom: 0.75rem;
+        }
+
+        /* Search Section Styling */
+        .search-wrapper {
+            position: relative;
+            margin-bottom: 0.5rem;
+        }
+
+        .search-icon-left {
+            position: absolute;
+            left: 1.25rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            pointer-events: none;
+            width: 20px;
+            height: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem 1.25rem 1rem 3.25rem !important;
+            border: 1px solid var(--gray-200) !important;
+            border-radius: var(--radius-lg) !important;
+            font-size: 0.95rem !important;
+            color: var(--gray-900) !important;
+            background-color: var(--gray-50) !important;
+            transition: var(--transition) !important;
+            outline: none !important;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+        }
+
+        .search-input:focus {
+            background-color: #ffffff !important;
+            border-color: var(--primary-light) !important;
+            box-shadow: 0 0 0 4px rgba(49, 130, 206, 0.15) !important;
+        }
+
+        /* Suggestions Dropdown Styling */
+        .suggestions-dropdown {
+            position: absolute;
+            top: 105%;
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            max-height: 280px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            animation: fadeIn 0.2s ease-out;
+            padding: 0.5rem;
+        }
+
+        .suggestion-item {
+            padding: 0.75rem 1.25rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: var(--radius-md);
+            transition: var(--transition);
+            margin-bottom: 2px;
+        }
+
+        .suggestion-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .suggestion-item:hover {
+            background-color: var(--gray-100);
+        }
+
+        .suggestion-item .emp-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .suggestion-item .emp-name {
+            font-weight: 600;
+            color: var(--gray-900);
+            font-size: 0.925rem;
+        }
+
+        .suggestion-item .emp-meta {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+        }
+
+        /* Selected Employee Card */
+        .selected-employee-card {
+            background: linear-gradient(to right, #ffffff, var(--gray-50));
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-xl);
+            padding: 1.5rem 2rem;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .selected-employee-card .emp-details-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        .selected-employee-card .avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            font-weight: 700;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .selected-employee-card .emp-meta-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .selected-employee-card .emp-name-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin: 0;
+        }
+
+        .selected-employee-card .emp-details-subtext {
+            font-size: 0.825rem;
+            color: var(--gray-500);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .selected-employee-card .department-pill {
+            background-color: var(--info-light);
+            color: var(--info);
+            padding: 0.125rem 0.5rem;
+            border-radius: 99px;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        /* Two-Column Upload Grid */
+        .upload-section-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            align-items: start;
+        }
+
+        @media (min-width: 992px) {
+            .upload-section-grid {
+                grid-template-columns: 360px 1fr;
+            }
+        }
+
+        /* Drag-and-Drop Attachment Box */
+        .drag-drop-zone {
+            border: 2px dashed var(--gray-300);
+            border-radius: var(--radius-lg);
+            padding: 2.25rem 1.25rem;
+            text-align: center;
+            background: var(--gray-50);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .drag-drop-zone:hover {
+            border-color: var(--primary-light);
+            background: #ffffff;
+        }
+
+        .drag-drop-zone.dragover {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            transform: scale(0.98);
+        }
+
+        .drag-drop-zone svg {
+            color: var(--gray-400);
+            transition: var(--transition);
+        }
+
+        .drag-drop-zone:hover svg {
+            color: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
+        .drag-drop-zone span {
+            font-size: 0.85rem;
+            color: var(--gray-500);
+            font-weight: 500;
+        }
+
+        .file-selected-info {
+            margin-top: 0.75rem;
+            padding: 0.625rem 1rem;
+            background-color: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            border-radius: var(--radius-md);
+            font-size: 0.825rem;
+            color: #065f46;
+            font-weight: 600;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        /* Tabular uploaded list layout */
+        .table-container {
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            border: 1px solid var(--gray-200);
+        }
+
+        .data-table {
+            border: none;
+            width: 100%;
+        }
+
+        .data-table th {
+            background-color: var(--gray-50);
+            color: var(--gray-600);
+            font-weight: 700;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .data-table td {
+            padding: 1.15rem 1.25rem;
+            border-bottom: 1px solid var(--gray-100);
+            vertical-align: middle;
+        }
+
+        .data-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tbody tr {
+            transition: var(--transition);
+        }
+
+        .data-table tbody tr:hover {
+            background-color: var(--gray-50);
+        }
+
+        /* Document Type Badges */
+        .doc-type-badge {
+            display: inline-flex;
+            padding: 0.25rem 0.625rem;
+            border-radius: 9999px;
+            font-size: 0.725rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .doc-type-badge.marksheets {
+            background-color: #fef3c7;
+            color: #d97706;
+        }
+
+        .doc-type-badge.offer-letter {
+            background-color: #d1fae5;
+            color: #059669;
+        }
+
+        .doc-type-badge.images {
+            background-color: #dbeafe;
+            color: #2563eb;
+        }
+
+        .doc-type-badge.other {
+            background-color: #f3e8ff;
+            color: #7c3aed;
+        }
+
+        /* Action Buttons */
+        .actions-cell-wrapper {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-action-mini {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--radius-md);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid transparent;
+        }
+
+        .btn-action-mini svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .btn-action-view {
+            background-color: #ffffff;
+            border-color: var(--gray-200);
+            color: var(--gray-700);
+        }
+
+        .btn-action-view:hover {
+            background-color: var(--gray-100);
+            color: var(--gray-900);
+            border-color: var(--gray-300);
+        }
+
+        .btn-action-download {
+            background-color: var(--primary);
+            color: #ffffff;
+        }
+
+        .btn-action-download:hover {
+            background-color: var(--primary-light);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-action-delete {
+            background-color: #fee2e2;
+            color: #ef4444;
+        }
+
+        .btn-action-delete:hover {
+            background-color: #fca5a5;
+            color: #b91c1c;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar-container"></aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header flex justify-between items-center mb-6">
+                <div class="page-title">
+                    <h1>Employee Documents</h1>
+                    <p>Search employee to view, upload, and download their official files</p>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <!-- Search Box -->
+                <div class="card mb-6">
+                    <h3 class="card-title-section">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="color: var(--primary-light);">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75l-2.489-2.489m0 0a3.375 3.375 0 10-4.773-4.773 3.375 3.375 0 004.773 4.773z"/>
+                        </svg>
+                        1. Select Employee
+                    </h3>
+                    <div class="search-wrapper">
+                        <svg class="search-icon-left" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+                        </svg>
+                        <input type="text" id="employee-search" class="search-input" placeholder="Search by name, employee ID, or email address..." autocomplete="off">
+                        <div id="suggestions" class="suggestions-dropdown"></div>
+                    </div>
+                </div>
+
+                <!-- Selected Employee Details -->
+                <div id="selected-employee-card" class="selected-employee-card">
+                    <div class="emp-details-wrapper">
+                        <div class="avatar" id="emp-avatar">?</div>
+                        <div class="emp-meta-info">
+                            <h3 class="emp-name-title" id="emp-fullName">John Doe</h3>
+                            <div class="emp-details-subtext">
+                                <span>ID: <strong id="emp-id">N/A</strong></span>
+                                <span>•</span>
+                                <span class="department-pill" id="emp-dept">N/A</span>
+                                <span>•</span>
+                                <span id="emp-email">john.doe@example.com</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="change-emp-btn" class="btn-secondary btn-sm" style="border-radius: var(--radius-md);">Change Employee</button>
+                </div>
+
+                <div id="main-document-area" style="display: none;">
+                    <div class="upload-section-grid">
+                        <!-- Upload Card -->
+                        <div class="card">
+                            <h3 class="card-title-section">
+                                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="color: var(--primary-light);">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                2. Upload Document
+                            </h3>
+                            <form id="document-upload-form">
+                                <div class="form-group mb-4">
+                                    <label class="form-label" style="font-weight: 600; color: var(--gray-700);">Document Type</label>
+                                    <select id="document-type" class="form-control" style="border-radius: var(--radius-md); padding: 0.75rem 1rem;" required>
+                                        <option value="" disabled selected>-- Select Type --</option>
+                                        <option value="Marksheets">Marksheets</option>
+                                        <option value="Offer Letter">Offer Letter</option>
+                                        <option value="Images">Images</option>
+                                        <option value="Other Documents">Other Documents</option>
+                                    </select>
+                                </div>
+                                <div class="form-group mb-4">
+                                    <label class="form-label" style="font-weight: 600; color: var(--gray-700);">Choose File</label>
+                                    <div class="drag-drop-zone" id="drop-zone">
+                                        <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/>
+                                        </svg>
+                                        <span>Drag & Drop file here or Click to Browse</span>
+                                        <input type="file" id="file-input" style="display: none;">
+                                    </div>
+                                    <div class="file-selected-info" id="file-info">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        Selected: <span id="file-name-text" style="word-break: break-all; margin-left: 0.25rem;"></span>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn-primary w-full flex justify-center items-center gap-2" style="border-radius: var(--radius-md); padding: 0.875rem 1.25rem;">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                                    </svg>
+                                    Upload Document
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Documents List -->
+                        <div class="card">
+                            <h3 class="card-title-section">
+                                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="color: var(--primary-light);">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
+                                </svg>
+                                Uploaded Documents List
+                            </h3>
+                            <div class="table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>File Name</th>
+                                            <th>Type</th>
+                                            <th>Uploaded Date</th>
+                                            <th class="text-center" style="width: 250px;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="documents-table-body">
+                                        <tr><td colspan="4" class="text-center p-8 text-muted">No documents uploaded yet.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script>
+        if (!auth.requireManagement()) throw new Error('Management access required');
+
+        let employeesList = [];
+        let selectedEmployee = null;
+
+        // Fetch all employees on load
+        async function fetchEmployees() {
+            try {
+                const res = await auth.apiCall('/api/employees');
+                if (res && res.ok) {
+                    employeesList = await res.json();
+                }
+            } catch (e) {
+                console.error('Error fetching employees:', e);
+                auth.showNotification('Error loading employee list', 'error');
+            }
+        }
+
+        // Suggestions logic
+        const searchInput = document.getElementById('employee-search');
+        const suggestionsBox = document.getElementById('suggestions');
+
+        searchInput.addEventListener('input', (e) => {
+            const val = e.target.value.trim().toLowerCase();
+            if (!val) {
+                suggestionsBox.style.display = 'none';
+                return;
+            }
+
+            const matches = employeesList.filter(emp => {
+                const fullName = `${emp.firstName || ''} ${emp.lastName || ''}`.toLowerCase();
+                const idStr = String(emp.id);
+                const emailStr = (emp.email || '').toLowerCase();
+                return fullName.includes(val) || idStr.includes(val) || emailStr.includes(val);
+            });
+
+            if (matches.length === 0) {
+                suggestionsBox.innerHTML = '<div style="padding: 12px; text-align: center; color: #9ca3af;">No employees found</div>';
+            } else {
+                suggestionsBox.innerHTML = matches.map(emp => `
+                    <div class="suggestion-item" onclick="selectEmployee(${emp.id})">
+                        <div class="emp-info">
+                            <span class="emp-name">${emp.firstName} ${emp.lastName}</span>
+                            <span class="emp-meta">ID: ${emp.id} | ${emp.departmentName || emp.department || 'No Dept'}</span>
+                        </div>
+                        <span style="font-size: 11px; color: #9ca3af;">${emp.email || ''}</span>
+                    </div>
+                `).join('');
+            }
+            suggestionsBox.style.display = 'block';
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+                suggestionsBox.style.display = 'none';
+            }
+        });
+
+        function selectEmployee(id) {
+            const emp = employeesList.find(e => e.id === id);
+            if (!emp) return;
+
+            selectedEmployee = emp;
+            suggestionsBox.style.display = 'none';
+            searchInput.value = '';
+
+            // Render selected details
+            document.getElementById('emp-avatar').textContent = `${emp.firstName[0]}${emp.lastName[0]}`;
+            document.getElementById('emp-fullName').textContent = `${emp.firstName} ${emp.lastName}`;
+            document.getElementById('emp-id').textContent = emp.id;
+            document.getElementById('emp-dept').textContent = emp.departmentName || emp.department || 'N/A';
+            document.getElementById('emp-email').textContent = emp.email || 'N/A';
+
+            document.getElementById('selected-employee-card').style.display = 'flex';
+            document.getElementById('main-document-area').style.display = 'block';
+
+            loadDocuments(emp.id);
+        }
+
+        document.getElementById('change-emp-btn').addEventListener('click', () => {
+            selectedEmployee = null;
+            document.getElementById('selected-employee-card').style.display = 'none';
+            document.getElementById('main-document-area').style.display = 'none';
+        });
+
+        // Drag & Drop
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileInfo = document.getElementById('file-info');
+        const fileNameText = document.getElementById('file-name-text');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                updateFileInfo();
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            updateFileInfo();
+        });
+
+        function updateFileInfo() {
+            if (fileInput.files.length > 0) {
+                fileNameText.textContent = fileInput.files[0].name;
+                fileInfo.style.display = 'block';
+            } else {
+                fileInfo.style.display = 'none';
+            }
+        }
+
+        function getDocTypeClass(type) {
+            const t = (type || '').toLowerCase();
+            if (t.includes('marksheet')) return 'marksheets';
+            if (t.includes('offer')) return 'offer-letter';
+            if (t.includes('image')) return 'images';
+            return 'other';
+        }
+
+        // Load Documents
+        async function loadDocuments(employeeId) {
+            try {
+                const res = await auth.apiCall(`/api/documents/employee/${employeeId}`);
+                if (!res || !res.ok) throw new Error('Failed to load documents');
+                const docs = await res.json();
+
+                const tbody = document.getElementById('documents-table-body');
+                if (docs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-muted">No documents uploaded yet.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = docs.map(doc => {
+                    const date = new Date(doc.uploadedAt);
+                    const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    return `
+                        <tr>
+                            <td class="font-semibold text-slate-800" style="word-break: break-all;">${doc.fileName}</td>
+                            <td><span class="doc-type-badge ${getDocTypeClass(doc.documentType)}">${doc.documentType}</span></td>
+                            <td class="text-sm text-slate-500">${formattedDate}</td>
+                            <td class="text-center">
+                                <div class="actions-cell-wrapper">
+                                    <button type="button" onclick="handleDocumentAction(${doc.id}, false, '${doc.fileName}')" class="btn-action-mini btn-action-view" title="View Document">
+                                        <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.43 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                        View
+                                    </button>
+                                    <button type="button" onclick="handleDocumentAction(${doc.id}, true, '${doc.fileName}')" class="btn-action-mini btn-action-download" title="Download Document">
+                                        <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                                        Download
+                                    </button>
+                                    <button type="button" onclick="deleteDocument(${doc.id}, '${doc.fileName}')" class="btn-action-mini btn-action-delete" title="Delete Document">
+                                        <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error(e);
+                auth.showNotification('Error loading documents', 'error');
+            }
+        }
+
+        window.handleDocumentAction = async function(id, isDownload, fileName) {
+            try {
+                const { token } = auth.getAuth();
+                auth.showNotification(isDownload ? 'Downloading...' : 'Opening...', 'info');
+                const res = await fetch(`/api/documents/download/${id}?download=${isDownload}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!res.ok) {
+                    auth.showNotification('Failed to retrieve document', 'error');
+                    return;
+                }
+
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                
+                if (isDownload) {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                } else {
+                    window.open(url, '_blank');
+                    // We don't revoke URL immediately here because the new tab needs time to load it
+                }
+            } catch (err) {
+                console.error('Error fetching document', err);
+                auth.showNotification('Error retrieving document', 'error');
+            }
+        };
+
+        window.deleteDocument = async function(id, fileName) {
+            if (!confirm(`Are you sure you want to delete "${fileName}"? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const { token } = auth.getAuth();
+                const res = await fetch(`/api/documents/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (res.ok) {
+                    auth.showNotification('Document deleted successfully', 'success');
+                    if (selectedEmployee) {
+                        loadDocuments(selectedEmployee.id);
+                    }
+                } else {
+                    const errMsg = await res.text();
+                    auth.showNotification('Failed to delete document: ' + errMsg, 'error');
+                }
+            } catch (err) {
+                console.error('Error deleting document:', err);
+                auth.showNotification('Network error occurred during deletion', 'error');
+            }
+        };
+
+        // Upload Form Submit
+        document.getElementById('document-upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!selectedEmployee) {
+                auth.showNotification('Please select an employee first', 'error');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            if (!file) {
+                auth.showNotification('Please select a file to upload', 'error');
+                return;
+            }
+
+            const docType = document.getElementById('document-type').value;
+            if (!docType) {
+                auth.showNotification('Please select a document type', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('employeeId', selectedEmployee.id);
+            formData.append('documentType', docType);
+            formData.append('file', file);
+
+            try {
+                // Get authorization token to bypass default JSON Content-Type headers in apiCall
+                const { token } = auth.getAuth();
+                auth.showNotification('Uploading document...', 'info');
+
+                const res = await fetch('/api/documents/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                if (res.ok) {
+                    auth.showNotification('Document uploaded successfully!', 'success');
+                    // Reset form
+                    document.getElementById('document-upload-form').reset();
+                    fileInfo.style.display = 'none';
+                    // Reload list
+                    loadDocuments(selectedEmployee.id);
+                } else {
+                    const errMsg = await res.text();
+                    auth.showNotification('Upload failed: ' + errMsg, 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                auth.showNotification('Network error occurred during upload', 'error');
+            }
+        });
+
+        // Initialize
+        fetchEmployees();
+    </script>
+</body>
+</html>

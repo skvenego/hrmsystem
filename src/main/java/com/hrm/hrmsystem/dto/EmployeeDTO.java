@@ -7,7 +7,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -36,7 +37,8 @@ public class EmployeeDTO {
     @Email(message = "Email should be valid")
     private String email;
     
-    @Size(max = 20, message = "Phone number must not exceed 20 characters")
+    @NotBlank(message = "Phone number is required")
+    @Pattern(regexp = "^[6-9][0-9]{9}$", message = "Phone number must be a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9")
     private String phone;
     
     @Size(max = 100, message = "Designation must not exceed 100 characters")
@@ -46,7 +48,7 @@ public class EmployeeDTO {
     @JsonDeserialize(using = LocalDateDeserializer.class)
     private LocalDate joiningDate;
     
-    @Positive(message = "Salary must be positive")
+    @PositiveOrZero(message = "Salary must be positive or zero")
     @JsonDeserialize(using = BigDecimalDeserializer.class)
     private BigDecimal salary;
     

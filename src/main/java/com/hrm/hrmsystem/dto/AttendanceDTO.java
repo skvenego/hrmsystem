@@ -14,6 +14,8 @@ public class AttendanceDTO {
     private Double workingHours;
     private Double overtimeHours;
     private String status;
+    private String fullStatus;
+    private String halfType;
     private String remarks;
 
     public AttendanceDTO() {}
@@ -28,6 +30,8 @@ public class AttendanceDTO {
     public Double getWorkingHours() { return workingHours; }
     public Double getOvertimeHours() { return overtimeHours; }
     public String getStatus() { return status; }
+    public String getFullStatus() { return fullStatus; }
+    public String getHalfType() { return halfType; }
     public String getRemarks() { return remarks; }
 
     // Setters
@@ -40,6 +44,8 @@ public class AttendanceDTO {
     public void setWorkingHours(Double workingHours) { this.workingHours = workingHours; }
     public void setOvertimeHours(Double overtimeHours) { this.overtimeHours = overtimeHours; }
     public void setStatus(String status) { this.status = status; }
+    public void setFullStatus(String fullStatus) { this.fullStatus = fullStatus; }
+    public void setHalfType(String halfType) { this.halfType = halfType; }
     public void setRemarks(String remarks) { this.remarks = remarks; }
 
     public static Builder builder() {
@@ -56,6 +62,8 @@ public class AttendanceDTO {
         private Double workingHours;
         private Double overtimeHours;
         private String status;
+        private String fullStatus;
+        private String halfType;
         private String remarks;
 
         public Builder id(Long id) { this.id = id; return this; }
@@ -67,6 +75,8 @@ public class AttendanceDTO {
         public Builder workingHours(Double workingHours) { this.workingHours = workingHours; return this; }
         public Builder overtimeHours(Double overtimeHours) { this.overtimeHours = overtimeHours; return this; }
         public Builder status(String status) { this.status = status; return this; }
+        public Builder fullStatus(String fullStatus) { this.fullStatus = fullStatus; return this; }
+        public Builder halfType(String halfType) { this.halfType = halfType; return this; }
         public Builder remarks(String remarks) { this.remarks = remarks; return this; }
 
         public AttendanceDTO build() {
@@ -80,6 +90,8 @@ public class AttendanceDTO {
             dto.workingHours = this.workingHours;
             dto.overtimeHours = this.overtimeHours;
             dto.status = this.status;
+            dto.fullStatus = this.fullStatus;
+            dto.halfType = this.halfType;
             dto.remarks = this.remarks;
             return dto;
         }

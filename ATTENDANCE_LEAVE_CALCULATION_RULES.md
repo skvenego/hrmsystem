@@ -108,7 +108,7 @@ When calculating any day, the system follows this priority order:
 - Deduction = 0.5 × Daily Basic Salary
 
 **Unpaid Leave Deduction:**
-- Deduction = Unpaid Leave Days × Daily Basic Salary
+- Deduction = unpaidUsedLeaves × Daily Basic Salary
 
 **Total Attendance Deduction:**
 - Total = Absent Deduction + Half-Day Deduction + Unpaid Leave Deduction

@@ -55,6 +55,9 @@ public class Payslip {
     @Column(name = "other_deduction", precision = 10, scale = 2)
     private BigDecimal otherDeduction;
 
+    @Column(name = "insurance", precision = 10, scale = 2)
+    private BigDecimal insurance;
+
     @Column(name = "total_deduction", precision = 10, scale = 2)
     private BigDecimal totalDeduction;
 
@@ -163,6 +166,7 @@ public class Payslip {
     public BigDecimal getEsi() { return esi; }
     public BigDecimal getIncomeTax() { return incomeTax; }
     public BigDecimal getOtherDeduction() { return otherDeduction; }
+    public BigDecimal getInsurance() { return insurance; }
     public BigDecimal getTotalDeduction() { return totalDeduction; }
     public BigDecimal getNetSalary() { return netSalary; }
     public Integer getTotalDays() { return totalDays; }
@@ -204,6 +208,7 @@ public class Payslip {
     public void setEsi(BigDecimal esi) { this.esi = esi; }
     public void setIncomeTax(BigDecimal incomeTax) { this.incomeTax = incomeTax; }
     public void setOtherDeduction(BigDecimal otherDeduction) { this.otherDeduction = otherDeduction; }
+    public void setInsurance(BigDecimal insurance) { this.insurance = insurance; }
     public void setTotalDeduction(BigDecimal totalDeduction) { this.totalDeduction = totalDeduction; }
     public void setNetSalary(BigDecimal netSalary) { this.netSalary = netSalary; }
     public void setTotalDays(Integer totalDays) { this.totalDays = totalDays; }

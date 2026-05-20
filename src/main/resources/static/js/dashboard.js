@@ -16,7 +16,7 @@ async function initializeDashboard() {
     if (user) {
         document.getElementById('user-name').textContent = user.username || user.employeeName || 'User';
     }
-    
+
     // Load dashboard data
     await loadDashboardData();
 }
@@ -24,43 +24,50 @@ async function initializeDashboard() {
 async function loadDashboardData() {
     const loadingEl = document.getElementById('loading');
     const contentEl = document.getElementById('dashboard-content');
-    
+
     try {
         // Fetch all data in parallel
         const [employeesRes, attendanceRes, leaveRes, payrollRes] = await Promise.all([
             auth.apiCall('/api/employees'),
-            auth.apiCall(`/api/attendance/date/${new Date().toISOString().split('T')[0]}`),
+            auth.apiCall('/api/dashboard/my/attendance'), // ✅ STANDARDIZED: Use same API as other pages
             auth.apiCall('/api/leaves'),
             auth.apiCall('/api/payroll/list')
         ]);
-        
+
         const stats = {
             totalEmployees: 0,
             presentToday: 0,
+            absentToday: 0,        // ✅ STANDARDIZED: Added absent days
+            paidUsedLeaves: 0,    // ✅ STANDARDIZED: Added paid used leaves
+            unpaidUsedLeaves: 0,  // ✅ STANDARDIZED: Added unpaid used leaves
             monthlyPayroll: 0,
             leaveRequests: 0
         };
-        
+
         let employees = [];
-        
+
         // Process employees
         if (employeesRes && employeesRes.ok) {
             employees = await employeesRes.json();
             stats.totalEmployees = employees.length || 0;
         }
-        
-        // Process attendance
+
+        // Process attendance - ✅ STANDARDIZED: Use same field names as API
         if (attendanceRes && attendanceRes.ok) {
             const attendance = await attendanceRes.json();
-            stats.presentToday = attendance.filter(a => a.status === 'PRESENT' || a.status === 'Present').length;
+            // API returns: { presentDays, absentDays, paidUsedLeaves, unpaidUsedLeaves, effectiveDays, totalHours }
+            stats.presentToday = attendance.presentDays || 0;
+            stats.absentToday = attendance.absentDays || 0;
+            stats.paidUsedLeaves = attendance.paidUsedLeaves || 0;
+            stats.unpaidUsedLeaves = attendance.unpaidUsedLeaves || 0;
         }
-        
+
         // Process leave requests
         if (leaveRes && leaveRes.ok) {
             const leaves = await leaveRes.json();
             stats.leaveRequests = leaves.filter(l => l.status === 'PENDING' || l.status === 'Pending').length;
         }
-        
+
         // Process payroll
         if (payrollRes && payrollRes.ok) {
             const payroll = await payrollRes.json();
@@ -69,20 +76,20 @@ async function loadDashboardData() {
             const currentMonthPayroll = payroll.filter(p => p.month === currentMonth && p.year === currentYear);
             stats.monthlyPayroll = currentMonthPayroll.reduce((sum, p) => sum + (p.netSalary || 0), 0);
         }
-        
+
         // Update stats
         document.getElementById('stat-employees').textContent = stats.totalEmployees;
         document.getElementById('stat-present').textContent = stats.presentToday;
         document.getElementById('stat-payroll').textContent = auth.formatCurrency(stats.monthlyPayroll);
         document.getElementById('stat-leave').textContent = stats.leaveRequests;
-        
+
         // Update recent employees table
         updateEmployeesTable(employees.slice(0, 5));
-        
+
         // Show content, hide loading
         loadingEl.style.display = 'none';
         contentEl.style.display = 'block';
-        
+
     } catch (error) {
         console.error('Error loading dashboard:', error);
         loadingEl.innerHTML = `
@@ -104,7 +111,7 @@ async function loadDashboardData() {
 
 function updateEmployeesTable(employees) {
     const tbody = document.getElementById('employees-table');
-    
+
     if (!employees || employees.length === 0) {
         tbody.innerHTML = `
             <tr>
@@ -115,7 +122,7 @@ function updateEmployeesTable(employees) {
         `;
         return;
     }
-    
+
     tbody.innerHTML = employees.map(emp => `
         <tr>
             <td>

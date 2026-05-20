@@ -22,6 +22,8 @@ public class LeaveDTO {
     private String cancellationReason;
     private String contactNumber;
     private LocalDate appliedDate;
+    private Long approverId;
+    private String approverName;
 
     public LeaveDTO() {}
 
@@ -44,6 +46,8 @@ public class LeaveDTO {
     public String getCancellationReason() { return cancellationReason; }
     public String getContactNumber() { return contactNumber; }
     public LocalDate getAppliedDate() { return appliedDate; }
+    public Long getApproverId() { return approverId; }
+    public String getApproverName() { return approverName; }
 
     // Setters
     public void setId(Long id) { this.id = id; }
@@ -64,6 +68,8 @@ public class LeaveDTO {
     public void setCancellationReason(String cancellationReason) { this.cancellationReason = cancellationReason; }
     public void setContactNumber(String contactNumber) { this.contactNumber = contactNumber; }
     public void setAppliedDate(LocalDate appliedDate) { this.appliedDate = appliedDate; }
+    public void setApproverId(Long approverId) { this.approverId = approverId; }
+    public void setApproverName(String approverName) { this.approverName = approverName; }
 
     public static Builder builder() {
         return new Builder();
@@ -88,6 +94,8 @@ public class LeaveDTO {
         private String cancellationReason;
         private String contactNumber;
         private LocalDate appliedDate;
+        private Long approverId;
+        private String approverName;
 
         public Builder id(Long id) { this.id = id; return this; }
         public Builder employeeId(Long employeeId) { this.employeeId = employeeId; return this; }
@@ -107,6 +115,8 @@ public class LeaveDTO {
         public Builder cancellationReason(String cancellationReason) { this.cancellationReason = cancellationReason; return this; }
         public Builder contactNumber(String contactNumber) { this.contactNumber = contactNumber; return this; }
         public Builder appliedDate(LocalDate appliedDate) { this.appliedDate = appliedDate; return this; }
+        public Builder approverId(Long approverId) { this.approverId = approverId; return this; }
+        public Builder approverName(String approverName) { this.approverName = approverName; return this; }
 
         public LeaveDTO build() {
             LeaveDTO dto = new LeaveDTO();
@@ -128,6 +138,8 @@ public class LeaveDTO {
             dto.cancellationReason = this.cancellationReason;
             dto.contactNumber = this.contactNumber;
             dto.appliedDate = this.appliedDate;
+            dto.approverId = this.approverId;
+            dto.approverName = this.approverName;
             return dto;
         }
     }

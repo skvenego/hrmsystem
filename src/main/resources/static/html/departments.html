@@ -4,115 +4,109 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Departments - HRM System</title>
-    <link rel="stylesheet" href="../css/employee-theme.css">
+    <link rel="stylesheet" href="../css/hrm-design-system.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-layout">
+    <div class="dashboard">
         <!-- Sidebar -->
-        <aside class="sidebar"></aside>
+        <aside class="sidebar" id="sidebar-container"></aside>
 
         <!-- Main Content -->
         <main class="main-content">
             <!-- Header -->
-            <header class="top-header">
+            <header class="header flex justify-between items-center mb-6">
                 <div class="page-title">
-                    <div class="page-title-icon">
-                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18M5 21V7l8-4 8 4v14M9 21v-6h6v6"/>
-                        </svg>
-                    </div>
                     <h1>Departments</h1>
+                    <p>Organize and manage organization units</p>
                 </div>
-                <div class="header-actions">
-                    <button class="icon-btn" onclick="auth.logout()" title="Logout">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                        </svg>
+                <div class="flex gap-2 items-center">
+                    <button id="add-dept-btn" class="btn-primary flex items-center gap-2">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="5" y2="19"></line><line x1="5" x2="19" y1="12" y2="12"></line></svg>
+                        Add Department
                     </button>
                 </div>
             </header>
 
-            <!-- Content Area -->
-            <div class="content-area">
-                <div class="page-content">
-                    <!-- Stats Cards -->
-                    <div class="stats-grid" style="margin-bottom: 2rem; grid-template-columns: repeat(3, 1fr);">
-                        <div class="stat-card">
-                            <div class="stat-icon blue">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M3 21h18M5 21V7l8-4 8 4v14M9 21v-6h6v6"/>
-                                </svg>
-                            </div>
-                            <div class="stat-info">
-                                <h3 id="stat-departments">0</h3>
-                                <p>Total Departments</p>
-                            </div>
+            <div class="page-content">
+                <!-- Stats Row -->
+                <div class="stats-grid mb-6">
+                    <div class="stat-card">
+                        <div class="stat-icon-wrapper primary">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 21h18M5 21V7l8-4 8 4v14M9 21v-6h6v6"/>
+                            </svg>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-icon green">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="9" cy="7" r="4"></circle>
-                                </svg>
-                            </div>
-                            <div class="stat-info">
-                                <h3 id="stat-employees">0</h3>
-                                <p>Total Employees</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon purple">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
-                                    <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
-                                </svg>
-                            </div>
-                            <div class="stat-info">
-                                <h3 id="stat-avg">0</h3>
-                                <p>Avg Employees/Dept</p>
-                            </div>
+                        <div class="stat-content">
+                            <span class="stat-label">Total Departments</span>
+                            <span class="stat-value" id="stat-departments">0</span>
                         </div>
                     </div>
+                    <div class="stat-card">
+                        <div class="stat-icon-wrapper success">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-label">Total Employees</span>
+                            <span class="stat-value" id="stat-employees">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon-wrapper secondary">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                                <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-label">Avg Employees</span>
+                            <span class="stat-value" id="stat-avg">0</span>
+                        </div>
+                    </div>
+                </div>
 
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                        <h2 style="font-size: 1.25rem; font-weight: 600; color: #1f2937;">Department List</h2>
-                        <button id="add-dept-btn" class="btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.625rem 1.25rem; border-radius: 8px; font-size: 0.875rem; font-weight: 500; cursor: pointer;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="5" y2="19"></line><line x1="5" x2="19" y1="12" y2="12"></line></svg>
-                            Add Department
-                        </button>
-                    </div>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Department List</h2>
+                </div>
 
-                    <!-- Department Cards Grid -->
-                    <div id="departments-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem;">
-                        <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: #6b7280;">Loading...</div>
-                    </div>
+                <!-- Department Cards Grid -->
+                <div id="departments-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div class="col-span-full text-center p-8 text-muted">Loading...</div>
                 </div>
             </div>
         </main>
     </div>
 
-    <div id="dept-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
-        <div class="modal-content" style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h3 style="font-size: 1.25rem; font-weight: 600; color: #1f2937;">Add Department</h3>
-                <button onclick="closeModal()" style="background: none; border: none; font-size: 1.5rem; color: #6b7280; cursor: pointer; padding: 0.25rem; border-radius: 4px; line-height: 1;">&times;</button>
+    <div id="dept-modal" class="modal">
+        <div class="modal-backdrop" onclick="closeModal()"></div>
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header border-b">
+                <h3 class="modal-title">Add Department</h3>
+                <button onclick="closeModal()" class="btn-icon">&times;</button>
             </div>
-            <form id="dept-form">
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label class="form-label" style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Department Name</label>
-                    <input type="text" name="name" class="form-input" required style="width: 100%; padding: 0.625rem 0.875rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.875rem; box-sizing: border-box;">
-                </div>
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label class="form-label" style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Department Code</label>
-                    <input type="text" name="code" class="form-input" required style="width: 100%; padding: 0.625rem 0.875rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.875rem; box-sizing: border-box;">
-                </div>
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label class="form-label" style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Description</label>
-                    <textarea name="description" class="form-input" rows="3" style="width: 100%; padding: 0.625rem 0.875rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.875rem; box-sizing: border-box; resize: vertical;"></textarea>
-                </div>
-                <button type="submit" class="btn-auth" style="width: 100%; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s;">Save Department</button>
-            </form>
+            <div class="modal-body">
+                <form id="dept-form">
+                    <div class="form-group mb-4">
+                        <label class="form-label">Department Name</label>
+                        <input type="text" name="name" class="form-control" required placeholder="e.g. Information Technology">
+                    </div>
+                    <div class="form-group mb-4">
+                        <label class="form-label">Department Code</label>
+                        <input type="text" name="code" class="form-control" required placeholder="e.g. IT001">
+                    </div>
+                    <div class="form-group mb-6">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="3" placeholder="Brief description of the department..."></textarea>
+                    </div>
+                    <div class="flex gap-3 justify-end">
+                        <button type="button" onclick="closeModal()" class="btn-secondary">Cancel</button>
+                        <button type="submit" class="btn-primary">Save Department</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -173,49 +167,48 @@
                 ];
 
                 grid.innerHTML = data.map((d, index) => {
-                    const color = colors[index % colors.length];
                     return `
-                        <div style="background: white; border-radius: 6px; padding: 0.75rem; box-shadow: 0 1px 2px rgba(0,0,0,0.08); border: 1px solid #e5e7eb; transition: all 0.2s;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <div style="width: 32px; height: 32px; border-radius: 6px; background: ${color.bg}; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0;">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M3 21h18M5 21V7l8-4 8 4v14M9 21v-6h6v6"/>
-                                        </svg>
+                        <div class="card p-4 flex flex-col justify-between" style="min-height: 180px;">
+                            <div>
+                                <div class="flex justify-between items-start mb-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="stat-icon-wrapper primary" style="width: 40px; height: 40px; flex-shrink: 0;">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M3 21h18M5 21V7l8-4 8 4v14M9 21v-6h6v6"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 class="font-bold text-sm mb-0">${d.name}</h3>
+                                            <span class="badge badge-primary text-xs" style="margin-top: 2px; display: inline-block;">${d.code || '-'}</span>
+                                        </div>
                                     </div>
-                                    <h3 style="font-size: 0.875rem; font-weight: 600; color: #1f2937; line-height: 1.2;">${d.name}</h3>
+                                    <button onclick="deleteDept(${d.id})" class="btn-danger btn-mini" title="Delete Department" style="flex-shrink: 0;">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                    </button>
                                 </div>
-                                <button onclick="deleteDept(${d.id})" style="background: #fee2e2; color: #dc2626; border: none; padding: 0.25rem; border-radius: 4px; cursor: pointer;" title="Delete">
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                </button>
+                                <div class="mt-2 text-xs text-muted" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;" title="${d.description || 'No description available'}">
+                                    ${d.description || 'No description available'}
+                                </div>
                             </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="background: #f3f4f6; color: #6b7280; padding: 0.1rem 0.4rem; border-radius: 9999px; font-size: 0.65rem; font-weight: 500;">${d.code || '-'}</span>
-                                <div style="text-align: right;">
-                                    <div style="font-size: 0.6rem; color: #6b7280;">Employees</div>
-                                    <div style="font-size: 0.9rem; font-weight: 600; color: #1f2937;">${d.employeeCount || 0}</div>
-                                </div>
+                            <div class="flex justify-between items-center mt-4 pt-3 border-t">
+                                <div class="text-xs text-muted font-medium">Employees</div>
+                                <div class="font-bold text-lg text-primary">${d.employeeCount || 0}</div>
                             </div>
                         </div>
                     `;
                 }).join('');
             } catch (e) {
                 console.error('Load departments error:', e);
-                document.getElementById('departments-grid').innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: red;">Error: ${e.message}</div>`;
+                document.getElementById('departments-grid').innerHTML = `<div class="col-span-full text-center p-8 text-danger">Error: ${e.message}</div>`;
             }
         }
         
         function openModal() { 
-            console.log('openModal called');
             const modal = document.getElementById('dept-modal');
-            console.log('Modal element:', modal);
-            modal.style.display = 'flex';
             modal.classList.add('active'); 
-            console.log('Modal display set to flex');
         }
         function closeModal() { 
             const modal = document.getElementById('dept-modal');
-            modal.style.display = 'none';
             modal.classList.remove('active'); 
         }
         

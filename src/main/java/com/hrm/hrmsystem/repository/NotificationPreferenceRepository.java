@@ -13,4 +13,6 @@ public interface NotificationPreferenceRepository extends JpaRepository<Notifica
     Optional<NotificationPreference> findByUserId(Long userId);
     
     boolean existsByUser(User user);
+
+    void deleteByUserId(Long userId);
 }

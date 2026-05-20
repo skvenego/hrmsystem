@@ -4,76 +4,74 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Profile - HRM System</title>
-    <link rel="stylesheet" href="../css/employee-theme.css">
+    <link rel="stylesheet" href="../css/hrm-design-system.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-layout">
+    <div class="dashboard">
         <!-- Sidebar -->
-        <aside class="sidebar"></aside>
+        <aside class="sidebar" id="sidebar-container"></aside>
 
         <!-- Main Content -->
         <main class="main-content">
             <!-- Header -->
-            <header class="top-header">
+            <header class="header flex justify-between items-center mb-6">
                 <div class="page-title">
-                    <div class="page-title-icon" style="background: linear-gradient(135deg, #a5f3fc 0%, #06b6d4 100%);">
-                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                        </svg>
-                    </div>
                     <h1>My Profile</h1>
+                    <p>Manage your personal information and preferences</p>
                 </div>
-                <div class="header-actions">
-                    <button class="icon-btn" onclick="history.back()" title="Go Back">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                        </svg>
+                <div class="flex gap-2 items-center">
+                    <button class="btn-secondary flex items-center gap-2" onclick="history.back()">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                        Back
                     </button>
-                    <button class="icon-btn" onclick="auth.logout()" title="Logout">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                        </svg>
+                    <button class="btn-danger flex items-center gap-2" onclick="auth.logout()">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                        Logout
                     </button>
                 </div>
             </header>
 
             <div class="page-content">
-                <div class="card">
-                    <div class="profile-header">
-                        <div class="profile-avatar" id="profile-avatar">?</div>
+                <div class="card p-0 overflow-hidden" style="max-width: 800px; margin: 0 auto;">
+                    <div class="p-8 border-b bg-gray-50 flex items-center gap-6">
+                        <div class="w-24 h-24 rounded-full bg-primary-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg" id="profile-avatar">?</div>
                         <div>
-                            <h2 id="profile-name">Loading...</h2>
-                            <p id="profile-role">Employee</p>
+                            <h2 class="text-2xl font-bold text-gray-800" id="profile-name">Loading...</h2>
+                            <p class="text-gray-500 font-medium" id="profile-role">Employee</p>
                         </div>
                     </div>
                     
-                    <div class="card-body">
-                        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="p-8 space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="form-group">
                                 <label class="form-label">First Name</label>
-                                <input type="text" id="firstName" class="form-control" disabled>
+                                <input type="text" id="firstName" class="form-control bg-gray-50" disabled>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Last Name</label>
-                                <input type="text" id="lastName" class="form-control" disabled>
+                                <input type="text" id="lastName" class="form-control bg-gray-50" disabled>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Email</label>
-                            <input type="email" id="email" class="form-control" disabled>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="form-group">
+                                <label class="form-label">Email Address</label>
+                                <input type="email" id="email" class="form-control bg-gray-50" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" id="phone" class="form-control bg-gray-50" disabled>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Phone</label>
-                            <input type="tel" id="phone" class="form-control" disabled>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Designation</label>
-                            <input type="text" id="designation" class="form-control" disabled>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Department</label>
-                            <input type="text" id="department" class="form-control" disabled>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="form-group">
+                                <label class="form-label">Designation</label>
+                                <input type="text" id="designation" class="form-control bg-gray-50" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Department</label>
+                                <input type="text" id="department" class="form-control bg-gray-50" disabled>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -96,7 +94,7 @@
                     const data = await res.json();
                     document.getElementById('profile-avatar').textContent = (data.username || 'U')[0].toUpperCase();
                     document.getElementById('profile-name').textContent = data.username || 'User';
-                    document.getElementById('profile-role').textContent = data.role || 'Employee';
+                    document.getElementById('profile-role').textContent = (data.role || 'Employee').replace('ROLE_', '').replace('_', ' ');
                     
                     document.getElementById('firstName').value = data.firstName || '';
                     document.getElementById('lastName').value = data.lastName || '';
@@ -104,6 +102,22 @@
                     document.getElementById('phone').value = data.phone || '';
                     document.getElementById('designation').value = data.designation || '';
                     document.getElementById('department').value = data.department || '';
+
+                    // Sync role in local storage if it changed on the backend
+                    const currentUser = auth.getCurrentUser();
+                    if (currentUser && currentUser.role !== data.role) {
+                        currentUser.role = data.role;
+                        auth.setAuth(auth.getAuth().token, currentUser);
+                        
+                        // Re-render the sidebar with the new role
+                        if (window.sidebar && window.sidebar.renderSidebar) {
+                            window.sidebar.renderSidebar();
+                            window.sidebar.checkPageAccess();
+                        } else if (typeof renderSidebar === 'function') {
+                            renderSidebar();
+                            if (typeof checkPageAccess === 'function') checkPageAccess();
+                        }
+                    }
                 }
             } catch (e) { 
                 console.error('Failed to load profile:', e);
@@ -113,12 +127,6 @@
         
         loadProfile();
     </script>
-    <style>
-        .profile-header { display: flex; align-items: center; gap: 1.5rem; padding: 1.5rem; border-bottom: 1px solid #e5e7eb; }
-        .profile-avatar { width: 80px; height: 80px; background: #4f46e5; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: 700; }
-        .profile-header h2 { font-size: 1.5rem; font-weight: 600; }
-        .profile-header p { color: #6b7280; }
-        .profile-form { padding: 1.5rem; }
-    </style>
 </body>
+</html>
 </html>

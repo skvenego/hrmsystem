@@ -32,4 +32,6 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
     // Find attendance by employee and month/year
     @Query("SELECT a FROM Attendance a WHERE a.employee = :employee AND MONTH(a.date) = :month AND YEAR(a.date) = :year")
     List<Attendance> findByEmployeeAndMonthAndYear(@Param("employee") Employee employee, @Param("month") int month, @Param("year") int year);
+
+    void deleteByEmployeeId(Long employeeId);
 }

@@ -19,4 +19,6 @@ public interface SalaryAdjustmentRepository extends JpaRepository<SalaryAdjustme
     List<SalaryAdjustment> findByIsAppliedFalse();
 
     Optional<SalaryAdjustment> findByIdAndEmployeeId(Long id, Long employeeId);
+
+    void deleteByEmployeeId(Long employeeId);
 }

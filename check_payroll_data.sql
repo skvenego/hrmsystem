@@ -77,8 +77,8 @@ SELECT
     id,
     employee_id,
     total_earned_leaves,
-    used_leaves,
-    (total_earned_leaves - used_leaves) as remaining_leaves,
+    Used Leaves_leaves,
+    (total_earned_leaves - Used Leaves_leaves) as remaining_leaves,
     year,
     cycle
 FROM leave_balances 

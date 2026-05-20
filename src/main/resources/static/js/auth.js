@@ -67,11 +67,10 @@ function redirectIfAuth() {
 
 // Format currency
 function formatCurrency(amount) {
-    return new Intl.NumberFormat('en-IN', {
-        style: 'currency',
-        currency: 'INR',
+    const formatted = new Intl.NumberFormat('en-IN', {
         maximumFractionDigits: 0
     }).format(amount);
+    return `Rs. ${formatted}`;
 }
 
 // Format date
@@ -135,6 +134,13 @@ async function apiCall(url, options = {}) {
         logout();
         return null;
     }
+
+    if (response.status === 403 && url.includes('/api/users/profile')) {
+        // Active user was deleted or credentials invalidated
+        console.log('Active user session invalid or deleted, logging out...');
+        logout();
+        return null;
+    }
     
     return response;
 }
@@ -146,7 +152,8 @@ const ROLES = {
     MANAGER: 'ROLE_MANAGER',
     EMPLOYEE: 'ROLE_EMPLOYEE',
     ACCOUNTANT: 'ROLE_ACCOUNTANT',
-    DIRECTOR: 'ROLE_DIRECTOR'
+    DIRECTOR: 'ROLE_DIRECTOR',
+    LEAVES: 'ROLE_LEAVES'
 };
 
 // Get user role
@@ -164,7 +171,7 @@ function hasRole(role) {
 // Check if user is HR/Admin/Accountant/Director (Management roles) - matches sidebar logic
 function isManagement() {
     const role = getUserRole();
-    return role === ROLES.ADMIN || role === ROLES.HR || role === ROLES.ACCOUNTANT || role === ROLES.DIRECTOR;
+    return role === ROLES.ADMIN || role === ROLES.HR || role === ROLES.ACCOUNTANT || role === ROLES.DIRECTOR || role === ROLES.LEAVES;
 }
 
 // Check if user is Employee only
@@ -176,13 +183,13 @@ function isEmployee() {
 // Check if user is Accountant
 function isAccountant() {
     const role = getUserRole();
-    return role === ROLES.ACCOUNTANT || role === ROLES.ADMIN;
+    return role === ROLES.ACCOUNTANT;
 }
 
 // Check if user is Director
 function isDirector() {
     const role = getUserRole();
-    return role === ROLES.DIRECTOR || role === ROLES.ADMIN;
+    return role === ROLES.DIRECTOR;
 }
 
 // Require management role

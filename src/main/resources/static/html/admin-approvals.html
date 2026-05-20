@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Approvals - HRM System</title>
+    <link rel="stylesheet" href="../css/employee-theme.css">
+    <link rel="stylesheet" href="../css/pages.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar"></aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header flex justify-between items-center mb-6">
+                <div class="page-title">
+                    <h1>Admin Approvals</h1>
+                    <p>Final review and authorization for payroll batches</p>
+                </div>
+                <span class="badge-admin">Admin Authorization</span>
+            </header>
+
+            <div class="page-content">
+                <div class="card">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr><th>Employee</th><th>Month</th><th>Net Salary</th><th>Accountant</th><th>Actions</th></tr>
+                            </thead>
+                            <tbody id="approvals-table">
+                                <tr><td colspan="5" style="text-align: center; padding: 2rem;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script>
+        if (!auth.requireAuth()) throw new Error('Auth required');
+        
+        async function loadApprovals() {
+            try {
+                // Fetch all payrolls and filter locally
+                const res = await auth.apiCall('/api/payroll/list');
+                const allData = res && res.ok ? await res.json() : [];
+                
+                // For admin/director, they need to approve payrolls that the accountant has already approved (or all pending approval)
+                // We'll show anything that is accountantApproved = true but directorApproved = false
+                const data = allData.filter(p => p.accountantApproved && !p.directorApproved && p.status !== 'PAID');
+                
+                const tbody = document.getElementById('approvals-table');
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">No pending approvals</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = data.map(a => `
+                    <tr>
+                        <td>${a.employeeName || 'Unknown'}</td>
+                        <td>${a.month}/${a.year}</td>
+                        <td>${auth.formatCurrency(a.netSalary || 0)}</td>
+                        <td>${a.accountantApproved ? '✅ Approved' : '⏳ Pending'}</td>
+                        <td>
+                            <button onclick="approve(${a.id})" class="btn-small" style="background: #dcfce7; color: #166534;">Final Approve</button>
+                            <button onclick="reject(${a.id})" class="btn-small" style="background: #fee2e2; color: #991b1b;">Reject</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) { console.error(e); }
+        }
+        
+        async function approve(id) {
+            try {
+                const res = await auth.apiCall(`/api/payroll/approve-director/${id}`, { 
+                    method: 'POST',
+                    body: JSON.stringify({ directorName: 'Admin' })
+                });
+                if (res && res.ok) {
+                    auth.showNotification('Final approval completed', 'success');
+                    loadApprovals();
+                } else {
+                    const errorMsg = await res.text();
+                    auth.showNotification(errorMsg || 'Failed to approve', 'error');
+                }
+            } catch (e) { auth.showNotification(e.message, 'error'); }
+        }
+        
+        async function reject(id) {
+            const reason = prompt('Enter rejection reason:');
+            if (!reason) return;
+            try {
+                const res = await auth.apiCall(`/api/payroll/reject-director/${id}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ reason })
+                });
+                if (res && res.ok) {
+                    auth.showNotification('Rejected', 'success');
+                    loadApprovals();
+                } else {
+                    const errorMsg = await res.text();
+                    auth.showNotification(errorMsg || 'Failed to reject', 'error');
+                }
+            } catch (e) { auth.showNotification(e.message, 'error'); }
+        }
+        
+        function logout() { auth.logout(); }
+        loadApprovals();
+    </script>
+    <style>.badge-admin { background: #dbeafe; color: #1e40af; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }</style>
+</body>
+</html>

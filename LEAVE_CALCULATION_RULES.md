@@ -20,11 +20,11 @@ May Portion: May 1 + May 2 = 2 days (May 3 is Sunday, excluded)
 
 ### Step 3: Calculate Paid/Unpaid Per Month
 
-**Assumption:** Employee has already used 1 day in April (previous leave)
+**Assumption:** Employee has already Used Leaves 1 day in April (previous leave)
 
 **April Calculation:**
 - April earned: 1.5 days
-- Already used: 1 day (old leave)
+- Already Used Leaves: 1 day (old leave)
 - Remaining: 0.5 days
 - April leave portion: 1 day
 - Paid: 0.5 (max remaining)

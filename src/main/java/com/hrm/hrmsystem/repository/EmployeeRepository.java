@@ -29,4 +29,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     // Eagerly load department for single employee
     @Query("SELECT e FROM Employee e LEFT JOIN FETCH e.department WHERE e.id = :id")
     Optional<Employee> findByIdWithDepartment(Long id);
+
+    boolean existsByShiftId(Long shiftId);
 }

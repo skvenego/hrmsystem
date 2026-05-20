@@ -166,8 +166,8 @@ public class PayslipController {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             String email = auth.getName();
             Employee employee = employeeService.getEmployeeByEmail(email);
-            if (employee == null) {
-                log.warn("No employee found for user: {}", email);
+            if (employee == null || employeeService.isSystemUser(employee)) {
+                log.warn("No employee found or user is system user: {}", email);
                 return ResponseEntity.ok(java.util.Collections.emptyList());
             }
             log.info("Fetching payslips for employee: {}", employee.getId());

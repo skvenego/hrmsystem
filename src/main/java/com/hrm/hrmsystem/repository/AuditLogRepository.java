@@ -19,4 +19,6 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
     List<AuditLog> findByChangedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
 
     List<AuditLog> findByEmployeeIdOrderByChangedAtDesc(Long employeeId);
+
+    void deleteByEmployeeId(Long employeeId);
 }

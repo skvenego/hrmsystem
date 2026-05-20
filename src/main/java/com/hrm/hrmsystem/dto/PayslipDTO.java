@@ -27,8 +27,11 @@ public class PayslipDTO {
     private BigDecimal esi;
     private BigDecimal incomeTax;
     private BigDecimal otherDeduction;
+    private BigDecimal insurance;
     private BigDecimal totalDeduction;
     private BigDecimal absentLeaveDeduction;
+    private BigDecimal unpaidLeaveDeduction;
+    private BigDecimal absentPenaltyDeduction;
 
     // Net Salary
     private BigDecimal netSalary;
@@ -82,8 +85,11 @@ public class PayslipDTO {
     public BigDecimal getEsi() { return esi; }
     public BigDecimal getIncomeTax() { return incomeTax; }
     public BigDecimal getOtherDeduction() { return otherDeduction; }
+    public BigDecimal getInsurance() { return insurance; }
     public BigDecimal getTotalDeduction() { return totalDeduction; }
     public BigDecimal getAbsentLeaveDeduction() { return absentLeaveDeduction; }
+    public BigDecimal getUnpaidLeaveDeduction() { return unpaidLeaveDeduction; }
+    public BigDecimal getAbsentPenaltyDeduction() { return absentPenaltyDeduction; }
     public BigDecimal getNetSalary() { return netSalary; }
     public Double getPresentDays() { return presentDays; }
     public Double getAbsentDays() { return absentDays; }
@@ -123,8 +129,11 @@ public class PayslipDTO {
     public void setEsi(BigDecimal esi) { this.esi = esi; }
     public void setIncomeTax(BigDecimal incomeTax) { this.incomeTax = incomeTax; }
     public void setOtherDeduction(BigDecimal otherDeduction) { this.otherDeduction = otherDeduction; }
+    public void setInsurance(BigDecimal insurance) { this.insurance = insurance; }
     public void setTotalDeduction(BigDecimal totalDeduction) { this.totalDeduction = totalDeduction; }
     public void setAbsentLeaveDeduction(BigDecimal absentLeaveDeduction) { this.absentLeaveDeduction = absentLeaveDeduction; }
+    public void setUnpaidLeaveDeduction(BigDecimal unpaidLeaveDeduction) { this.unpaidLeaveDeduction = unpaidLeaveDeduction; }
+    public void setAbsentPenaltyDeduction(BigDecimal absentPenaltyDeduction) { this.absentPenaltyDeduction = absentPenaltyDeduction; }
     public void setNetSalary(BigDecimal netSalary) { this.netSalary = netSalary; }
     public void setPresentDays(Double presentDays) { this.presentDays = presentDays; }
     public void setAbsentDays(Double absentDays) { this.absentDays = absentDays; }
@@ -168,7 +177,11 @@ public class PayslipDTO {
         private BigDecimal esi;
         private BigDecimal incomeTax;
         private BigDecimal otherDeduction;
+        private BigDecimal insurance;
         private BigDecimal totalDeduction;
+        private BigDecimal absentLeaveDeduction;
+        private BigDecimal unpaidLeaveDeduction;
+        private BigDecimal absentPenaltyDeduction;
         private BigDecimal netSalary;
         private Double presentDays;
         private Double absentDays;
@@ -205,7 +218,11 @@ public class PayslipDTO {
         public Builder esi(BigDecimal esi) { this.esi = esi; return this; }
         public Builder incomeTax(BigDecimal incomeTax) { this.incomeTax = incomeTax; return this; }
         public Builder otherDeduction(BigDecimal otherDeduction) { this.otherDeduction = otherDeduction; return this; }
+        public Builder insurance(BigDecimal insurance) { this.insurance = insurance; return this; }
         public Builder totalDeduction(BigDecimal totalDeduction) { this.totalDeduction = totalDeduction; return this; }
+        public Builder absentLeaveDeduction(BigDecimal absentLeaveDeduction) { this.absentLeaveDeduction = absentLeaveDeduction; return this; }
+        public Builder unpaidLeaveDeduction(BigDecimal unpaidLeaveDeduction) { this.unpaidLeaveDeduction = unpaidLeaveDeduction; return this; }
+        public Builder absentPenaltyDeduction(BigDecimal absentPenaltyDeduction) { this.absentPenaltyDeduction = absentPenaltyDeduction; return this; }
         public Builder netSalary(BigDecimal netSalary) { this.netSalary = netSalary; return this; }
         public Builder presentDays(Double presentDays) { this.presentDays = presentDays; return this; }
         public Builder absentDays(Double absentDays) { this.absentDays = absentDays; return this; }
@@ -244,7 +261,11 @@ public class PayslipDTO {
             dto.esi = this.esi;
             dto.incomeTax = this.incomeTax;
             dto.otherDeduction = this.otherDeduction;
+            dto.insurance = this.insurance;
             dto.totalDeduction = this.totalDeduction;
+            dto.absentLeaveDeduction = this.absentLeaveDeduction;
+            dto.unpaidLeaveDeduction = this.unpaidLeaveDeduction;
+            dto.absentPenaltyDeduction = this.absentPenaltyDeduction;
             dto.netSalary = this.netSalary;
             dto.presentDays = this.presentDays;
             dto.absentDays = this.absentDays;

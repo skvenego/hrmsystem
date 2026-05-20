@@ -33,6 +33,9 @@ public class NotificationPreference {
     @Column(nullable = false)
     private Boolean attendanceUpdates = true;
 
+    @Column(nullable = false)
+    private Boolean monthlyReports = true;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
@@ -89,6 +92,9 @@ public class NotificationPreference {
     
     public Boolean getAttendanceUpdates() { return attendanceUpdates; }
     public void setAttendanceUpdates(Boolean attendanceUpdates) { this.attendanceUpdates = attendanceUpdates; }
+    
+    public Boolean getMonthlyReports() { return monthlyReports; }
+    public void setMonthlyReports(Boolean monthlyReports) { this.monthlyReports = monthlyReports; }
     
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

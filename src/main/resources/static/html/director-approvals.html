@@ -4,38 +4,49 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Director Approvals - HRM System</title>
-    <link rel="stylesheet" href="../css/employee-theme.css">
-    <link rel="stylesheet" href="../css/pages.css">
+    <link rel="stylesheet" href="../css/hrm-design-system.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-layout">
+    <div class="dashboard">
         <!-- Sidebar -->
-        <aside class="sidebar"></aside>
+        <aside class="sidebar" id="sidebar-container"></aside>
 
         <!-- Main Content -->
         <main class="main-content">
             <!-- Header -->
-            <header class="top-header">
+            <header class="header flex justify-between items-center mb-6">
                 <div class="page-title">
-                    <div class="page-title-icon">
-                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                    </div>
-                    <h1>Final Approvals</h1>
+                    <h1>Payroll Approval Status</h1>
+                    <p>Monitor the status of current payroll batches</p>
                 </div>
-                <span class="badge-director">Director View</span>
+                <div class="flex gap-2 items-center">
+                    <span class="badge-director" style="background: #e0e7ff; color: #3730a3; padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Director View
+                    </span>
+                    <button class="btn-danger flex items-center gap-2" onclick="auth.logout()">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                        Logout
+                    </button>
+                </div>
+            </header>
 
             <div class="page-content">
-                <div class="card">
-                    <div class="table-container">
-                        <table class="data-table">
+                <div class="card p-0 overflow-hidden shadow-sm border border-gray-100">
+                    <div class="table-container dashboard-table-scroll">
+                        <table class="data-table w-full text-left border-collapse">
                             <thead>
-                                <tr><th>Employee</th><th>Month</th><th>Net Salary</th><th>Accountant</th><th>Actions</th></tr>
+                                <tr class="bg-gray-50 border-b border-gray-200">
+                                    <th class="p-4 font-semibold text-gray-700">Employee</th>
+                                    <th class="p-4 font-semibold text-gray-700">Month/Year</th>
+                                    <th class="p-4 font-semibold text-gray-700">Net Salary</th>
+                                    <th class="p-4 font-semibold text-gray-700">Accountant Status</th>
+                                    <th class="p-4 font-semibold text-gray-700">Admin Status</th>
+                                </tr>
                             </thead>
-                            <tbody id="approvals-table">
-                                <tr><td colspan="5" style="text-align: center; padding: 2rem;">Loading...</td></tr>
+                            <tbody id="approvals-table" class="divide-y divide-gray-100">
+                                <tr><td colspan="5" class="text-center p-8 text-gray-500">Loading...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -51,53 +62,34 @@
         
         async function loadApprovals() {
             try {
-                const res = await auth.apiCall('/api/payroll/approvals/pending/director');
+                // Director can see ALL payroll status
+                const res = await auth.apiCall('/api/payroll/list');
                 const data = res && res.ok ? await res.json() : [];
                 
                 const tbody = document.getElementById('approvals-table');
                 if (!data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">No pending approvals</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">No payroll records found</td></tr>';
                     return;
                 }
                 
                 tbody.innerHTML = data.map(a => `
-                    <tr>
-                        <td>${a.employeeName || 'Unknown'}</td>
-                        <td>${a.month}/${a.year}</td>
-                        <td>${auth.formatCurrency(a.netSalary || 0)}</td>
-                        <td>${a.accountantApproved ? '✅ Approved' : '⏳ Pending'}</td>
-                        <td>
-                            <button onclick="approve(${a.id})" class="btn-small" style="background: #dcfce7; color: #166534;">Final Approve</button>
-                            <button onclick="reject(${a.id})" class="btn-small" style="background: #fee2e2; color: #991b1b;">Reject</button>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="p-4 font-medium text-gray-800">${a.employeeName || 'Unknown'}</td>
+                        <td class="p-4 text-gray-600">${a.month}/${a.year}</td>
+                        <td class="p-4 font-bold text-gray-800">${auth.formatCurrency(a.netSalary || 0)}</td>
+                        <td class="p-4">
+                            ${a.accountantApproved 
+                                ? '<span class="status-badge active bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">✅ Done</span>' 
+                                : '<span class="status-badge pending bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-medium">⏳ Pending</span>'}
+                        </td>
+                        <td class="p-4">
+                            ${a.directorApproved 
+                                ? '<span class="status-badge active bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">✅ Done</span>' 
+                                : '<span class="status-badge pending bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-medium">⏳ Pending</span>'}
                         </td>
                     </tr>
                 `).join('');
             } catch (e) { console.error(e); }
-        }
-        
-        async function approve(id) {
-            try {
-                const res = await auth.apiCall(`/api/payroll/approvals/${id}/director/approve`, { method: 'POST' });
-                if (res && res.ok) {
-                    auth.showNotification('Final approval completed', 'success');
-                    loadApprovals();
-                }
-            } catch (e) { auth.showNotification(e.message, 'error'); }
-        }
-        
-        async function reject(id) {
-            const reason = prompt('Enter rejection reason:');
-            if (!reason) return;
-            try {
-                const res = await auth.apiCall(`/api/payroll/approvals/${id}/director/reject`, {
-                    method: 'POST',
-                    body: JSON.stringify({ reason })
-                });
-                if (res && res.ok) {
-                    auth.showNotification('Rejected', 'success');
-                    loadApprovals();
-                }
-            } catch (e) { auth.showNotification(e.message, 'error'); }
         }
         
         function logout() { auth.logout(); }

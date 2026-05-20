@@ -1,27 +1,64 @@
 package com.hrm.hrmsystem.engine;
 
 /**
- * Attendance Summary DTO - Clean calculation result
- * Used across all services for consistent data
+ * ✅ FIXED: Attendance Summary DTO - Proper HR data model
+ * Separates concepts correctly to avoid double deductions
  */
 public class AttendanceSummary {
-    public double present = 0;
-    public double absent = 0;
-    public double paidLeave = 0;
-    public double unpaidLeave = 0;
-    public double totalDays = 0;
+    // ✅ CORE HR FIELDS - Proper separation
+    public double workedDays = 0;      // Actual attendance only
+    public double paidLeave = 0;        // Approved paid leave
+    public double unpaidLeave = 0;      // Approved unpaid leave
+    public double absent = 0;          // Unauthorized absence only
+    public double unmarked = 0;         // No attendance record
+    public double payableDays = 0;      // workedDays + paidLeave
     
+    // ✅ COMPATIBILITY FIELDS
+    public int year = 0;               // For wrapper methods
+    public int month = 0;              // For wrapper methods
+    public double workedHours = 0;       // For wrapper methods
+    
+    // ✅ LEGACY COMPATIBILITY - Remove after frontend migration
+    @Deprecated
+    public double getPresent() {
+        return workedDays; // For backward compatibility
+    }
+    
+    @Deprecated
+    public double getAbsent() {
+        return absent + unpaidLeave; // For backward compatibility
+    }
+    
+    @Deprecated
+    public double getActualWorkingHours() {
+        return workedHours; // For wrapper methods
+    }
+    
+    // ✅ CORRECT CALCULATIONS
     public double getTotalWorkingDays() {
-        return present + absent;
+        return workedDays + paidLeave + unpaidLeave + absent + unmarked;
     }
     
     public double getTotalLeaveDays() {
         return paidLeave + unpaidLeave;
     }
     
+    public double getPayableDays() {
+        return payableDays;
+    }
+    
+    /**
+     * PRESENT DAYS CALCULATION: Worked Days only
+     * Includes: Present Marked Days
+     * Excludes: Absent Days + Unpaid Leave Days + Paid Leave Days + Unmarked Days
+     */
+    public double getPresentDays() {
+        return workedDays;
+    }  
+    
     @Override
     public String toString() {
-        return String.format("AttendanceSummary{present=%.1f, absent=%.1f, paidLeave=%.1f, unpaidLeave=%.1f}",
-                present, absent, paidLeave, unpaidLeave);
+        return String.format("AttendanceSummary{workedDays=%.1f, paidLeave=%.1f, unpaidLeave=%.1f, absent=%.1f, unmarked=%.1f, payableDays=%.1f}",
+                workedDays, paidLeave, unpaidLeave, absent, unmarked, payableDays);
     }
 }

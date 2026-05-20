@@ -56,4 +56,8 @@ public interface PayrollApprovalRepository extends JpaRepository<PayrollApproval
         @Param("role") User.Role role, 
         @Param("status") PayrollApproval.ApprovalStatus status
     );
+
+    void deleteByPayrollId(Long payrollId);
+
+    void deleteByApprovedById(Long approvedById);
 }

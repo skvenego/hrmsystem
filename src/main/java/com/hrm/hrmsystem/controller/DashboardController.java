@@ -2,20 +2,22 @@ package com.hrm.hrmsystem.controller;
 
 import com.hrm.hrmsystem.dto.LeaveBalanceDTO;
 import com.hrm.hrmsystem.dto.PayslipDTO;
+import com.hrm.hrmsystem.engine.AttendanceEngine;
 import com.hrm.hrmsystem.engine.AttendanceSummary;
+import com.hrm.hrmsystem.model.Attendance;
 import com.hrm.hrmsystem.model.Employee;
 import com.hrm.hrmsystem.model.Leave;
 import com.hrm.hrmsystem.model.User;
-import com.hrm.hrmsystem.service.AttendanceService;
-import com.hrm.hrmsystem.service.EmployeeService;
-import com.hrm.hrmsystem.service.LeaveBalanceService;
-import com.hrm.hrmsystem.service.LeaveService;
-import com.hrm.hrmsystem.service.PayslipService;
-import com.hrm.hrmsystem.service.UnifiedCalculationService;
 import com.hrm.hrmsystem.repository.EmployeeRepository;
 import com.hrm.hrmsystem.repository.LeaveRepository;
 import com.hrm.hrmsystem.repository.UserRepository;
-import com.hrm.hrmsystem.service.DatabaseLeaveService;
+import com.hrm.hrmsystem.service.AttendanceService;
+import com.hrm.hrmsystem.service.EmployeeService;
+import com.hrm.hrmsystem.service.LeaveService;
+import com.hrm.hrmsystem.service.PayslipService;
+import com.hrm.hrmsystem.service.UnifiedCalculationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -35,6 +37,8 @@ import java.util.Optional;
 @CrossOrigin(origins = "*")
 public class DashboardController {
 
+    private static final Logger log = LoggerFactory.getLogger(DashboardController.class);
+
     private final AttendanceService attendanceService;
     private final EmployeeService employeeService;
     private final LeaveService leaveService;
@@ -43,8 +47,8 @@ public class DashboardController {
     private final LeaveRepository leaveRepository;
     private final UserRepository userRepository;
     private final UnifiedCalculationService unifiedCalculationService;
-    private final DatabaseLeaveService databaseLeaveService;
-    private final LeaveBalanceService leaveBalanceService;
+
+    private final AttendanceEngine attendanceEngine;
 
     public DashboardController(
             AttendanceService attendanceService,
@@ -55,8 +59,7 @@ public class DashboardController {
             LeaveRepository leaveRepository,
             UserRepository userRepository,
             UnifiedCalculationService unifiedCalculationService,
-            DatabaseLeaveService databaseLeaveService,
-            LeaveBalanceService leaveBalanceService) {
+            AttendanceEngine attendanceEngine) {
         this.attendanceService = attendanceService;
         this.employeeService = employeeService;
         this.leaveService = leaveService;
@@ -65,8 +68,7 @@ public class DashboardController {
         this.leaveRepository = leaveRepository;
         this.userRepository = userRepository;
         this.unifiedCalculationService = unifiedCalculationService;
-        this.databaseLeaveService = databaseLeaveService;
-        this.leaveBalanceService = leaveBalanceService;
+        this.attendanceEngine = attendanceEngine;
     }
 
     /**
@@ -96,69 +98,63 @@ public class DashboardController {
                 Employee employee = user.getEmployee();
                 Long employeeId = employee.getId();
                 
+                log.info("Dashboard DEBUG - User {} linked to employee ID: {}", username, employeeId);
+                
                 dashboardData.put("employeeId", employeeId);
                 dashboardData.put("employeeName", employee.getFirstName() + " " + employee.getLastName());
                 dashboardData.put("department", employee.getDepartment() != null ? employee.getDepartment().getName() : "N/A");
                 dashboardData.put("designation", employee.getDesignation());
                 
-                // Get leave balance - Use AttendanceEngine (single source of truth)
+                // Get attendance summary for current month - USE SINGLE SOURCE OF TRUTH
                 try {
-                    LeaveBalanceDTO balance = leaveService.getLeaveBalance(employeeId);
-                    dashboardData.put("leaveBalance", balance);
-                } catch (Exception e) {
-                    dashboardData.put("leaveBalance", new LeaveBalanceDTO());
-                }
-                
-                // Get attendance summary for current month - USE LEAVE REPOSITORY AS SOURCE OF TRUTH
-                try {
-                    LocalDate today = LocalDate.now();
-                    YearMonth yearMonth = YearMonth.of(today.getYear(), today.getMonthValue());
-                    LocalDate monthStart = yearMonth.atDay(1);
-                    LocalDate monthEnd = yearMonth.atEndOfMonth();
-
-                    // ✅ DATABASE-FIRST: Use DatabaseLeaveService for leave statistics (SOURCE OF TRUTH)
-                    double paidLeaveDays = databaseLeaveService.getPaidLeaveDays(employeeId, today.getYear(), today.getMonthValue());
-                    double unpaidLeaveDays = databaseLeaveService.getUnpaidLeaveDays(employeeId, today.getYear(), today.getMonthValue());
-
-                    // ✅ Use AttendanceEngine ONLY for attendance (present/absent), NOT for leave
-                    AttendanceSummary summary = unifiedCalculationService.calculateForUI(employeeId, today.getYear(), today.getMonthValue());
-
-                    final double STANDARD_HOURS_PER_DAY = 8.0;
-                    double effectiveDays = summary.present + paidLeaveDays;
-                    double totalHours = (summary.present + paidLeaveDays) * STANDARD_HOURS_PER_DAY;
-
-                    dashboardData.put("attendance", Map.of(
-                        "presentDays", summary.present,
-                        "absentDays", summary.absent,
-                        "paidLeaveDays", paidLeaveDays,
-                        "unpaidLeaveDays", unpaidLeaveDays,
-                        "effectiveDays", effectiveDays,
-                        "totalHours", totalHours
-                    ));
-                } catch (Exception e) {
-                    dashboardData.put("attendance", Map.of("presentDays", 0, "absentDays", 0, "paidLeaveDays", 0, "unpaidLeaveDays", 0, "totalHours", 0));
-                }
-                
-                // Get latest payslip for salary info - use AttendanceEngine for leave data
-                try {
-                    List<PayslipDTO> payslips = payslipService.getPayslipsByEmployee(employeeId);
-                    if (!payslips.isEmpty()) {
-                        payslips.sort((a, b) -> b.getMonthYear().compareTo(a.getMonthYear()));
-                        PayslipDTO latestPayslip = payslips.get(0);
-                        // Override with fresh calculated leave values from UnifiedCalculationService
-                        LocalDate today = LocalDate.now();
-                        var lbSummary = 
-                            unifiedCalculationService.calculateLeaveBalance(employeeId, today.getYear(), today.getMonthValue());
-                        latestPayslip.setPaidLeaveDays(lbSummary.currentMonthUsed);
-                        latestPayslip.setUnpaidLeaveDays(lbSummary.currentMonthUnpaid);
-                        dashboardData.put("latestPayslip", latestPayslip);
+                    if (employeeService.isSystemUser(employee)) {
+                        dashboardData.put("attendance", Map.of(
+                            "presentDays", 0.0,
+                            "absentDays", 0.0,
+                            "totalHours", 0.0,
+                            "paidUsedLeaves", 0.0,
+                            "unpaidUsedLeaves", 0.0,
+                            "usedLeaves", 0.0
+                        ));
+                        dashboardData.put("leaveBalance", LeaveBalanceDTO.builder()
+                            .totalEarnedLeaves(0.0)
+                            .usedLeaves(0.0)
+                            .paidLeaves(0.0)
+                            .unpaidLeaves(0.0)
+                            .availableLeaves(0.0)
+                            .remaining(0.0)
+                            .build());
                     } else {
-                        dashboardData.put("latestPayslip", null);
+                        LocalDate today = LocalDate.now();
+                        YearMonth currentMonth = YearMonth.of(today.getYear(), today.getMonthValue());
+
+                        // ✅ Use AttendanceEngine for attendance calculation (present/absent)
+                        AttendanceSummary summary = attendanceEngine.calculate(employeeId, currentMonth);
+                        
+                        // ✅ Use LeaveService for leave balance (Cumulative) - SINGLE SOURCE OF TRUTH
+                        LeaveBalanceDTO balance = leaveService.getLeaveBalance(employeeId);
+                        
+                        log.info("Dashboard DEBUG - Employee {}: summary.worked={}, summary.paidLeave={}, summary.unpaidLeave={}", 
+                            employeeId, summary.workedDays, summary.paidLeave, summary.unpaidLeave);
+                        log.info("Dashboard DEBUG - Employee {}: Final Balance Used={}, Remaining={}, Earned={}", 
+                            employeeId, balance.getUsedLeaves(), balance.getAvailableLeaves(), balance.getTotalEarnedLeaves());
+
+                        dashboardData.put("attendance", Map.of(
+                            "presentDays", summary.getPresentDays(), 
+                            "absentDays", summary.absent, 
+                            "totalHours", summary.getPresentDays() * 8.0
+                        ));
+                        
+                        // ✅ Directly use the balance object - NO manual re-mapping of fields
+                        dashboardData.put("leaveBalance", balance);
                     }
                 } catch (Exception e) {
-                    dashboardData.put("latestPayslip", null);
+                    dashboardData.put("attendance", Map.of("presentDays", 0, "absentDays", 0, "paidUsedLeaves", 0, "unpaidUsedLeaves", 0, "totalHours", 0, "payableDays", 0));
                 }
-            }
+                
+            } else {
+                log.warn("Dashboard DEBUG - User {} is not linked to any employee", username);
+            } // End of if (user.getEmployee() != null)
             
             return ResponseEntity.ok(dashboardData);
         } catch (Exception e) {
@@ -173,57 +169,109 @@ public class DashboardController {
     public ResponseEntity<?> getDashboardStats() {
         try {
             Map<String, Object> stats = new HashMap<>();
+            LocalDate today = LocalDate.now();
             
             // Employee stats
-            long totalEmployees = employeeRepository.count();
-            long activeEmployees = employeeRepository.findAll().stream()
+            List<Employee> nonSystemEmployees = employeeRepository.findAll().stream()
+                    .filter(e -> !employeeService.isSystemUser(e))
+                    .toList();
+            long totalEmployees = nonSystemEmployees.size();
+            List<Employee> activeEmployeesList = nonSystemEmployees.stream()
                     .filter(e -> e.getStatus() == Employee.EmployeeStatus.ACTIVE)
-                    .count();
+                    .toList();
+            long activeEmployees = activeEmployeesList.size();
             
+            // Leave stats for today
+            List<Leave> approvedLeaves = leaveRepository.findByStatus(Leave.LeaveStatus.APPROVED);
+            long onLeaveToday = approvedLeaves.stream()
+                    .filter(l -> l.getEmployee() != null && !employeeService.isSystemUser(l.getEmployee()))
+                    .filter(l -> !today.isBefore(l.getStartDate()) && !today.isAfter(l.getEndDate()))
+                    .count();
+
             stats.put("employees", Map.of(
                 "total", totalEmployees,
                 "active", activeEmployees,
-                "onLeave", 0,
+                "onLeave", onLeaveToday,
                 "newThisMonth", 0
             ));
             
             // Attendance stats
-            LocalDate today = LocalDate.now();
+            long presentToday = attendanceService.getPresentTodayCount();
+            
             stats.put("attendance", Map.of(
-                "presentToday", 0, // Would need today's attendance data
-                "averageHours", 0,
-                "onTime", 0,
+                "presentToday", presentToday,
+                "averageHours", 8.0, // Default or calculate if needed
+                "onTime", presentToday, // Simplified
                 "late", 0
             ));
             
             // Payroll stats
-            String currentMonth = today.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+            String currentMonthStr = today.format(DateTimeFormatter.ofPattern("yyyy-MM"));
             try {
-                List<PayslipDTO> monthPayslips = payslipService.getPayslipsByMonth(currentMonth);
-                double totalPayroll = monthPayslips.stream()
+                // Total Monthly Payroll = Sum of all active non-system employees' gross salaries
+                double totalPayroll = activeEmployeesList.stream()
+                        .map(Employee::getTotalGrossSalary)
+                        .filter(java.util.Objects::nonNull)
+                        .map(BigDecimal::doubleValue)
+                        .mapToDouble(Double::doubleValue)
+                        .sum();
+                        
+                List<PayslipDTO> rawPayslips = payslipService.getPayslipsByMonth(currentMonthStr);
+                List<PayslipDTO> monthPayslips = rawPayslips.stream()
+                        .filter(p -> p.getEmployeeId() != null)
+                        .filter(p -> {
+                            Optional<Employee> empOpt = employeeRepository.findById(p.getEmployeeId());
+                            return empOpt.isPresent() && !employeeService.isSystemUser(empOpt.get());
+                        })
+                        .toList();
+                
+                // Salary Paid = Sum of approved, sent, or paid payslips (actual cost)
+                double salaryPaid = monthPayslips.stream()
+                        .filter(p -> List.of("APPROVED", "SENT", "PAID").contains((p.getStatus() != null ? p.getStatus() : "").toUpperCase()) || 
+                                     "PAID".equals(p.getPayrollStatus()))
                         .map(PayslipDTO::getNetSalary)
                         .map(BigDecimal::doubleValue)
                         .mapToDouble(Double::doubleValue)
                         .sum();
+                
+                double pendingAmount = totalPayroll - salaryPaid;
+                if (pendingAmount < 0) pendingAmount = 0;
+                
                 long pendingPayslips = monthPayslips.stream()
-                        .filter(p -> "DRAFT".equals(p.getStatus()))
+                        .filter(p -> "GENERATED".equals(p.getStatus()) || "DRAFT".equals(p.getStatus()))
                         .count();
                 
                 stats.put("payroll", Map.of(
                     "totalAmount", totalPayroll,
+                    "salaryPaid", salaryPaid,
+                    "pendingAmount", pendingAmount,
                     "processed", monthPayslips.size(),
                     "pending", pendingPayslips
                 ));
             } catch (Exception e) {
-                stats.put("payroll", Map.of("totalAmount", 0, "processed", 0, "pending", 0));
+                stats.put("payroll", Map.of("totalAmount", 0, "salaryPaid", 0, "processed", 0, "pending", 0));
             }
             
             // Leave stats
             try {
-                List<?> pendingLeaves = leaveService.getPendingLeaves();
+                List<com.hrm.hrmsystem.dto.LeaveDTO> rawPendingLeaves = leaveService.getPendingLeaves();
+                List<com.hrm.hrmsystem.dto.LeaveDTO> pendingLeaves = rawPendingLeaves.stream()
+                        .filter(l -> l.getEmployeeId() != null)
+                        .filter(l -> {
+                            Optional<Employee> empOpt = employeeRepository.findById(l.getEmployeeId());
+                            return empOpt.isPresent() && !employeeService.isSystemUser(empOpt.get());
+                        })
+                        .toList();
+                
+                // Count approved/rejected TODAY (simplified)
+                long approvedToday = approvedLeaves.stream()
+                        .filter(l -> l.getEmployee() != null && !employeeService.isSystemUser(l.getEmployee()))
+                        .filter(l -> today.equals(l.getAppliedDate())) // Or check an approvalDate if exists
+                        .count();
+
                 stats.put("leaves", Map.of(
                     "pendingRequests", pendingLeaves.size(),
-                    "approvedToday", 0,
+                    "approvedToday", approvedToday,
                     "rejectedToday", 0
                 ));
             } catch (Exception e) {
@@ -251,6 +299,9 @@ public class DashboardController {
             }
             
             Long employeeId = userOpt.get().getEmployee().getId();
+            if (employeeService.isSystemUser(userOpt.get().getEmployee())) {
+                return ResponseEntity.ok(Map.of("message", "No payslips found"));
+            }
             List<PayslipDTO> payslips = payslipService.getPayslipsByEmployee(employeeId);
             
             if (payslips.isEmpty()) {
@@ -269,6 +320,39 @@ public class DashboardController {
      * Get current user's attendance summary
      * Uses LeaveRepository for leave statistics (source of truth)
      */
+    @GetMapping("/my/attendance/daily")
+    public ResponseEntity<?> getMyDailyAttendance(
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Integer year) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String username = auth.getName();
+            
+            Optional<User> userOpt = userRepository.findByUsername(username);
+            if (userOpt.isEmpty() || userOpt.get().getEmployee() == null) {
+                return ResponseEntity.status(404).body(Map.of("error", "Employee not found"));
+            }
+
+            Long employeeId = userOpt.get().getEmployee().getId();
+            if (employeeService.isSystemUser(userOpt.get().getEmployee())) {
+                return ResponseEntity.ok(List.of());
+            }
+            LocalDate today = LocalDate.now();
+            
+            // Use provided month/year or default to current
+            int targetMonth = month != null ? month : today.getMonthValue();
+            int targetYear = year != null ? year : today.getYear();
+            YearMonth yearMonth = YearMonth.of(targetYear, targetMonth);
+            
+            // ✅ Use AttendanceEngine for detailed daily calculation
+            List<Map<String, Object>> dailyData = attendanceEngine.getDailyAttendanceDetails(employeeId, targetYear, targetMonth);
+            
+            return ResponseEntity.ok(dailyData);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+    
     @GetMapping("/my/attendance")
     public ResponseEntity<?> getMyAttendanceSummary() {
         try {
@@ -281,29 +365,41 @@ public class DashboardController {
             }
 
             Long employeeId = userOpt.get().getEmployee().getId();
+            if (employeeService.isSystemUser(userOpt.get().getEmployee())) {
+                Map<String, Object> result = new HashMap<>();
+                result.put("presentDays", 0.0);
+                result.put("absentDays", 0.0);
+                result.put("paidUsedLeaves", 0.0);
+                result.put("unpaidUsedLeaves", 0.0);
+                result.put("usedLeaves", 0.0);
+                result.put("remainingLeaveBalance", 0.0);
+                result.put("totalEarned", 0.0);
+                result.put("totalHours", 0.0);
+                result.put("month", LocalDate.now().format(DateTimeFormatter.ofPattern("MMMM yyyy")));
+                return ResponseEntity.ok(result);
+            }
             LocalDate today = LocalDate.now();
             YearMonth yearMonth = YearMonth.of(today.getYear(), today.getMonthValue());
             LocalDate monthStart = yearMonth.atDay(1);
             LocalDate monthEnd = yearMonth.atEndOfMonth();
 
-            // ✅ DATABASE-FIRST: Use DatabaseLeaveService for leave statistics (SOURCE OF TRUTH)
-            double paidLeaveDays = databaseLeaveService.getPaidLeaveDays(employeeId, today.getYear(), today.getMonthValue());
-            double unpaidLeaveDays = databaseLeaveService.getUnpaidLeaveDays(employeeId, today.getYear(), today.getMonthValue());
+            // ✅ Use calculate() instead of calculatePlanned() for accurate attendance (no future dates)
+            AttendanceSummary summary = attendanceEngine.calculate(employeeId, yearMonth);
 
-            // ✅ Use AttendanceEngine ONLY for attendance (present/absent), NOT for leave
-            AttendanceSummary summary = unifiedCalculationService.calculateForUI(employeeId, today.getYear(), today.getMonthValue());
-
-            final double STANDARD_HOURS_PER_DAY = 8.0;
-            double effectiveDays = summary.present + paidLeaveDays;
-            double totalHours = (summary.present + paidLeaveDays) * STANDARD_HOURS_PER_DAY;
-
+            // ✅ Use LeaveService for leave balance (Cumulative) - SINGLE SOURCE OF TRUTH
+            LeaveBalanceDTO balance = leaveService.getLeaveBalance(employeeId);
+            
             Map<String, Object> result = new HashMap<>();
-            result.put("presentDays", summary.present);
-            result.put("absentDays", summary.absent);
-            result.put("paidLeaveDays", paidLeaveDays);
-            result.put("unpaidLeaveDays", unpaidLeaveDays);
-            result.put("effectiveDays", effectiveDays);
-            result.put("totalHours", totalHours);
+            result.put("presentDays", summary.getPresentDays()); // Use centralized calculation from engine
+            result.put("absentDays", summary.absent); // Absent = only actual absent days, not including unpaid leave
+            result.put("paidUsedLeaves", balance.getPaidLeaves()); // ✅ Cumulative Paid (7.5)
+            result.put("unpaidUsedLeaves", balance.getUnpaidLeaves()); // ✅ Cumulative Unpaid (0.5)
+            result.put("usedLeaves", balance.getUsedLeaves()); // ✅ Total Cumulative (8.0)
+            
+            result.put("remainingLeaveBalance", balance.getAvailableLeaves());
+            result.put("totalEarned", balance.getTotalEarnedLeaves()); // Total earned leaves from engine
+            result.put("totalHours", summary.getPresentDays() * 8.0); // ✅ Added for consistency
+            
             result.put("month", today.format(DateTimeFormatter.ofPattern("MMMM yyyy")));
 
             return ResponseEntity.ok(result);
@@ -332,25 +428,22 @@ public class DashboardController {
             LocalDate monthStart = yearMonth.atDay(1);
             LocalDate monthEnd = yearMonth.atEndOfMonth();
 
-            // ✅ DATABASE-FIRST: Use DatabaseLeaveService for leave statistics (SOURCE OF TRUTH)
-            double paidLeaveDays = databaseLeaveService.getPaidLeaveDays(employeeId, targetYear, targetMonth);
-            double unpaidLeaveDays = databaseLeaveService.getUnpaidLeaveDays(employeeId, targetYear, targetMonth);
-
             // ✅ Use AttendanceEngine ONLY for attendance (present/absent), NOT for leave
             AttendanceSummary summary =
                     unifiedCalculationService.calculateForPayroll(employeeId, targetYear, targetMonth);
 
-            final double STANDARD_HOURS_PER_DAY = 8.0;
-            double effectiveDays = summary.present + paidLeaveDays;
-            double totalHours = (summary.present + paidLeaveDays) * STANDARD_HOURS_PER_DAY;
+            // ✅ Use LeaveService for leave balance (Cumulative) - SINGLE SOURCE OF TRUTH
+            LeaveBalanceDTO balance = leaveService.getLeaveBalance(employeeId);
 
             Map<String, Object> result = new HashMap<>();
-            result.put("presentDays", summary.present);
-            result.put("absentDays", summary.absent);
-            result.put("paidLeaveDays", paidLeaveDays);
-            result.put("unpaidLeaveDays", unpaidLeaveDays);
-            result.put("effectiveDays", effectiveDays);
-            result.put("totalHours", totalHours);
+            result.put("presentDays", summary.getPresentDays()); // Consistent with my-attendance
+            result.put("absentDays", summary.absent); // ✅ FIXED: Use engine value only - NO calculation
+            result.put("paidUsedLeaves", balance.getPaidLeaves()); // ✅ Cumulative Paid (7.5)
+            result.put("unpaidUsedLeaves", balance.getUnpaidLeaves()); // ✅ Cumulative Unpaid (0.5)
+            result.put("usedLeaves", balance.getUsedLeaves()); // ✅ Total Cumulative (8.0)
+            result.put("totalHours", summary.getPresentDays() * 8.0); // ✅ Restored for frontend display and consistency
+            result.put("remainingLeaveBalance", balance.getAvailableLeaves());
+            result.put("totalEarned", balance.getTotalEarnedLeaves());
             result.put("month", yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")));
 
             return ResponseEntity.ok(result);
@@ -374,13 +467,15 @@ public class DashboardController {
         try {
             YearMonth targetMonth = YearMonth.of(year, month);
             
-            // Use UnifiedCalculationService - SINGLE SOURCE OF TRUTH
-            var lbSummary = 
-                unifiedCalculationService.calculateLeaveBalance(employeeId, year, month);
+            // ✅ Use AttendanceEngine - SINGLE SOURCE OF TRUTH
+            AttendanceEngine.LeaveBalanceSummary lbSummary = 
+                attendanceEngine.calculateLeaveBalance(employeeId, YearMonth.of(year, month));
             
             // Return only the correct fields for UI display
             Map<String, Object> result = new HashMap<>();
             result.put("used", lbSummary.usedLeaves);
+            result.put("unpaid", lbSummary.unpaidLeaves);
+            result.put("totalUsed", lbSummary.getTotalUsedLeaves());
             result.put("remaining", lbSummary.getAvailableLeaves());
             result.put("totalEarned", lbSummary.earnedLeaves);
             result.put("month", targetMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")));
@@ -392,4 +487,5 @@ public class DashboardController {
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
     }
+
 }

@@ -3,38 +3,40 @@
 
 if (!auth.requireAuth()) throw new Error('Auth required');
 
-const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 let currentPayrollData = null;
 
 async function loadPayroll() {
     const tbody = document.getElementById('payroll-table');
     tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;">⏳ Loading payroll data...</td></tr>';
-    
+
     try {
         const res = await auth.apiCall('/api/payroll/list?t=' + Date.now());
+        console.log('Payroll API Response Status:', res?.status);
+
         if (!res || !res.ok) {
             const errorText = res ? await res.text() : 'No response';
             tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #dc2626;">❌ Error loading payroll: ${res?.status || 'Network Error'} - ${errorText.substring(0, 100)}</td></tr>`;
             console.error('Payroll load error:', res?.status, errorText);
             return;
         }
-        
+
         let data = await res.json();
-        console.log('Payroll data loaded:', data);
-        
+        console.log('Payroll data received:', data ? data.length : 0, 'records');
+
         // Filter by selected month and year
         const selectedMonth = parseInt(document.getElementById('month-filter').value);
         const selectedYear = parseInt(document.getElementById('year-filter').value);
         console.log('Filtering for month:', selectedMonth, 'year:', selectedYear);
-        
+
         data = data.filter(p => parseInt(p.month) === selectedMonth && parseInt(p.year) === selectedYear);
         console.log('Filtered data:', data.length, 'records');
-        
+
         if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem;">No payroll records for ${monthNames[selectedMonth-1]} ${selectedYear}. Generate payroll first.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem;">No payroll records for ${monthNames[selectedMonth - 1]} ${selectedYear}. Generate payroll first.</td></tr>`;
             return;
         }
-        
+
         tbody.innerHTML = data.map(p => {
             const statusClass = (p.status || 'PENDING').toLowerCase().replace('_', '-');
             const statusLabels = {
@@ -44,27 +46,50 @@ async function loadPayroll() {
                 'PAID': 'Paid'
             };
             const statusLabel = statusLabels[p.status] || p.status || 'Pending';
-            
-            // Build action buttons based on status workflow
+
+            // Build action buttons based on status workflow (Only for Admins/HR, not Accountant/Director/Leaves)
             let actions = '';
-            if (p.status === 'PENDING') {
-                actions = `<button onclick="sendForApproval(${p.id})" class="btn-small" style="background: #dbeafe; color: #1e40af;">Send for Approval</button>`;
-            } else if (p.status === 'PENDING_APPROVAL') {
-                actions = `<span style="color: #f59e0b; font-size: 0.875rem;">⏳ Waiting for Accountant</span>`;
-            } else if (p.status === 'APPROVED') {
-                actions = `<button onclick="payPayroll(${p.id})" class="btn-small" style="background: #16a34a; color: white; font-weight: 600;">💰 Pay Now</button>`;
-            } else if (p.status === 'PAID') {
-                actions = `<span class="badge-paid" style="background: #dcfce7; color: #166534; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600;">✓ Successfully Paid</span>`;
+            const isManager = auth.hasRole('ROLE_ACCOUNTANT') || auth.hasRole('ROLE_DIRECTOR') || auth.hasRole('ROLE_LEAVES');
+            
+            if (!isManager) {
+                if (p.status === 'PENDING') {
+                    actions = `<button onclick="sendForApproval(${p.id})" class="btn-small" style="background: #dbeafe; color: #1e40af;">Send for Approval</button>`;
+                } else if (p.status === 'PENDING_APPROVAL') {
+                    actions = `<span style="color: #f59e0b; font-size: 0.875rem;">⏳ Waiting for Accountant</span>`;
+                } else if (p.status === 'APPROVED') {
+                    actions = `<button onclick="payPayroll(${p.id})" class="btn-small" style="background: #16a34a; color: white; font-weight: 600;">💰 Pay Now</button>`;
+                } else if (p.status === 'PAID') {
+                    actions = `<span class="badge-paid" style="background: #dcfce7; color: #166534; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600;">✓ Successfully Paid</span>`;
+                }
+            } else {
+                // For Accountant/Director, display read-only status labels instead of action buttons
+                if (p.status === 'PENDING') {
+                    actions = `<span style="color: #6b7280; font-size: 0.875rem; margin-right: 0.5rem;">Draft</span>`;
+                } else if (p.status === 'PENDING_APPROVAL') {
+                    actions = `<span style="color: #f59e0b; font-size: 0.875rem; margin-right: 0.5rem;">Pending Approval</span>`;
+                } else if (p.status === 'APPROVED') {
+                    actions = `<span style="color: #2563eb; font-size: 0.875rem; margin-right: 0.5rem;">Approved</span>`;
+                } else if (p.status === 'PAID') {
+                    actions = `<span class="badge-paid" style="background: #dcfce7; color: #166534; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; margin-right: 0.5rem;">Paid</span>`;
+                }
             }
+
+            // Compute deductions on-the-fly to handle stale DB records
+            const _gross = p.grossSalary || 0;
+            const _dr = _gross > 0 ? _gross / 26 : 0;
+            const _unp = (_dr * (p.unpaidLeaveDays || 0));
+            const _abs = (_dr * (p.absentDays || 0));
+            const _totalDed = (p.providentFund || p.pf || 0) + (p.tax || p.incomeTax || 0) + (p.insurance || p.otherDeduction || 0) + _unp + _abs;
+            const _netSal = Math.max(0, _gross - _totalDed);
 
             return `
             <tr>
                 <td>${p.employeeName || 'Unknown'}</td>
-                <td>${monthNames[p.month-1]} ${p.year}</td>
+                <td>${monthNames[p.month - 1]} ${p.year}</td>
                 <td>${auth.formatCurrency(p.basicSalary || 0)}</td>
-                <td>${auth.formatCurrency(p.grossSalary || 0)}</td>
-                <td>${auth.formatCurrency(p.totalDeductions || 0)}</td>
-                <td><strong>${auth.formatCurrency(p.netSalary || 0)}</strong></td>
+                <td>${auth.formatCurrency(_gross)}</td>
+                <td>${auth.formatCurrency(_totalDed)}</td>
+                <td><strong>${auth.formatCurrency(_netSal)}</strong></td>
                 <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
                 <td>
                     ${actions}
@@ -73,7 +98,15 @@ async function loadPayroll() {
                 </td>
             </tr>
         `}).join('');
-    } catch (e) { 
+
+        // Hide administrative buttons for Accountant, Director and Leaves department
+        if (auth.hasRole('ROLE_ACCOUNTANT') || auth.hasRole('ROLE_DIRECTOR') || auth.hasRole('ROLE_LEAVES')) {
+            const clearBtn = document.querySelector('button[onclick="clearAllPayrolls()"]');
+            const genBtn = document.querySelector('button[onclick="generatePayroll()"]');
+            if (clearBtn) clearBtn.style.display = 'none';
+            if (genBtn) genBtn.style.display = 'none';
+        }
+    } catch (e) {
         console.error('Payroll load error:', e);
         document.getElementById('payroll-table').innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #dc2626;">❌ Error: ${e.message}</td></tr>`;
     }
@@ -82,29 +115,29 @@ async function loadPayroll() {
 async function generatePayroll() {
     const month = document.getElementById('month-filter').value;
     const year = document.getElementById('year-filter').value;
-    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    
-    console.log(`Generating payroll for ${monthNames[month-1]} ${year}...`);
-    
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+    console.log(`Generating payroll for ${monthNames[month - 1]} ${year}...`);
+
     try {
         const res = await auth.apiCall('/api/payroll/generate-all', {
             method: 'POST',
             body: JSON.stringify({ month: parseInt(month), year: parseInt(year) })
         });
-        
+
         if (res && res.ok) {
             const data = await res.json();
             console.log('Generated payrolls:', data);
-            auth.showNotification(`Payroll generated for ${monthNames[month-1]} ${year} (${data.length} employees)`, 'success');
+            auth.showNotification(`Payroll generated for ${monthNames[month - 1]} ${year} (${data.length} employees)`, 'success');
             setTimeout(() => loadPayroll(), 500); // Small delay to ensure DB commit
         } else {
             const error = await res.text();
             console.error('Generate payroll failed:', error);
             auth.showNotification('Failed: ' + error, 'error');
         }
-    } catch (e) { 
+    } catch (e) {
         console.error('Generate error:', e);
-        auth.showNotification(e.message, 'error'); 
+        auth.showNotification(e.message, 'error');
     }
 }
 
@@ -123,7 +156,7 @@ async function clearAllPayrolls() {
 
 async function sendForApproval(id) {
     try {
-        const res = await auth.apiCall(`/api/payroll/send-for-approval/${id}`, { 
+        const res = await auth.apiCall(`/api/payroll/send-for-approval/${id}`, {
             method: 'POST',
             body: JSON.stringify({ approvedBy: 'HR' })
         });
@@ -147,7 +180,7 @@ async function payPayroll(id) {
 
 async function approvePayroll(id) {
     try {
-        const res = await auth.apiCall(`/api/payroll/approve/${id}`, { 
+        const res = await auth.apiCall(`/api/payroll/approve/${id}`, {
             method: 'POST',
             body: JSON.stringify({ accountantName: 'Accountant' })
         });
@@ -160,7 +193,7 @@ async function approvePayroll(id) {
 
 async function rejectPayroll(id) {
     try {
-        const res = await auth.apiCall(`/api/payroll/reject/${id}`, { 
+        const res = await auth.apiCall(`/api/payroll/reject/${id}`, {
             method: 'POST',
             body: JSON.stringify({ reason: 'Rejected by accountant' })
         });
@@ -177,7 +210,7 @@ async function viewPayslipDetails(id) {
         const payrollRes = await auth.apiCall('/api/payroll/list?t=' + Date.now());
         const data = payrollRes && payrollRes.ok ? await payrollRes.json() : [];
         console.log('Payroll data loaded:', data.length, 'records');
-        
+
         const payroll = data.find(p => p.id == id);
         if (!payroll) {
             console.error('Payroll not found for id:', id);
@@ -194,39 +227,48 @@ async function viewPayslipDetails(id) {
         console.log('API URL:', url);
         const res = await auth.apiCall(url);
         console.log('Payslip API response:', res);
-        
+
         let p;
         if (!res || !res.ok) {
             // Payslip not found - use payroll data directly
             console.log('Payslip not found, using payroll data directly');
             const errorText = await res.text();
             console.log('API error (expected for missing payslip):', res.status, errorText);
-            
+
             // Use payroll data as payslip data
+            const _gross = payroll.grossSalary || 0;
+            const _dailyRate = _gross > 0 ? (_gross / 26) : 0;
+            // ✅ Compute deductions on-the-fly (handles old records where backend value is 0)
+            const _unpaidDed = (_dailyRate * (payroll.unpaidLeaveDays || 0));
+            const _absentDed = (_dailyRate * (payroll.absentDays || 0));
+            const _totalAttDed = _unpaidDed + _absentDed;
             p = {
                 ...payroll,
                 monthYear: monthYear,
                 status: payroll.status || 'PENDING',
-                // Calculate absentLeaveDeduction if not present
-                absentLeaveDeduction: payroll.absentLeaveDeduction || payroll.otherDeductions || 0,
+                // ✅ Use computed deductions (fallback if backend value is 0)
+                absentLeaveDeduction: _totalAttDed || payroll.absentLeaveDeduction || payroll.otherDeductions || 0,
+                unpaidLeaveDeduction: _unpaidDed || payroll.unpaidLeaveDeduction || 0,
+                absentPenaltyDeduction: _absentDed || payroll.absentPenaltyDeduction || 0,
                 // Map payroll field names to payslip field names
                 pf: payroll.providentFund,
                 incomeTax: payroll.tax,
                 otherDeduction: payroll.insurance,
-                totalDeduction: payroll.totalDeductions,
+                totalDeduction: (payroll.totalDeductions || 0),
+                // ✅ FIXED: Remove frontend calculations - use backend values only
                 paidLeaveDays: payroll.paidLeaveDays || 0,
                 unpaidLeaveDays: payroll.unpaidLeaveDays || 0,
                 leaveBalance: payroll.leaveBalance
             };
-            console.log('Using payroll data as payslip:', p);
+            console.log('Using payroll data as payslip (computed deductions):', p);
         } else {
             p = await res.json();
             console.log('Payslip data:', p);
         }
-        
+
         const modal = document.getElementById('payslip-modal');
         const content = document.getElementById('modal-content-body');
-        
+
         const statusColors = {
             'PENDING': '#f59e0b',
             'PENDING_APPROVAL': '#3b82f6',
@@ -234,7 +276,7 @@ async function viewPayslipDetails(id) {
             'PAID': '#16a34a'
         };
         const statusColor = statusColors[p.status] || '#6b7280';
-        
+
         content.innerHTML = `
             <div style="text-align: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #e5e7eb;">
                 <h3 style="margin: 0; font-size: 1.5rem;">PAYSLIP</h3>
@@ -254,29 +296,28 @@ async function viewPayslipDetails(id) {
                         </div>
                         <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px;">
                             ${p.inProbation || p.probationStatus === 'In Progress' ?
-                                `<p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Probation Status</p>
+                `<p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Probation Status</p>
                                 <p style="margin: 0; font-size: 1rem; font-weight: 600; color: #dc2626;">⏳ In Progress (${p.probationMonths || 3} months)</p>
                                 <p style="margin: 4px 0 0 0; font-size: 0.7rem; color: #64748b;">Joined: ${p.joinDate ? new Date(p.joinDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}<br>Complete: ${p.joinDate ? new Date(new Date(p.joinDate).setMonth(new Date(p.joinDate).getMonth() + (p.probationMonths || 3))).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</p>` :
-                                `<p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Probation Status</p>
+                `<p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Probation Status</p>
                                 <p style="margin: 0; font-size: 1rem; font-weight: 600; color: #16a34a;">✅ Completed (${p.probationMonths || 3} months)</p>
                                 <p style="margin: 4px 0 0 0; font-size: 0.7rem; color: #64748b;">Joined: ${p.joinDate ? new Date(p.joinDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}<br>Completed: ${p.joinDate ? new Date(new Date(p.joinDate).setMonth(new Date(p.joinDate).getMonth() + (p.probationMonths || 3))).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</p>`
-                            }
+            }
                         </div>
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
                         <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px;">
-                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Used</p>
+                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Used Leaves (Paid + Unpaid)</p>
                             <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #d97706;">${((p.leaveBalance && typeof p.leaveBalance.usedLeaves === 'number') ? p.leaveBalance.usedLeaves : 0).toFixed(1)}</p>
                         </div>
                         <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px;">
                             <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Remaining</p>
                             <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #16a34a;">${((p.leaveBalance && typeof p.leaveBalance.availableLeaves === 'number') ? p.leaveBalance.availableLeaves : 0).toFixed(1)}</p>
                         </div>
-                    </div>
-                </div>
-            </div>
+                </div >
+            </div >
             
-            <!-- Leave Details Section -->
+
             <div style="margin-bottom: 1rem;">
                 <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #374151;">📊 Attendance & Leave Summary</h4>
                 <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; border: 1px solid #bae6fd;">
@@ -292,11 +333,11 @@ async function viewPayslipDetails(id) {
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
                         <div style="text-align: center; padding: 0.5rem; background: #f0fdf4; border-radius: 6px;">
-                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Paid Leave Days</p>
+                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Paid Used Leaves</p>
                             <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #16a34a;">${(p.paidLeaveDays || 0).toFixed(1)}</p>
                         </div>
                         <div style="text-align: center; padding: 0.5rem; background: #fef2f2; border-radius: 6px;">
-                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Unpaid Leave Days</p>
+                            <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Unpaid Used Leaves</p>
                             <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #dc2626;">${(p.unpaidLeaveDays || 0).toFixed(1)}</p>
                         </div>
                     </div>
@@ -316,14 +357,30 @@ async function viewPayslipDetails(id) {
                 </div>
             </div>
             
-            <!-- Attendance Deduction Breakdown -->
             <div style="margin-bottom: 1rem;">
-                <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #374151;">Attendance Deductions (Daily Rate: ${auth.formatCurrency((p.basicSalary || 0) / 26)} based on 26 days)</h4>
+                <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #374151;">Attendance Deductions</h4>
                 <div style="background: #fef2f2; padding: 0.75rem; border-radius: 8px;">
-                    <!-- CRITICAL FIX: Half days are already included in absentDays - do NOT show separately to avoid double-counting display -->
-                    ${p.absentDays > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;"><span>Absent (${p.absentDays} days):</span><span style="color: #dc2626;">-${auth.formatCurrency(p.absentDays * ((p.basicSalary || 0) / 26))}</span></div>` : ''}
-                    ${p.unpaidLeaveDays > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;"><span>Unpaid Leaves (${p.unpaidLeaveDays} days):</span><span style="color: #dc2626;">-${auth.formatCurrency(p.unpaidLeaveDays * ((p.basicSalary || 0) / 26))}</span></div>` : ''}
-                    ${p.absentLeaveDeduction > 0 ? `<div style="display: flex; justify-content: space-between; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #e5e7eb; color: #dc2626;"><span><strong>Total Attendance Deduction:</strong></span><strong>-${auth.formatCurrency(p.absentLeaveDeduction)}</strong></div>` : '<div style="color: #059669; text-align: center;">✓ No attendance deductions</div>'}
+                    ${(() => {
+                        // ✅ Compute on-the-fly to handle stale DB records
+                        const gross = p.grossSalary || 0;
+                        const dailyRate = gross > 0 ? gross / 26 : 0;
+                        const unpaidDed = (dailyRate * (p.unpaidLeaveDays || 0));
+                        const absentDed = (dailyRate * (p.absentDays || 0));
+                        const totalAttDed = unpaidDed + absentDed;
+                        let html = '';
+                        if ((p.absentDays || 0) > 0) {
+                            html += `<div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;"><span>Absent (${p.absentDays} days &times; 1&times; daily rate)</span><span style="color: #dc2626;">-${auth.formatCurrency(absentDed)}</span></div>`;
+                        }
+                        if ((p.unpaidLeaveDays || 0) > 0) {
+                            html += `<div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;"><span>Unpaid Leaves (${p.unpaidLeaveDays} days &times; 1&times; daily rate)</span><span style="color: #dc2626;">-${auth.formatCurrency(unpaidDed)}</span></div>`;
+                        }
+                        if (totalAttDed > 0) {
+                            html += `<div style="display: flex; justify-content: space-between; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #e5e7eb;"><span><strong>Total Attendance Deduction:</strong></span><strong>-${auth.formatCurrency(totalAttDed)}</strong></div>`;
+                        } else {
+                            html += '<div style="color: #059669; text-align: center;">✓ No attendance deductions</div>';
+                        }
+                        return html;
+                    })()}
                 </div>
             </div>
 
@@ -334,7 +391,8 @@ async function viewPayslipDetails(id) {
                     <div style="display: flex; justify-content: space-between; padding: 0.25rem 0;"><span>Tax</span><span style="color: #dc2626;">-${auth.formatCurrency(p.incomeTax || p.tax || 0)}</span></div>
                     <div style="display: flex; justify-content: space-between; padding: 0.25rem 0;"><span>Insurance</span><span style="color: #dc2626;">-${auth.formatCurrency(p.otherDeduction || p.insurance || 0)}</span></div>
                     <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-top: 1px solid #fca5a5; margin-top: 0.5rem; font-weight: 600;">
-                        <span>Total Other Deductions</span><span style="color: #dc2626;">-${auth.formatCurrency((p.totalDeductions || p.totalDeduction || 0) - (p.absentLeaveDeduction || 0))}</span>
+                        <span>Total Other Deductions</span>
+                        <span style="color: #dc2626;">-${auth.formatCurrency((p.pf || p.providentFund || 0) + (p.incomeTax || p.tax || 0) + (p.otherDeduction || p.insurance || 0))}</span>
                     </div>
                 </div>
             </div>
@@ -343,21 +401,37 @@ async function viewPayslipDetails(id) {
                 <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #374151;">Total Deductions</h4>
                 <div style="background: #fef2f2; padding: 0.75rem; border-radius: 8px;">
                     <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; font-weight: 600; font-size: 1.1rem;">
-                        <span>Total Deductions</span><span style="color: #dc2626;">-${auth.formatCurrency(p.totalDeductions || p.totalDeduction || 0)}</span>
+                        <span>Total Deductions</span>
+                        <span style="color: #dc2626;">-${auth.formatCurrency((() => {
+                            const gross = p.grossSalary || 0;
+                            const dr = gross > 0 ? gross / 26 : 0;
+                            const unp = (dr * (p.unpaidLeaveDays || 0));
+                            const abs = (dr * (p.absentDays || 0));
+                            return (p.pf || p.providentFund || 0) + (p.incomeTax || p.tax || 0) + (p.otherDeduction || p.insurance || 0) + unp + abs;
+                        })())}</span>
                     </div>
                 </div>
             </div>
-            
+
             <div style="background: #eff6ff; padding: 1rem; border-radius: 8px; text-align: center; margin-bottom: 1rem;">
                 <p style="margin: 0; color: #6b7280; font-size: 0.875rem;">Net Salary</p>
-                <p style="margin: 0.25rem 0; font-size: 1.5rem; font-weight: 700; color: #1e40af;">${auth.formatCurrency(p.netSalary || 0)}</p>
+                <p style="margin: 0.25rem 0; font-size: 1.5rem; font-weight: 700; color: #1e40af;">${auth.formatCurrency((() => {
+                    const gross = p.grossSalary || 0;
+                    const dr = gross > 0 ? gross / 26 : 0;
+                    const unp = (dr * (p.unpaidLeaveDays || 0));
+                    const abs = (dr * (p.absentDays || 0));
+                    const totalDed = (p.pf || p.providentFund || 0) + (p.incomeTax || p.tax || 0) + (p.otherDeduction || p.insurance || 0) + unp + abs;
+                    return Math.max(0, gross - totalDed);
+                })())}</p>
             </div>
             
             <div style="display: flex; gap: 0.5rem;">
-                <button onclick="editPayroll(${payroll.id})" class="btn-small" style="flex: 1; background: #3b82f6; color: white;">✏️ Edit Payroll</button>
+                ${(auth.hasRole('ROLE_HR') || auth.hasRole('ROLE_ACCOUNTANT')) ? `
+                    <button onclick="editPayroll(${payroll.id})" class="btn-small" style="flex: 1; background: #3b82f6; color: white;">✏️ Edit Payroll</button>
+                ` : ''}
                 <button onclick="closeModal()" class="btn-small" style="flex: 1; background: #f3f4f6; color: #374151;">Close</button>
             </div>
-        `;
+    `;
         
         modal.style.display = 'flex';
     } catch (e) {
@@ -379,33 +453,35 @@ function showPayrollDataInModal(payroll) {
         const statusColor = statusColors[payroll.status] || '#6b7280';
 
         content.innerHTML = `
-            <div style="text-align: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #e5e7eb;">
+        < div style = "text-align: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #e5e7eb;" >
                 <h3 style="margin: 0; font-size: 1.5rem;">PAYROLL DETAILS</h3>
                 <p style="margin: 0.25rem 0; color: #6b7280;">${payroll.monthYear || 'N/A'}</p>
                 <p style="margin: 0; font-weight: 600;">${payroll.employeeName || 'Employee'}</p>
                 <span style="display: inline-block; margin-top: 0.5rem; background: ${statusColor}20; color: ${statusColor}; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600;">${payroll.status || 'Pending'}</span>
-            </div>
+            </div >
             
             <div style="background: #fefce8; border: 1px solid #fde047; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
                 <p style="margin: 0; color: #854d0e; font-size: 0.875rem;">ℹ️ Payslip not yet generated. Showing payroll data instead.</p>
             </div>
     
-    <!-- Leave Details Section -->
+    <!--Leave Details Section-- >
     <div style="margin-bottom: 1rem;">
         <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #374151;">Leave Details</h4>
         <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; border: 1px solid #bae6fd;">
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
                 <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px;">
                     <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Total Days</p>
-                    <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #0284c7;">${(payroll.leaveDays || 0) + (payroll.halfDays || 0) * 0.5}</p>
+                    <!-- ✅ FIXED: Use backend values only - no frontend calculation -->
+                    <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #0284c7;">${payroll.leaveDays || 0}</p>
                 </div>
                 <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px;">
+                    <!-- ✅ FIXED: Use backend values only - no frontend calculation -->
                     <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Paid Days</p>
-                    <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #16a34a;">${(payroll.paidLeaveDays || 0).toFixed(1)}</p>
+                    <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #16a34a;">${payroll.paidLeaveDays || 0}</p>
                 </div>
                 <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px;">
                     <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Unpaid Days</p>
-                    <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #dc2626;">${(payroll.unpaidLeaveDays || 0).toFixed(1)}</p>
+                    <p style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #16a34a;">${payroll.unpaidLeaveDays || 0}</p>
                 </div>
                 <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px;">
                     <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Half Days</p>
@@ -449,8 +525,8 @@ function showPayrollDataInModal(payroll) {
         <p style="margin: 0; color: #6b7280; font-size: 0.875rem;">Net Salary</p>
         <p style="margin: 0.25rem 0; font-size: 1.5rem; font-weight: 700; color: #1e40af;">${auth.formatCurrency(payroll.netSalary || 0)}</p>
     </div>
-    
-        `;
+
+    `;
         modal.style.display = 'flex';
     } catch(e) {
         console.error('Error viewing payroll:', e);
@@ -469,12 +545,12 @@ async function editPayroll(id) {
         const content = document.getElementById('modal-content-body');
     
     content.innerHTML = `
-        <div style="text-align: center; margin-bottom: 1.5rem;">
+        < div style = "text-align: center; margin-bottom: 1.5rem;" >
             <h3 style="margin: 0; font-size: 1.5rem;">Edit Payroll</h3>
             <p style="margin: 0.25rem 0; color: #6b7280;">${payroll.monthYear || 'N/A'}</p>
             <p style="margin: 0; font-weight: 600;">${payroll.employeeName || 'Employee'}</p>
-        </div>
-        
+        </div >
+
         <form id="editPayrollForm">
             <div style="margin-bottom: 1rem;">
                 <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #374151;">Earnings</h4>
@@ -497,7 +573,7 @@ async function editPayroll(id) {
                     </div>
                 </div>
             </div>
-            
+
             <div style="margin-bottom: 1rem;">
                 <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #374151;">Deductions</h4>
                 <div style="background: #fef2f2; padding: 0.75rem; border-radius: 8px;">
@@ -519,13 +595,13 @@ async function editPayroll(id) {
                     </div>
                 </div>
             </div>
-            
+
             <div style="display: flex; gap: 0.5rem;">
                 <button type="button" onclick="savePayrollEdit(${id})" class="btn-small" style="flex: 1; background: #16a34a; color: white;">💾 Save Changes</button>
                 <button type="button" onclick="closeModal()" class="btn-small" style="flex: 1; background: #f3f4f6; color: #374151;">Cancel</button>
             </div>
         </form>
-        `;
+    `;
         
         modal.style.display = 'flex';
     } catch (e) {
@@ -549,10 +625,8 @@ async function savePayrollEdit(id) {
         otherDeductions: parseFloat(formData.get('otherDeductions')) || 0
     };
 
-    // Recalculate totals
-    data.grossSalary = data.basicSalary + data.hra + data.da + data.otherAllowances;
-    data.totalDeductions = data.providentFund + data.tax + data.insurance + data.otherDeductions + (currentPayrollData?.absentLeaveDeduction || 0);
-    data.netSalary = data.grossSalary - data.totalDeductions;
+    // ✅ FIXED: Remove duplicate calculations - use backend values only
+    // grossSalary, totalDeductions, netSalary should come from AttendanceEngine
 
     try {
         const res = await auth.apiCall('/api/payroll/' + id, {
@@ -623,13 +697,14 @@ function downloadPayslip(id) {
         auth.showNotification('Payslip ID not available', 'error');
         return;
     }
-    window.open(`/api/payslips/${payslipId}/download-pdf`, '_blank');
+    const token = auth.getAuth().token;
+    window.open(`/api/payslips/${payslipId}/download-pdf?token=${token}`, '_blank');
 }
 
 function logout() { auth.logout(); }
 
 // Close modal when clicking outside
-window.onclick = function(event) {
+window.onclick = function (event) {
     const modal = document.getElementById('payslip-modal');
     if (event.target === modal) {
         closeModal();
@@ -637,9 +712,11 @@ window.onclick = function(event) {
 };
 
 // Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const now = new Date();
     document.getElementById('month-filter').value = now.getMonth() + 1;
     document.getElementById('year-filter').value = now.getFullYear();
     loadPayroll();
 });
+
+

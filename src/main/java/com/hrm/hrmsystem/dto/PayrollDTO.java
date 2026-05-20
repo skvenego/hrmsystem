@@ -37,6 +37,8 @@ public class PayrollDTO {
 
     private LocalDate paymentDate;
     private String status;
+    private Boolean accountantApproved;
+    private Boolean directorApproved;
     
     // Attendance details (for display in frontend)
     private Double presentDays;
@@ -46,6 +48,8 @@ public class PayrollDTO {
     private Double unpaidLeaveDays;
     private Integer halfDays;
     private Double absentLeaveDeduction;
+    private BigDecimal unpaidLeaveDeduction;
+    private BigDecimal absentPenaltyDeduction;
     
     // Leave balance info (for display in payslip modal)
     private LeaveBalanceInfo leaveBalance;

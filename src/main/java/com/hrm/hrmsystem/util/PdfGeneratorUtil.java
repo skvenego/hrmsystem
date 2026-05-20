@@ -24,8 +24,8 @@ import java.util.UUID;
 public class PdfGeneratorUtil {
 
     private static final String PDF_DIRECTORY = "payslips/";
-    private static final String COMPANY_NAME = "HRM System";
-    private static final String COMPANY_ADDRESS = "123 Business Street, City, Country";
+    private static final String COMPANY_NAME = "ENEGO SERVICE PRIVATE LIMITED";
+    private static final String COMPANY_ADDRESS = "Official Registered Address";
 
     /**
      * Generate PDF for payslip
@@ -178,7 +178,36 @@ public class PdfGeneratorUtil {
         addDeductionRow(deductionsTable, "Provident Fund (PF)", payslip.getPf());
         addDeductionRow(deductionsTable, "Employee State Insurance (ESI)", payslip.getEsi());
         addDeductionRow(deductionsTable, "Income Tax", payslip.getIncomeTax());
-        addDeductionRow(deductionsTable, "Other Deductions", payslip.getOtherDeduction());
+        
+        // Calculate insurance and general other deductions
+        BigDecimal ins = payslip.getInsurance() != null ? payslip.getInsurance() : BigDecimal.ZERO;
+        BigDecimal other = payslip.getOtherDeduction() != null ? payslip.getOtherDeduction() : BigDecimal.ZERO;
+        BigDecimal generalOther = other.subtract(ins);
+        if (generalOther.compareTo(BigDecimal.ZERO) < 0) {
+            generalOther = BigDecimal.ZERO;
+        }
+        
+        if (ins.compareTo(BigDecimal.ZERO) > 0) {
+            addDeductionRow(deductionsTable, "Insurance", ins);
+        }
+        if (generalOther.compareTo(BigDecimal.ZERO) > 0) {
+            addDeductionRow(deductionsTable, "Other Deductions", generalOther);
+        }
+        
+        // Calculate attendance/leave deductions
+        BigDecimal unpaid = payslip.getUnpaidLeaveDeduction() != null ? payslip.getUnpaidLeaveDeduction() : BigDecimal.ZERO;
+        BigDecimal totalAttendance = payslip.getAbsentLeaveDeduction() != null ? payslip.getAbsentLeaveDeduction() : BigDecimal.ZERO;
+        BigDecimal absentPenalty = totalAttendance.subtract(unpaid);
+        if (absentPenalty.compareTo(BigDecimal.ZERO) < 0) {
+            absentPenalty = BigDecimal.ZERO;
+        }
+        
+        if (unpaid.compareTo(BigDecimal.ZERO) > 0) {
+            addDeductionRow(deductionsTable, "Unpaid Leave Deduction (" + (payslip.getUnpaidLeaveDays() != null ? payslip.getUnpaidLeaveDays() : 0) + " days)", unpaid);
+        }
+        if (absentPenalty.compareTo(BigDecimal.ZERO) > 0) {
+            addDeductionRow(deductionsTable, "Absent Penalty Deduction (" + (payslip.getAbsentDays() != null ? payslip.getAbsentDays() : 0) + " days)", absentPenalty);
+        }
 
         // Total Deduction
         Cell totalDeductCell = new Cell().add(new Paragraph("TOTAL DEDUCTION").setBold());

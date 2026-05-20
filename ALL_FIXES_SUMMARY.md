@@ -23,7 +23,7 @@ if (leaveInCurrentCycle && !leave.getEndDate().isAfter(today)) {
 if (leaveInCurrentCycle) {
     // Count actual days excluding Sundays
     long actualDays = countDaysExcludingSundays(leave.getStartDate(), leave.getEndDate());
-    usedLeaves += (double) actualDays;
+    Used LeavesLeaves += (double) actualDays;
 }
 ```
 

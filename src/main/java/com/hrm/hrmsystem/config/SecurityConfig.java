@@ -74,42 +74,46 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/users/profile").authenticated()
                 
                 // === WRITE APIs - Restricted by role ===
-                // Employee management (create/update/delete) - Admin/HR only
-                .requestMatchers(HttpMethod.POST, "/api/employees/**").hasAnyRole("ADMIN", "HR")
-                .requestMatchers(HttpMethod.PUT, "/api/employees/**").hasAnyRole("ADMIN", "HR")
-                .requestMatchers(HttpMethod.DELETE, "/api/employees/**").hasAnyRole("ADMIN", "HR")
+                // Employee management (create/update/delete) - HR and Admin
+                .requestMatchers(HttpMethod.POST, "/api/employees/**").hasAnyRole("HR", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/employees/**").hasAnyRole("HR", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/employees/**").hasAnyRole("HR", "ADMIN")
                 
-                // Department management - Admin/HR only
-                .requestMatchers(HttpMethod.POST, "/api/departments/**").hasAnyRole("ADMIN", "HR")
-                .requestMatchers(HttpMethod.PUT, "/api/departments/**").hasAnyRole("ADMIN", "HR")
-                .requestMatchers(HttpMethod.DELETE, "/api/departments/**").hasAnyRole("ADMIN", "HR")
+                // Department management - HR and Admin
+                .requestMatchers(HttpMethod.POST, "/api/departments/**").hasAnyRole("HR", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/departments/**").hasAnyRole("HR", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/departments/**").hasAnyRole("HR", "ADMIN")
                 
-                // Attendance management (mark attendance) - Admin/HR/Manager
-                .requestMatchers(HttpMethod.POST, "/api/attendance/**").hasAnyRole("ADMIN", "HR", "MANAGER")
-                .requestMatchers(HttpMethod.PUT, "/api/attendance/**").hasAnyRole("ADMIN", "HR", "MANAGER")
+                // Attendance management (mark attendance) - HR/Manager/Admin
+                .requestMatchers(HttpMethod.POST, "/api/attendance/**").hasAnyRole("HR", "MANAGER", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/attendance/**").hasAnyRole("HR", "MANAGER", "ADMIN")
                 
-                // Leave management (approve/reject) - Admin/HR
+                // Leave management (approve/reject/modify) - HR/Leaves/Accountant/Admin
                 .requestMatchers(HttpMethod.POST, "/api/leaves/apply").authenticated() // Employees can apply
-                .requestMatchers(HttpMethod.POST, "/api/leaves/approve/**", "/api/leaves/reject/**", "/api/leaves/cancel/**").hasAnyRole("ADMIN", "HR")
-                .requestMatchers(HttpMethod.POST, "/api/leaves/recalculate-paid-days").hasAnyRole("ADMIN", "HR") // Data fix endpoint
+                .requestMatchers(HttpMethod.POST, "/api/leaves/approve/**", "/api/leaves/reject/**", "/api/leaves/cancel/**", "/api/leaves/modify/**").hasAnyRole("HR", "LEAVES", "ACCOUNTANT", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/leaves/recalculate-paid-days").hasAnyRole("HR", "LEAVES", "ACCOUNTANT", "ADMIN") // Data fix endpoint
                 
-                // Payroll management - Admin/HR/Accountant
-                .requestMatchers(HttpMethod.POST, "/api/payroll/**").hasAnyRole("ADMIN", "HR", "ACCOUNTANT")
-                .requestMatchers(HttpMethod.PUT, "/api/payroll/**").hasAnyRole("ADMIN", "HR", "ACCOUNTANT")
-                .requestMatchers(HttpMethod.DELETE, "/api/payroll/**").hasAnyRole("ADMIN", "HR")
+                // Payroll management - HR/Accountant/Admin
+                .requestMatchers(HttpMethod.POST, "/api/payroll/**").hasAnyRole("HR", "ACCOUNTANT", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/payroll/**").hasAnyRole("HR", "ACCOUNTANT", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/payroll/**").hasAnyRole("HR", "ADMIN")
                 
-                // Payslip management - Admin/HR/Accountant
-                .requestMatchers(HttpMethod.POST, "/api/payslips/**").hasAnyRole("ADMIN", "HR", "ACCOUNTANT")
-                .requestMatchers(HttpMethod.PUT, "/api/payslips/**").hasAnyRole("ADMIN", "HR", "ACCOUNTANT")
+                // Payslip management - HR/Accountant/Admin
+                .requestMatchers(HttpMethod.POST, "/api/payslips/**").hasAnyRole("HR", "ACCOUNTANT", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/payslips/**").hasAnyRole("HR", "ACCOUNTANT", "ADMIN")
                 
                 // Accountant approvals
-                .requestMatchers("/api/payroll/approvals/pending/accountant", "/api/payroll/approvals/*/accountant-approve", "/api/payroll/approvals/*/accountant-reject").hasAnyRole("ACCOUNTANT", "ADMIN")
+                .requestMatchers("/api/payroll/approvals/pending/accountant", "/api/payroll/approvals/*/accountant-approve", "/api/payroll/approvals/*/accountant-reject").hasRole("ACCOUNTANT")
                 
                 // Director approvals
-                .requestMatchers("/api/payroll/approvals/pending/director", "/api/payroll/approvals/*/director-approve", "/api/payroll/approvals/*/director-reject").hasAnyRole("DIRECTOR", "ADMIN")
+                .requestMatchers("/api/payroll/approvals/pending/director", "/api/payroll/approvals/*/director-approve", "/api/payroll/approvals/*/director-reject").hasRole("DIRECTOR")
                 
-                // Admin only APIs
-                .requestMatchers("/api/admin/**", "/api/users/**").hasRole("ADMIN")
+                // User profile management
+                .requestMatchers(HttpMethod.GET, "/api/users/profile").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/users/update-email").authenticated()
+                
+                // HR only APIs (previously Admin) - HR and Admin
+                .requestMatchers("/api/admin/**", "/api/users/**").hasAnyRole("HR", "ADMIN")
                 
                 // All HTML pages are public - frontend JS handles role checks
                 .requestMatchers("/html/**").permitAll()

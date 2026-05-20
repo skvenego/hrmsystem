@@ -131,6 +131,34 @@ public class PayrollController {
         }
     }
 
+    // Approve payroll by director
+    @PostMapping("/approve-director/{payrollId}")
+    public ResponseEntity<?> approveByDirector(@PathVariable Long payrollId, @RequestBody Map<String, String> request) {
+        try {
+            String directorName = request.getOrDefault("directorName", "Director");
+            PayrollDTO payroll = payrollService.approveByDirector(payrollId, directorName);
+            return ResponseEntity.ok(payroll);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error approving payroll: " + e.getMessage());
+        }
+    }
+
+    // Reject payroll by director
+    @PostMapping("/reject-director/{payrollId}")
+    public ResponseEntity<?> rejectByDirector(@PathVariable Long payrollId, @RequestBody Map<String, String> request) {
+        try {
+            String reason = request.getOrDefault("reason", "");
+            PayrollDTO payroll = payrollService.rejectByDirector(payrollId, reason);
+            return ResponseEntity.ok(payroll);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error rejecting payroll: " + e.getMessage());
+        }
+    }
+
     // Delete all payroll records
     @DeleteMapping("/clear-all")
     public ResponseEntity<String> clearAllPayrolls() {

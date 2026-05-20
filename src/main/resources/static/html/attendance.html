@@ -4,54 +4,641 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance - HRM System</title>
-    <link rel="stylesheet" href="../css/employee-theme.css">
-    <link rel="stylesheet" href="../css/pages.css">
+    <link rel="stylesheet" href="../css/hrm-design-system.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ===== Design Tokens ===== */
+        :root {
+            --primary:       #1e3a5f;
+            --primary-light: #2c5282;
+            --accent:        #d4af37;
+            --accent-light:  #f0d878;
+            --success:       #059669;
+            --success-bg:    #d1fae5;
+            --success-border:#6ee7b7;
+            --danger:        #dc2626;
+            --danger-bg:     #fee2e2;
+            --danger-border: #fca5a5;
+            --warning:       #d97706;
+            --warning-bg:    #fef3c7;
+            --warning-border:#fcd34d;
+            --info:          #2563eb;
+            --info-bg:       #dbeafe;
+            --info-border:   #93c5fd;
+            --gray-50:  #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --radius-sm: 0.375rem;
+            --radius:    0.5rem;
+            --radius-md: 0.75rem;
+            --radius-lg: 1rem;
+            --radius-xl: 1.25rem;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+            --shadow:    0 4px 6px -1px rgba(0,0,0,.06), 0 2px 4px -1px rgba(0,0,0,.04);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,.08), 0 4px 6px -2px rgba(0,0,0,.04);
+            --shadow-lg: 0 20px 25px -5px rgba(0,0,0,.10), 0 10px 10px -5px rgba(0,0,0,.04);
+            --transition: all 0.22s cubic-bezier(.4,0,.2,1);
+        }
+
+        /* ===== Page Layout ===== */
+        .page-content { animation: fadeIn .35s ease-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0);   }
+        }
+
+        /* ===== Header Action Bar ===== */
+        .attendance-action-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            flex-wrap: wrap;
+        }
+
+        .attendance-date-picker {
+            padding: 0.6rem 0.875rem !important;
+            border: 1px solid var(--gray-200) !important;
+            border-radius: var(--radius-md) !important;
+            font-size: 0.875rem !important;
+            color: var(--gray-800) !important;
+            background: #fff !important;
+            box-shadow: var(--shadow-sm) !important;
+            transition: var(--transition) !important;
+            cursor: pointer;
+        }
+        .attendance-date-picker:focus {
+            border-color: var(--primary-light) !important;
+            box-shadow: 0 0 0 3px rgba(44,82,130,.15) !important;
+            outline: none !important;
+        }
+
+        /* Shared action button base */
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: var(--radius-md);
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+            box-shadow: var(--shadow-sm);
+            letter-spacing: 0.01em;
+        }
+        .action-btn svg { flex-shrink: 0; }
+
+        .action-btn-success {
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: #fff;
+        }
+        .action-btn-success:hover {
+            background: linear-gradient(135deg, #047857, #059669);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+
+        .action-btn-secondary {
+            background: #fff;
+            color: var(--gray-700);
+            border: 1px solid var(--gray-200);
+        }
+        .action-btn-secondary:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+            transform: translateY(-1px);
+        }
+
+        .action-btn-danger {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            color: #fff;
+        }
+        .action-btn-danger:hover {
+            background: linear-gradient(135deg, #b91c1c, #dc2626);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+
+        .action-btn-warning {
+            background: linear-gradient(135deg, #d97706, #f59e0b);
+            color: #fff;
+        }
+        .action-btn-warning:hover {
+            background: linear-gradient(135deg, #b45309, #d97706);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+        .action-btn-warning.active-filter {
+            background: linear-gradient(135deg, #ca8a04, #eab308);
+        }
+
+        /* ===== Search Bar ===== */
+        .attendance-search-wrapper {
+            position: relative;
+            width: 300px;
+        }
+        .attendance-search-icon {
+            position: absolute;
+            left: 0.875rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            pointer-events: none;
+            width: 16px;
+            height: 16px;
+        }
+        .attendance-search-input {
+            width: 100%;
+            padding: 0.65rem 1rem 0.65rem 2.5rem !important;
+            border: 1px solid var(--gray-200) !important;
+            border-radius: var(--radius-md) !important;
+            font-size: 0.875rem !important;
+            color: var(--gray-800) !important;
+            background: #fff !important;
+            transition: var(--transition) !important;
+            box-shadow: var(--shadow-sm) !important;
+        }
+        .attendance-search-input:focus {
+            border-color: var(--primary-light) !important;
+            box-shadow: 0 0 0 3px rgba(44,82,130,.15) !important;
+            outline: none !important;
+        }
+
+        /* ===== Deduction Info Banner ===== */
+        .info-banner {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border: 1px solid var(--info-border);
+            border-left: 4px solid var(--info);
+            border-radius: var(--radius-lg);
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+        .info-banner-icon {
+            color: var(--info);
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .info-banner-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin-bottom: 0.25rem;
+        }
+        .info-banner-body {
+            font-size: 0.78rem;
+            color: #1d4ed8;
+            line-height: 1.65;
+        }
+
+        /* ===== Status Badges ===== */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.28rem 0.7rem;
+            border-radius: 9999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+        .status-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            opacity: 0.7;
+            flex-shrink: 0;
+        }
+
+        .status-badge.present {
+            background: var(--success-bg);
+            color: var(--success);
+            border-color: var(--success-border);
+        }
+        .status-badge.absent {
+            background: var(--danger-bg);
+            color: var(--danger);
+            border-color: var(--danger-border);
+        }
+        .status-badge.partial_absent, .status-badge.half_day {
+            background: var(--warning-bg);
+            color: var(--warning);
+            border-color: var(--warning-border);
+        }
+        .status-badge.paid_leave {
+            background: #d1fae5;
+            color: #065f46;
+            border-color: #a7f3d0;
+        }
+        .status-badge.unpaid_leave {
+            background: #fee2e2;
+            color: #991b1b;
+            border-color: #fca5a5;
+        }
+        .status-badge.week_off {
+            background: var(--gray-100);
+            color: var(--gray-600);
+            border-color: var(--gray-300);
+        }
+        .status-badge.pending {
+            background: #fef9c3;
+            color: #854d0e;
+            border-color: #fde68a;
+        }
+        .status-badge.not_marked {
+            background: var(--gray-50);
+            color: var(--gray-400);
+            border-color: var(--gray-200);
+        }
+
+        /* ===== Half-Day Toggle Controls ===== */
+        .attendance-mini-group {
+            display: inline-flex;
+            gap: 2px;
+            background: var(--gray-100);
+            padding: 3px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--gray-200);
+        }
+        .btn-mini {
+            padding: 3px 9px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            border: none;
+            border-radius: calc(var(--radius-sm) - 2px);
+            cursor: pointer;
+            background: transparent;
+            color: var(--gray-500);
+            transition: var(--transition);
+            letter-spacing: 0.02em;
+        }
+        .btn-mini:hover { background: var(--gray-200); color: var(--gray-800); }
+        .active-p {
+            background: #059669 !important;
+            color: #fff !important;
+            box-shadow: 0 1px 3px rgba(5,150,105,.3) !important;
+        }
+        .active-a {
+            background: #dc2626 !important;
+            color: #fff !important;
+            box-shadow: 0 1px 3px rgba(220,38,38,.3) !important;
+        }
+
+        /* Full-day P/A toggle */
+        .btn-toggle {
+            padding: 4px 14px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            background: #fff;
+            color: var(--gray-600);
+            transition: var(--transition);
+            letter-spacing: 0.02em;
+        }
+        .btn-toggle:hover { background: var(--gray-50); border-color: var(--gray-300); }
+
+        /* Label badges for leave halves */
+        .badge-mini {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: var(--radius-sm);
+            background: #e0e7ff;
+            color: #3730a3;
+            border: 1px solid #c7d2fe;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        /* ===== Table styling ===== */
+        .card {
+            background: #fff;
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--gray-200);
+            box-shadow: var(--shadow);
+        }
+        .table-container { border-radius: var(--radius-xl); overflow: hidden; }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th {
+            background: var(--gray-50);
+            color: var(--gray-600);
+            font-weight: 700;
+            font-size: 0.72rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        .data-table td {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--gray-100);
+            vertical-align: middle;
+            font-size: 0.875rem;
+            color: var(--gray-700);
+        }
+        .data-table tbody tr:last-child td { border-bottom: none; }
+        .data-table tbody tr { transition: var(--transition); }
+        .data-table tbody tr:hover { background: var(--gray-50); }
+
+        /* Employee Avatar */
+        .user-avatar {
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: #fff;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 0.8rem;
+        }
+
+        /* ===== Employee Detail Modal ===== */
+        .employee-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn .2s ease-out;
+        }
+        .modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,.45);
+            backdrop-filter: blur(4px);
+        }
+        .employee-modal .modal-content {
+            position: relative;
+            z-index: 1;
+            background: #fff;
+            border-radius: var(--radius-xl);
+            width: 100%;
+            max-width: 480px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            animation: slideUp .25s cubic-bezier(.4,0,.2,1);
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px) scale(.97); }
+            to   { opacity: 1; transform: translateY(0)   scale(1);    }
+        }
+        .employee-modal .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--gray-100);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        }
+        .employee-modal .modal-header h2 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            margin: 0;
+        }
+        .employee-modal .close-btn {
+            background: rgba(255,255,255,.15);
+            border: none;
+            color: #fff;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            padding: 0;
+            line-height: 1;
+        }
+        .employee-modal .close-btn:hover { background: rgba(255,255,255,.25); }
+        .employee-modal .modal-body {
+            padding: 2rem 1.5rem;
+            text-align: center;
+        }
+        .employee-modal .emp-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: #fff;
+            font-weight: 800;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            box-shadow: 0 4px 12px rgba(30,58,95,.25);
+        }
+        .employee-modal h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin: 0 0 0.25rem;
+        }
+        .employee-modal .emp-designation {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+            margin-bottom: 1.5rem;
+        }
+        .emp-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            text-align: left;
+        }
+        .detail-item {
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            padding: 0.75rem;
+        }
+        .detail-item label {
+            display: block;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--gray-400);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+        .detail-item span {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--gray-800);
+            word-break: break-all;
+        }
+
+        /* ===== Pending-resolve action buttons (inside table) ===== */
+        .resolve-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: var(--radius-sm);
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .resolve-btn-present {
+            background: var(--success-bg);
+            color: var(--success);
+            border: 1px solid var(--success-border);
+        }
+        .resolve-btn-present:hover { background: #a7f3d0; }
+        .resolve-btn-absent {
+            background: var(--danger-bg);
+            color: var(--danger);
+            border: 1px solid var(--danger-border);
+        }
+        .resolve-btn-absent:hover { background: #fecaca; }
+
+        /* ===== Vertical divider in action cells ===== */
+        .cell-divider {
+            width: 1px;
+            height: 20px;
+            background: var(--gray-200);
+            margin: 0 4px;
+            flex-shrink: 0;
+        }
+
+        /* ===== View-details eye button ===== */
+        .btn-view-details {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--gray-200);
+            background: #fff;
+            color: var(--gray-500);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.9rem;
+        }
+        .btn-view-details:hover {
+            background: var(--gray-100);
+            color: var(--gray-800);
+            border-color: var(--gray-300);
+        }
+    </style>
 </head>
 <body>
-    <div class="app-layout">
+    <div class="dashboard">
         <!-- Sidebar -->
-        <aside class="sidebar"></aside>
+        <aside class="sidebar" id="sidebar-container"></aside>
 
         <!-- Main Content -->
         <main class="main-content">
             <!-- Header -->
-            <header class="top-header">
+            <header class="header flex justify-between items-center mb-6">
                 <div class="page-title">
-                    <div class="page-title-icon">
-                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                    </div>
                     <h1>Attendance Management</h1>
+                    <p>Track and manage employee daily attendance</p>
                 </div>
-                <div class="header-actions" style="display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end;">
-                    <div style="display: flex; gap: 0.5rem;">
-                        <input type="date" id="date-input" class="search-input" style="padding: 0.5rem; border-radius: 6px; border: 1px solid #d1d5db;">
-                        <button onclick="markAllPresent()" class="btn-primary" style="background: #16a34a; color: white; padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer;">✓ All Present</button>
-                        <button onclick="markAllAbsent()" class="btn-secondary" style="background: #dc2626; color: white; padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer;">✗ All Absent</button>
-                        <button onclick="clearAllAttendance()" class="btn-danger" style="background: #b91c1c; color: white; padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer;">🗑️ Clear All</button>
-                        <button onclick="filterPendingOnly()" id="filter-pending-btn" style="background: #eab308; color: white; padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer;">⚠ Pending Only</button>
-                    </div>
-                    <input type="text" id="search-input" placeholder="🔍 Search employee by name..." style="padding: 0.5rem; border-radius: 6px; border: 1px solid #d1d5db; width: 300px;" onkeyup="filterEmployees()">
+                <div class="attendance-action-bar">
+                    <input type="date" id="date-input" class="attendance-date-picker">
+                    <button onclick="markAllPresent()" class="action-btn action-btn-success">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                        All Present
+                    </button>
+                    <button onclick="markAllAbsent()" class="action-btn action-btn-secondary">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        All Absent
+                    </button>
+                    <button onclick="clearAllAttendance()" class="action-btn action-btn-danger">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+                        Clear All
+                    </button>
+                    <button onclick="filterPendingOnly()" id="filter-pending-btn" class="action-btn action-btn-warning">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+                        Pending
+                    </button>
                 </div>
             </header>
 
             <div class="page-content">
-                <div id="popup" class="popup" style="display: none;">
-                    <div class="popup-content">
-                        <p id="popup-message"></p>
-                        <button onclick="closePopup()">OK</button>
+                <!-- Search Bar -->
+                <div class="flex justify-between items-center mb-5">
+                    <div></div>
+                    <div class="attendance-search-wrapper">
+                        <svg class="attendance-search-icon" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+                        </svg>
+                        <input type="text" id="search-input" placeholder="Search by name or department..." class="attendance-search-input" onkeyup="filterEmployees()">
                     </div>
                 </div>
-                <div class="card">
+
+                <!-- Alert Popup Modal -->
+                <div id="popup" class="modal">
+                    <div class="modal-backdrop" onclick="closePopup()"></div>
+                    <div class="modal-content" style="max-width: 400px;">
+                        <div class="modal-body text-center p-6">
+                            <p id="popup-message" class="mb-6 font-medium"></p>
+                            <button onclick="closePopup()" class="btn-primary w-full">OK</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Deduction Policy Info Banner -->
+                <div class="info-banner">
+                    <div class="info-banner-icon">
+                        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="info-banner-title">Standard Deduction Policy</div>
+                        <p class="info-banner-body">
+                            • <strong>Standard Deduction:</strong> Marking any half as 'Absent' results in <strong>0.5 absent days</strong>. Salary is deducted at a 1:1 ratio based on absent days.<br>
+                            • <strong>Independent Control:</strong> You can mark each half (Morning / Afternoon) independently per employee.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Attendance Table -->
+                <div class="card" style="padding: 0; overflow: hidden;">
                     <div class="table-container">
                         <table class="data-table">
                             <thead>
-                                <tr><th>Employee</th><th>Date</th><th>Status</th><th>Check In</th><th>Check Out</th><th>Actions</th></tr>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th class="text-center">Check In</th>
+                                    <th class="text-center">Check Out</th>
+                                    <th class="text-center">Working Hrs</th>
+                                    <th style="text-align: right; padding-right: 1.25rem;">Actions</th>
+                                </tr>
                             </thead>
                             <tbody id="attendance-table">
-                                <tr><td colspan="6" style="text-align: center; padding: 2rem;">Loading...</td></tr>
+                                <tr><td colspan="7" class="text-center p-8 text-muted">Loading employees...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -93,6 +680,7 @@
                 case "UNPAID_LEAVE": return "Unpaid Leave";
                 case "PRESENT": return "Present";
                 case "ABSENT": return "Absent";
+                case "PARTIAL_ABSENT": return "Partial Absent";
                 case "WEEK_OFF": return "Week Off";
                 case "HALF_DAY": return "Half Day";
                 case "PENDING": return "Pending";
@@ -108,6 +696,7 @@
                 case "UNPAID_LEAVE": return "#ef4444"; // Red
                 case "PRESENT": return "#22c55e"; // Green
                 case "ABSENT": return "#ef4444"; // Red
+                case "PARTIAL_ABSENT": return "#f59e0b"; // Amber
                 case "WEEK_OFF": return "#6b7280"; // Gray
                 case "HALF_DAY": return "#f59e0b"; // Amber
                 case "PENDING": return "#eab308"; // Yellow
@@ -175,10 +764,12 @@
                         department: deptName,
                         date: selectedDate,
                         status: status,
+                        fullStatus: attendance?.fullStatus || null,
                         displayStatus: displayStatus,
                         checkInTime: attendance?.checkInTime || '-',
                         checkOutTime: attendance?.checkOutTime || '-',
                         workingHours: attendance?.workingHours !== undefined ? attendance.workingHours : '-',
+                        halfType: attendance?.halfType || null,
                         remarks: attendance?.remarks || '-',
                         isFuture: isFutureDate(selectedDate)
                     };
@@ -203,78 +794,98 @@
             const tbody = document.getElementById('attendance-table');
             
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No employees found matching your search</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center p-8">No employees found matching your search</td></tr>';
                 return;
             }
             
             tbody.innerHTML = data.map(a => {
                 const status = a.status || 'NOT_MARKED';
+                const statusDisplay = a.displayStatus;
                 const statusClass = status.toLowerCase();
-                const statusColor = getStatusColor(status);
-                const isPresent = status === 'PRESENT';
-                const isAbsent = status === 'ABSENT';
-                const isHalfDay = status === 'HALF_DAY';
-                const isPending = status === 'PENDING';
-                const isNotMarked = status === 'NOT_MARKED';
-                const isPaidLeave = status === 'PAID_LEAVE';
-                const isUnpaidLeave = status === 'UNPAID_LEAVE';
-                const isWeekOff = status === 'WEEK_OFF';
                 
                 return `
                     <tr>
                         <td>
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <div style="width: 36px; height: 36px; background: #4f46e5; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.875rem;">${a.employeeName.charAt(0) || '?'}</div>
+                            <div class="flex items-center gap-3">
+                                <div class="user-avatar" style="width: 36px; height: 36px; font-size: 0.875rem;">${a.employeeName.charAt(0) || '?'}</div>
                                 <div>
                                     <div style="font-weight: 600;">${a.employeeName}</div>
-                                    <div style="font-size: 0.75rem; color: #6b7280;">${a.department}</div>
-                                    <button onclick="viewEmployeeDetails(${a.employeeId})" class="btn-view" style="margin-top: 4px; padding: 2px 8px; font-size: 0.7rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">👁 View Details</button>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);">${a.department}</div>
                                 </div>
                             </div>
                         </td>
                         <td>${a.date}</td>
                         <td>
-                            <span class="status-badge" style="
-                                background: ${statusColor}20;
-                                color: ${statusColor};
-                                border: 1px solid ${statusColor}40;
-                                font-weight: 500;
-                                padding: 0.25rem 0.75rem;
-                                border-radius: 0.375rem;
-                                font-size: 0.875rem;
-                            ">${a.displayStatus}</span>
+                            <span class="status-badge ${statusClass}">${statusDisplay}</span>
                         </td>
-                        <td>${a.checkInTime}</td>
-                        <td>${a.checkOutTime}</td>
-                        <td>${isWeekOff ? '-' : (isPaidLeave || isUnpaidLeave ? (isPaidLeave ? 'Paid Leave' : 'Unpaid Leave') : (a.workingHours !== undefined && a.workingHours > 0 ? a.workingHours + ' hrs' : '-'))}</td>
+                        <td class="text-center">${a.checkInTime}</td>
+                        <td class="text-center">${a.checkOutTime}</td>
+                        <td class="text-center">${a.workingHours !== undefined && a.workingHours > 0 && !a.status.includes('LEAVE') ? a.workingHours + ' hrs' : '-'}</td>
                         <td>
                             ${!a.isFuture ? `
-                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                    ${isWeekOff ? `
-                                        <span style="color: #6b7280; font-size: 0.875rem; font-style: italic;">Week Off</span>
-                                    ` : isPaidLeave || isUnpaidLeave ? `
-                                        <span style="color: #6b7280; font-size: 0.875rem; font-style: italic;">On Leave</span>
-                                    ` : isPending ? `
-                                        <button onclick="resolvePendingAttendance(${a.employeeId}, 'PRESENT', this)" class="btn-toggle" data-status="present" title="Mark Present" style="background: #22c55e; color: white;">
-                                            <span style="width: 10px; height: 10px; background: white; border-radius: 50%; display: inline-block; margin-right: 4px;"></span> Present
-                                        </button>
-                                        <button onclick="resolvePendingAttendance(${a.employeeId}, 'ABSENT', this)" class="btn-toggle" data-status="absent" title="Mark Absent" style="background: #ef4444; color: white;">
-                                            <span style="width: 10px; height: 10px; background: white; border-radius: 50%; display: inline-block; margin-right: 4px;"></span> Absent
-                                            <span style="width: 10px; height: 10px; background: white; border-radius: 50%; display: inline-block; margin-right: 4px;"></span>✗ Absent
-                                        </button>
-                                    ` : `
-                                        <button onclick="setAttendance(${a.employeeId}, 'PRESENT')" class="btn-toggle ${isPresent ? 'active' : ''}" data-status="present" title="Mark Present">
-                                            <span style="width: 10px; height: 10px; background: #22c55e; border-radius: 50%; display: inline-block; margin-right: 4px;"></span>P
-                                        </button>
-                                        <button onclick="setAttendance(${a.employeeId}, 'HALF_DAY')" class="btn-toggle ${isHalfDay ? 'active' : ''}" data-status="half" title="Mark Half Day">
-                                            <span style="width: 10px; height: 10px; background: #f59e0b; border-radius: 50%; display: inline-block; margin-right: 4px;"></span>H
-                                        </button>
-                                        <button onclick="setAttendance(${a.employeeId}, 'ABSENT')" class="btn-toggle ${isAbsent ? 'active' : ''}" data-status="absent" title="Mark Absent">
-                                            <span style="width: 10px; height: 10px; background: #ef4444; border-radius: 50%; display: inline-block; margin-right: 4px;"></span>A
-                                        </button>
-                                    `}
+                                <div class="flex items-center gap-2">
+                                    ${status === 'WEEK_OFF' ? `
+                                        <span class="status-badge week_off">Week Off</span>
+                                    ` : status === 'PENDING' ? `
+                                        <button onclick="resolvePendingAttendance(${a.employeeId}, 'PRESENT', this)" class="resolve-btn resolve-btn-present">✓ Present</button>
+                                        <button onclick="resolvePendingAttendance(${a.employeeId}, 'ABSENT', this)" class="resolve-btn resolve-btn-absent">✗ Absent</button>
+                                    ` : (function() {
+                                        const fs = a.fullStatus || '';
+                                        const h1Leave = fs.includes('1H:PAID_LEAVE') || fs.includes('1H:UNPAID_LEAVE');
+                                        const h2Leave = fs.includes('2H:PAID_LEAVE') || fs.includes('2H:UNPAID_LEAVE');
+                                        const isFullLeave = h1Leave && h2Leave;
+                                        
+                                        const h1Present = fs.includes('1H:PRESENT') || status === 'PRESENT';
+                                        const h2Present = fs.includes('2H:PRESENT') || status === 'PRESENT';
+                                        const h1Absent = fs.includes('1H:ABSENT') || status === 'ABSENT';
+                                        const h2Absent = fs.includes('2H:ABSENT') || status === 'ABSENT';
+
+                                        let buttons = '';
+                                        
+                                        if (isFullLeave) {
+                                            return `<span class="badge-mini" style="background: #e0e7ff; color: #3730a3; border-color: #c7d2fe; padding: 4px 12px; font-size: 0.75rem;">Full Day Leave</span>`;
+                                        }
+
+                                        // 1H Group
+                                        if (h1Leave) {
+                                            buttons += `<span class="badge-mini">1H Leave</span>`;
+                                        } else {
+                                            buttons += `
+                                                <div class="attendance-mini-group">
+                                                    <button onclick="setAttendance(${a.employeeId}, 'HALF_DAY', 'FIRST_HALF')" class="btn-mini ${h1Present ? 'active-p' : ''}" title="1H Present">P</button>
+                                                    <button onclick="setAttendance(${a.employeeId}, 'ABSENT', 'FIRST_HALF')" class="btn-mini ${h1Absent ? 'active-a' : ''}" title="1H Absent">A</button>
+                                                </div>
+                                            `;
+                                        }
+
+                                        // 2H Group
+                                        if (h2Leave) {
+                                            buttons += `<span class="badge-mini">2H Leave</span>`;
+                                        } else {
+                                            buttons += `
+                                                <div class="attendance-mini-group">
+                                                    <button onclick="setAttendance(${a.employeeId}, 'HALF_DAY', 'SECOND_HALF')" class="btn-mini ${h2Present ? 'active-p' : ''}" title="2H Present">P</button>
+                                                    <button onclick="setAttendance(${a.employeeId}, 'ABSENT', 'SECOND_HALF')" class="btn-mini ${h2Absent ? 'active-a' : ''}" title="2H Absent">A</button>
+                                                </div>
+                                            `;
+                                        }
+
+                                        // Full Day Actions
+                                        if (!h1Leave && !h2Leave) {
+                                            buttons += `
+                                                <div class="cell-divider"></div>
+                                                <button onclick="setAttendance(${a.employeeId}, 'PRESENT')" class="btn-toggle ${status === 'PRESENT' ? 'active-p' : ''}" title="Full Day Present">P</button>
+                                                <button onclick="setAttendance(${a.employeeId}, 'ABSENT')" class="btn-toggle ${status === 'ABSENT' ? 'active-a' : ''}" title="Full Day Absent">A</button>
+                                            `;
+                                        }
+
+                                        return buttons;
+                                    })()}
+                                    <button onclick="viewEmployeeDetails(${a.employeeId})" class="btn-view-details" title="View Employee Details">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.43 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                    </button>
                                 </div>
-                            ` : '<span style="color: #9ca3af; font-size: 0.875rem;">Future</span>'}
+                            ` : '<span class="text-muted" style="font-size: 0.875rem;">Future</span>'}
                         </td>
                     </tr>
                 `}).join('');
@@ -301,13 +912,21 @@
             const btn = document.getElementById('filter-pending-btn');
 
             if (showPendingOnly) {
-                btn.style.background = '#ca8a04';
-                btn.textContent = '✓ Show All';
+                btn.classList.add('active-filter');
+                btn.style.removeProperty('background');
+                btn.innerHTML = `
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                    Show All
+                `;
                 const pendingOnly = filteredEmployees.filter(emp => emp.status === 'PENDING');
                 renderAttendanceTable(pendingOnly);
             } else {
-                btn.style.background = '#eab308';
-                btn.textContent = '⚠ Pending Only';
+                btn.classList.remove('active-filter');
+                btn.style.removeProperty('background');
+                btn.innerHTML = `
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+                    Pending
+                `;
                 renderAttendanceTable(filteredEmployees);
             }
         }
@@ -363,13 +982,15 @@
                                 </div>
                                 <div class="detail-item">
                                     <label>Salary</label>
-                                    <span>${emp.salary ? '₹' + emp.salary : 'N/A'}</span>
+                                    <span>${emp.salary ? 'Rs. ' + emp.salary : 'N/A'}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 `;
                 document.body.appendChild(modal);
+                document.body.style.overflow = 'hidden';
+                document.documentElement.style.overflow = 'hidden';
             } catch (e) {
                 console.error(e);
                 auth.showNotification('Failed to load employee details', 'error');
@@ -379,9 +1000,11 @@
         function closeEmployeeModal() {
             const modal = document.querySelector('.employee-modal');
             if (modal) modal.remove();
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
         }
 
-        async function setAttendance(empId, status) {
+        async function setAttendance(empId, status, halfType = null) {
             if (isFutureDate(selectedDate)) {
                 showPopup('Cannot mark attendance for future dates');
                 return;
@@ -394,13 +1017,24 @@
             }
 
             try {
-                const res = await auth.apiCall(`/api/attendance/mark-${status.toLowerCase().replace('_', '-')}/${empId}?date=${selectedDate}`, { method: 'POST' });
+                let url;
+                if (halfType) {
+                    // Use mark-half-day for any partial marking (Absent or Present)
+                    url = `/api/attendance/mark-half-day/${empId}?date=${selectedDate}&halfType=${halfType}&status=${status}`;
+                } else {
+                    // Full day marking
+                    url = `/api/attendance/mark-${status.toLowerCase().replace('_', '-')}/${empId}?date=${selectedDate}`;
+                }
+                
+                const res = await auth.apiCall(url, { method: 'POST' });
                 if (res && res.ok) {
-                    auth.showNotification(`Marked ${status.replace(/_/g, ' ').toLowerCase()}`, 'success');
+                    auth.showNotification(`Marked ${status.replace(/_/g, ' ').toLowerCase()}${halfType ? ' (' + halfType.replace('_', ' ').toLowerCase() + ')' : ''}`, 'success');
                     // Force reload attendance data to reflect the change
                     await loadAttendance();
                 } else {
                     const error = await res.text();
+                    console.error('Attendance error:', error);
+                    alert('Server Error: ' + error);
                     auth.showNotification(error || 'Failed to mark attendance', 'error');
                 }
             } catch (e) {
@@ -503,19 +1137,17 @@
         // Update status badge immediately when button is clicked
         function updateStatusBadge(row, newStatus) {
             const statusBadge = row.querySelector('.status-badge');
-            console.log('updateStatusBadge called with status:', newStatus, 'badge found:', !!statusBadge);
             if (statusBadge) {
                 const isPresent = newStatus === 'PRESENT';
                 const isAbsent = newStatus === 'ABSENT';
+                const isPartial = newStatus === 'PARTIAL_ABSENT';
                 const isPending = newStatus === 'PENDING';
+                const isLeave = newStatus.includes('LEAVE');
                 
-                statusBadge.style.background = isPresent ? '#dcfce7' : isAbsent ? '#fee2e2' : isPending ? '#fef9c3' : '#f3f4f6';
-                statusBadge.style.color = isPresent ? '#166534' : isAbsent ? '#991b1b' : isPending ? '#854d0e' : '#6b7280';
-                statusBadge.style.border = isPresent ? '1px solid #86efac' : isAbsent ? '1px solid #fca5a5' : isPending ? '1px solid #fde047' : '1px solid #d1d5db';
+                statusBadge.style.background = isPresent ? '#dcfce7' : isAbsent ? '#fee2e2' : isPartial ? '#fef3c7' : isPending ? '#fef9c3' : isLeave ? '#e0e7ff' : '#f3f4f6';
+                statusBadge.style.color = isPresent ? '#166534' : isAbsent ? '#991b1b' : isPartial ? '#92400e' : isPending ? '#854d0e' : isLeave ? '#3730a3' : '#6b7280';
+                statusBadge.style.border = isPresent ? '1px solid #86efac' : isAbsent ? '1px solid #fca5a5' : isPartial ? '1px solid #fcd34d' : isPending ? '1px solid #fde047' : isLeave ? '1px solid #c7d2fe' : '1px solid #d1d5db';
                 statusBadge.textContent = newStatus.replace(/_/g, ' ');
-                console.log('Status badge updated to:', newStatus);
-            } else {
-                console.error('Status badge not found in row');
             }
         }
         
@@ -597,10 +1229,14 @@
         function showPopup(msg) {
             document.getElementById('popup-message').textContent = msg;
             document.getElementById('popup').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
         }
         
         function closePopup() {
             document.getElementById('popup').style.display = 'none';
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
         }
         
         function logout() { auth.logout(); }
@@ -616,190 +1252,10 @@
             loadAttendance();
         });
         
+        // Initialize date input
+        document.getElementById('date-input').value = selectedDate;
+        
         loadAttendance();
     </script>
-    <style>
-        .popup { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; }
-        .popup-content { background: white; padding: 2rem; border-radius: 12px; text-align: center; }
-        .popup-content button { margin-top: 1rem; padding: 0.5rem 1.5rem; background: #4f46e5; color: white; border: none; border-radius: 6px; cursor: pointer; }
-        
-        /* Toggle Button Styles */
-        .btn-toggle {
-            padding: 0.375rem 0.75rem;
-            border: 2px solid #e5e7eb;
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            font-weight: 600;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .btn-toggle:hover {
-            border-color: #d1d5db;
-            background: #f9fafb;
-        }
-        .btn-toggle.active[data-status="present"] {
-            background: #dcfce7;
-            border-color: #22c55e;
-            color: #166534;
-        }
-        .btn-toggle.active[data-status="half"] {
-            background: #fef3c7;
-            border-color: #f59e0b;
-            color: #92400e;
-        }
-        .btn-toggle.active[data-status="absent"] {
-            background: #fee2e2;
-            border-color: #ef4444;
-            color: #991b1b;
-        }
-        
-        /* Status Badge Styles */
-        .status-badge.present {
-            background: #dcfce7 !important;
-            color: #166534 !important;
-            border: 1px solid #86efac !important;
-        }
-        .status-badge.absent {
-            background: #fee2e2 !important;
-            color: #991b1b !important;
-            border: 1px solid #fca5a5 !important;
-        }
-        .status-badge.half_day {
-            background: #fef3c7 !important;
-            color: #92400e !important;
-            border: 1px solid #fcd34d !important;
-        }
-        .status-badge.not_marked {
-            background: #f3f4f6 !important;
-            color: #6b7280 !important;
-            border: 1px solid #d1d5db !important;
-        }
-        
-        /* Table Styles */
-        .data-table th {
-            background: #f8fafc;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
-        }
-        .data-table td {
-            padding: 1rem;
-            vertical-align: middle;
-        }
-        
-        /* View Button */
-        .btn-view {
-            transition: all 0.2s;
-        }
-        .btn-view:hover {
-            background: #2563eb !important;
-            transform: translateY(-1px);
-        }
-        
-        /* Employee Modal */
-        .employee-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-        }
-        .modal-content {
-            position: relative;
-            background: white;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1.5rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .modal-header h2 {
-            margin: 0;
-            font-size: 1.25rem;
-        }
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #6b7280;
-        }
-        .close-btn:hover {
-            color: #1f2937;
-        }
-        .modal-body {
-            padding: 2rem;
-            text-align: center;
-        }
-        .emp-avatar {
-            width: 80px;
-            height: 80px;
-            background: #4f46e5;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin: 0 auto 1rem;
-        }
-        .modal-body h3 {
-            margin: 0 0 0.25rem 0;
-            font-size: 1.5rem;
-        }
-        .emp-designation {
-            color: #6b7280;
-            margin: 0 0 1.5rem 0;
-        }
-        .emp-details-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            text-align: left;
-        }
-        .detail-item {
-            background: #f9fafb;
-            padding: 1rem;
-            border-radius: 8px;
-        }
-        .detail-item label {
-            display: block;
-            font-size: 0.75rem;
-            color: #6b7280;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.25rem;
-        }
-        .detail-item span {
-            font-weight: 600;
-            color: #1f2937;
-        }
-    </style>
 </body>
 </html>

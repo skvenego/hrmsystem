@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,38 +8,91 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>My Attendance - HRM System</title>
-    <link rel="stylesheet" href="../css/employee-theme.css?v=2">
+    <link rel="stylesheet" href="../css/hrm-design-system.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ===== Status Badges (Match HR Design) ===== */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.28rem 0.7rem;
+            border-radius: 9999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+        .status-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            opacity: 0.7;
+            flex-shrink: 0;
+        }
+
+        .status-badge.present {
+            background: #d1fae5;
+            color: #059669;
+            border-color: #6ee7b7;
+        }
+        .status-badge.absent {
+            background: #fee2e2;
+            color: #dc2626;
+            border-color: #fca5a5;
+        }
+        .status-badge.partial_absent, .status-badge.half_day {
+            background: #fef3c7;
+            color: #d97706;
+            border-color: #fcd34d;
+        }
+        .status-badge.paid_leave {
+            background: #d1fae5;
+            color: #065f46;
+            border-color: #a7f3d0;
+        }
+        .status-badge.unpaid_leave {
+            background: #fee2e2;
+            color: #991b1b;
+            border-color: #fca5a5;
+        }
+        .status-badge.week_off, .status-badge.weekly_off {
+            background: #f3f4f6;
+            color: #4b5563;
+            border-color: #d1d5db;
+        }
+        .status-badge.pending {
+            background: #fef9c3;
+            color: #854d0e;
+            border-color: #fde68a;
+        }
+        .status-badge.not_marked {
+            background: #f9fafb;
+            color: #9ca3af;
+            border-color: #e5e7eb;
+        }
+    </style>
 </head>
+
 <body>
-    <div class="app-layout">
+    <div class="dashboard">
         <!-- Sidebar -->
-        <aside class="sidebar"></aside>
+        <aside class="sidebar" id="sidebar-container"></aside>
 
         <!-- Main Content -->
         <main class="main-content">
             <!-- Header -->
-            <header class="top-header">
+            <header class="header flex justify-between items-center mb-6">
                 <div class="page-title">
-                    <div class="page-title-icon" style="background: linear-gradient(135deg, #dbeafe 0%, #3b82f6 100%);">
-                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                    </div>
                     <h1>My Attendance</h1>
+                    <p>View your monthly attendance records and summary</p>
                 </div>
-                <div class="header-actions">
-                    <button class="icon-btn" onclick="history.back()" title="Go Back">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                        </svg>
-                    </button>
-                    <button class="icon-btn" onclick="loadMyAttendance()" title="Refresh Data">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                        </svg>
-                    </button>
-                    <select id="month-filter" class="form-control" style="width: auto; min-width: 150px;">
+                <div class="flex gap-2 items-center">
+                    <select id="month-filter" class="form-control" style="width: auto;">
                         <option value="0">January</option>
                         <option value="1">February</option>
                         <option value="2">March</option>
@@ -52,107 +106,82 @@
                         <option value="10">November</option>
                         <option value="11">December</option>
                     </select>
-                    <select id="year-filter" class="form-control" style="width: auto; min-width: 100px;">
+                    <select id="year-filter" class="form-control" style="width: auto;">
                         <option value="2024">2024</option>
                         <option value="2025">2025</option>
                         <option value="2026" selected>2026</option>
                     </select>
+                    <button class="btn-primary flex items-center gap-2" onclick="loadMyAttendance()">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Refresh
+                    </button>
                 </div>
             </header>
 
             <div class="page-content">
                 <!-- Info Banner -->
-                <div class="card" style="margin-bottom: 1rem; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-left: 4px solid #3b82f6;">
-                    <div class="card-body" style="padding: 0.75rem 1rem;">
-                        <p style="margin: 0; color: #1e40af; font-size: 0.9rem;">
-                            <strong>ℹ️ Note:</strong> Approved leaves are automatically shown as "LEAVE" status. 
-                            Select month/year to view your records. Contact HR for discrepancies.
-                        </p>
-                    </div>
-                </div>
-                
-                <!-- Summary Cards -->
-                <div class="stats-grid" style="margin-bottom: 1.5rem;">
-                    <div class="stat-card">
-                        <div class="stat-icon green">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <path d="m9 16 2 2 4-4"></path>
+                <div class="card bg-blue-50 border-blue-200 mb-6">
+                    <div class="p-4 flex gap-3">
+                        <div class="text-blue-600">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
-                        <div class="stat-info">
-                            <h3 id="present-days">0</h3>
-                            <p>Present Days</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon orange">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="9" x2="15" y1="12" y2="12"></line>
-                            </svg>
-                        </div>
-                        <div class="stat-info">
-                            <h3 id="absent-days">0</h3>
-                            <p>Absent Days</p>
-                            <small style="color: #dc2626; font-size: 0.65rem;">Deducted from salary as unpaid leave</small>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon blue">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                            </svg>
-                        </div>
-                        <div class="stat-info">
-                            <h3 id="paid-leave-days">0</h3>
-                            <p>Paid Leave Days</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon red">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="15" x2="9" y1="9" y2="15"></line>
-                                <line x1="9" x2="15" y1="9" y2="15"></line>
-                            </svg>
-                        </div>
-                        <div class="stat-info">
-                            <h3 id="unpaid-leave-days">0</h3>
-                            <p>Unpaid Leave Days</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon purple">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14"></polyline>
-                            </svg>
-                        </div>
-                        <div class="stat-info">
-                            <h3 id="working-hours">0</h3>
-                            <p>Total Hours</p>
+                        <div>
+                            <h4 class="text-blue-800 font-bold text-sm mb-1">Attendance Notes</h4>
+                            <p class="text-blue-700 text-xs leading-relaxed">
+                                Approved leaves are automatically shown as "LEAVE" status. Contact HR for any
+                                discrepancies.
+                            </p>
                         </div>
                     </div>
                 </div>
 
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Attendance Records</h3>
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+                    <div class="card p-4 border-l-4 border-success-500">
+                        <div class="text-xs text-muted font-bold uppercase mb-1">Present Days</div>
+                        <div class="text-2xl font-bold text-success-700" id="present-days">0</div>
                     </div>
+                    <div class="card p-4 border-l-4 border-danger-500">
+                        <div class="text-xs text-muted font-bold uppercase mb-1">Absent Days</div>
+                        <div class="text-2xl font-bold text-danger-700" id="absent-days">0</div>
+                        <div class="text-[10px] text-danger-500 font-medium mt-1">⚠️ Salary double deduction applies
+                        </div>
+                    </div>
+                    <div class="card p-4 border-l-4 border-primary-500">
+                        <div class="text-xs text-muted font-bold uppercase mb-1">Paid Used Leaves</div>
+                        <div class="text-2xl font-bold text-primary-700" id="paid-used-leave-days">0</div>
+                    </div>
+                    <div class="card p-4 border-l-4 border-warning-500">
+                        <div class="text-xs text-muted font-bold uppercase mb-1">Unpaid Used Leaves</div>
+                        <div class="text-2xl font-bold text-warning-700" id="unpaid-leave-days">0</div>
+                    </div>
+                    <div class="card p-4 border-l-4 border-secondary-500">
+                        <div class="text-xs text-muted font-bold uppercase mb-1">Total Hours</div>
+                        <div class="text-2xl font-bold text-secondary-700" id="working-hours">0</div>
+                    </div>
+                </div>
+
+                <div class="card p-0 overflow-hidden">
                     <div class="table-container">
-                        <table class="table">
+                        <table class="data-table">
                             <thead>
                                 <tr>
                                     <th>Date</th>
                                     <th>Status</th>
                                     <th>Check In</th>
                                     <th>Check Out</th>
-                                    <th>Working Hours</th>
+                                    <th class="text-right">Working Hours</th>
                                 </tr>
                             </thead>
                             <tbody id="attendance-table">
-                                <tr><td colspan="5" style="text-align: center; padding: 2rem; color: var(--gray-500);">Loading...</td></tr>
+                                <tr>
+                                    <td colspan="5" class="text-center p-8 text-muted">Loading records...</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -165,18 +194,106 @@
     <script src="../js/sidebar.js"></script>
     <script>
         if (!auth.requireAuth()) throw new Error('Auth required');
-        
+
         // Render sidebar explicitly
         renderSidebar();
-        
+
         const user = auth.getCurrentUser();
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        
+
         // Set current month and year
         const now = new Date();
         document.getElementById('month-filter').value = now.getMonth();
         document.getElementById('year-filter').value = now.getFullYear();
-        
+
+        function getCleanStatus(status) {
+            if (!status) {
+                return { display: 'NOT MARKED', cssClass: 'not_marked' };
+            }
+            const clean = status.trim().toUpperCase();
+            
+            // Exact legacy / simple matching first
+            if (clean === 'WEEKLY_OFF' || clean === 'WEEK_OFF' || clean === 'WEEKLY OFF') {
+                return { display: 'WEEK OFF', cssClass: 'week_off' };
+            }
+            if (clean === 'NOT_MARKED' || clean === 'NOT MARKED') {
+                return { display: 'NOT MARKED', cssClass: 'not_marked' };
+            }
+            if (clean === 'PRESENT') {
+                return { display: 'PRESENT', cssClass: 'present' };
+            }
+            if (clean === 'ABSENT') {
+                return { display: 'ABSENT', cssClass: 'absent' };
+            }
+            if (clean === 'HALF_DAY') {
+                return { display: 'HALF DAY', cssClass: 'half_day' };
+            }
+            if (clean === 'PAID_LEAVE') {
+                return { display: 'PAID LEAVE', cssClass: 'paid_leave' };
+            }
+            if (clean === 'UNPAID_LEAVE') {
+                return { display: 'UNPAID LEAVE', cssClass: 'unpaid_leave' };
+            }
+            if (clean === 'ON_LEAVE' || clean === 'LEAVE') {
+                return { display: 'ON LEAVE', cssClass: 'paid_leave' };
+            }
+            if (clean === 'PENDING') {
+                return { display: 'PENDING', cssClass: 'pending' };
+            }
+
+            // Parse detailed halves (e.g. "1H:PRESENT, 2H:PRESENT")
+            const parts = clean.split(',').map(p => p.trim());
+            if (parts.length === 2) {
+                const h1 = parts[0]; // e.g. "1H:PRESENT"
+                const h2 = parts[1]; // e.g. "2H:PRESENT"
+                
+                const h1Status = h1.split(':')[1] || '';
+                const h2Status = h2.split(':')[1] || '';
+                
+                // If both halves are the same
+                if (h1Status === h2Status) {
+                    if (h1Status === 'PRESENT') return { display: 'PRESENT', cssClass: 'present' };
+                    if (h1Status === 'ABSENT') return { display: 'ABSENT', cssClass: 'absent' };
+                    if (h1Status === 'PAID_LEAVE') return { display: 'PAID LEAVE', cssClass: 'paid_leave' };
+                    if (h1Status === 'UNPAID_LEAVE') return { display: 'UNPAID LEAVE', cssClass: 'unpaid_leave' };
+                    if (h1Status === 'WEEK_OFF' || h1Status === 'WEEKLY_OFF') return { display: 'WEEK OFF', cssClass: 'week_off' };
+                    if (h1Status === 'NOT_MARKED') return { display: 'NOT MARKED', cssClass: 'not_marked' };
+                }
+                
+                // If they are different but both are leaves
+                const isH1Leave = h1Status.includes('LEAVE');
+                const isH2Leave = h2Status.includes('LEAVE');
+                if (isH1Leave && isH2Leave) {
+                    if (h1Status === 'UNPAID_LEAVE' && h2Status === 'UNPAID_LEAVE') {
+                        return { display: 'UNPAID LEAVE', cssClass: 'unpaid_leave' };
+                    }
+                    return { display: 'PAID LEAVE', cssClass: 'paid_leave' };
+                }
+                
+                // If one half is present, one half is absent / leave
+                if (h1Status !== 'NOT_MARKED' && h2Status !== 'NOT_MARKED') {
+                    return { display: 'HALF DAY', cssClass: 'half_day' };
+                }
+                
+                // If one of them is NOT_MARKED, check the other
+                if (h1Status === 'NOT_MARKED') {
+                    if (h2Status === 'PRESENT') return { display: 'HALF DAY', cssClass: 'half_day' };
+                    if (h2Status === 'ABSENT') return { display: 'ABSENT', cssClass: 'absent' };
+                    if (h2Status === 'PAID_LEAVE') return { display: 'PAID LEAVE', cssClass: 'paid_leave' };
+                    if (h2Status === 'UNPAID_LEAVE') return { display: 'UNPAID LEAVE', cssClass: 'unpaid_leave' };
+                }
+                if (h2Status === 'NOT_MARKED') {
+                    if (h1Status === 'PRESENT') return { display: 'HALF DAY', cssClass: 'half_day' };
+                    if (h1Status === 'ABSENT') return { display: 'ABSENT', cssClass: 'absent' };
+                    if (h1Status === 'PAID_LEAVE') return { display: 'PAID LEAVE', cssClass: 'paid_leave' };
+                    if (h1Status === 'UNPAID_LEAVE') return { display: 'UNPAID LEAVE', cssClass: 'unpaid_leave' };
+                }
+            }
+            
+            // Fallback
+            return { display: status.replace(/_/g, ' '), cssClass: 'not_marked' };
+        }
+
         async function loadMyAttendance() {
             const month = parseInt(document.getElementById('month-filter').value) + 1;
             const year = parseInt(document.getElementById('year-filter').value);
@@ -188,25 +305,28 @@
 
                 // FIXED: Use AttendanceEngine API for consistent calculation with payroll
                 let presentDays = 0, absentDays = 0, paidLeaveDays = 0, unpaidLeaveDays = 0, totalHours = 0;
-                
+
                 // Call the AttendanceEngine API (single source of truth)
                 const summaryRes = await auth.apiCall('/api/dashboard/my/attendance');
                 if (summaryRes && summaryRes.ok) {
                     const summary = await summaryRes.json();
                     presentDays = summary.presentDays || 0;
                     absentDays = summary.absentDays || 0;
-                    paidLeaveDays = summary.paidLeaveDays || 0;
-                    unpaidLeaveDays = summary.unpaidLeaveDays || 0;
+                    paidLeaveDays = summary.paidUsedLeaves || 0; // Fixed: use paidUsedLeaves
+                    unpaidLeaveDays = summary.unpaidUsedLeaves || 0; // Fixed: use unpaidUsedLeaves
                     totalHours = summary.totalHours || 0;
                 } else {
                     console.error('Failed to load attendance summary from AttendanceEngine');
                 }
 
-                // Fetch attendance data for table display only (not for calculations)
-                const attRes = await auth.apiCall(`/api/attendance/my?month=${month}&year=${year}`);
+                // Fetch attendance data using engine API for correct calculations
+                const attRes = await auth.apiCall(`/api/dashboard/my/attendance/daily?month=${month}&year=${year}`);
                 let attendanceData = [];
                 if (attRes && attRes.ok) {
                     attendanceData = await attRes.json();
+                    console.log('DEBUG - Engine API returned data:', attendanceData); // Debug: Check engine API response
+                } else {
+                    console.error('DEBUG - Engine API failed:', attRes); // Debug: Check API failure
                 }
 
                 // Create a map of existing attendance by date
@@ -215,74 +335,21 @@
                     attendanceMap.set(a.date, a);
                 });
 
-                // Also fetch leaves to add to the table
-                const leavesTableRes = await auth.apiCall('/api/leaves/my');
-                const leavesData = leavesTableRes && leavesTableRes.ok ? await leavesTableRes.json() : [];
-                // Leaves data loaded successfully
+                // ✅ FIXED: Remove old leave processing - engine API already handles leaves correctly
+                // No need to fetch and process leaves separately
 
-                // Add approved leaves as LEAVE status in attendance
-                let approvedLeaveDays = 0;
-                leavesData.forEach(leave => {
-                    if (leave.status === 'APPROVED') {
-                        // Generate all dates in the leave range
-                        const start = new Date(leave.startDate);
-                        const end = new Date(leave.endDate);
-                        
-                        // Track which days are unpaid (unpaid days typically at the end of leave)
-                        const totalDays = leave.totalDays || 0;
-                        const unpaidDays = leave.unpaidDays || 0;
-                        const paidDays = leave.paidDays || 0;
-                        let dayCounter = 0;
-
-                        // Check if this leave spans multiple months
-                        const spansMonths = start.getMonth() !== end.getMonth() || start.getFullYear() !== end.getFullYear();
-                        const nextMonthStart = new Date(year, month, 1); // First day of next month
-
-                        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                            const dateStr = d.toISOString().split('T')[0];
-                            dayCounter++;
-
-                            // Check if this date is in the selected month/year
-                            if (d.getMonth() + 1 === month && d.getFullYear() === year) {
-                                approvedLeaveDays++;
-                                
-                                // Determine if this day is unpaid (last N days of leave are unpaid)
-                                // For example: 4 days total, 1 unpaid = last 1 day is unpaid
-                                const isUnpaid = dayCounter > paidDays;
-                                
-                                // Check if leave continues into next month
-                                const continuesNextMonth = spansMonths && d.getDate() === new Date(year, month, 0).getDate();
-
-                                // Only add if not already marked as attendance
-                                if (!attendanceMap.has(dateStr)) {
-                                    attendanceMap.set(dateStr, {
-                                        date: dateStr,
-                                        status: 'LEAVE',
-                                        checkInTime: null,
-                                        checkOutTime: null,
-                                        workingHours: 0,
-                                        leaveReason: leave.reason,
-                                        leaveType: leave.leaveType,
-                                        isUnpaid: isUnpaid,  // Track if this day is unpaid
-                                        continuesNextMonth: continuesNextMonth // Track if continues
-                                    });
-                                }
-                            }
-                        }
-                    }
-                });
-                
                 // Convert map back to array
                 const mergedData = Array.from(attendanceMap.values());
+                console.log('DEBUG - Final merged data for display:', mergedData); // Debug: Check final data
                 // Merged data ready for display
 
                 // FIXED: Use AttendanceEngine values directly for summary cards
                 document.getElementById('present-days').textContent = presentDays % 1 === 0 ? presentDays : presentDays.toFixed(1);
                 document.getElementById('absent-days').textContent = absentDays % 1 === 0 ? absentDays : absentDays.toFixed(1);
-                document.getElementById('paid-leave-days').textContent = paidLeaveDays % 1 === 0 ? paidLeaveDays : paidLeaveDays.toFixed(1);
+                document.getElementById('paid-used-leave-days').textContent = paidLeaveDays % 1 === 0 ? paidLeaveDays : paidLeaveDays.toFixed(1);
                 document.getElementById('unpaid-leave-days').textContent = unpaidLeaveDays % 1 === 0 ? unpaidLeaveDays : unpaidLeaveDays.toFixed(1);
                 document.getElementById('working-hours').textContent = totalHours.toFixed(1);
-                
+
                 // Render table
                 const tbody = document.getElementById('attendance-table');
                 if (!mergedData || mergedData.length === 0) {
@@ -297,7 +364,7 @@
                                         <line x1="3" x2="21" y1="10" y2="10"></line>
                                     </svg>
                                     <p style="margin: 0; font-size: 1rem; font-weight: 500;">No attendance records found</p>
-                                    <p style="margin: 0; font-size: 0.875rem;">for ${monthNames[month-1]} ${year}</p>
+                                    <p style="margin: 0; font-size: 0.875rem;">for ${monthNames[month - 1]} ${year}</p>
                                     <p style="margin: 0.5rem 0 0 0; font-size: 0.8rem; color: var(--gray-400);">
                                         HR marks attendance daily. Please check another month or contact HR.
                                     </p>
@@ -306,29 +373,60 @@
                         </tr>`;
                     return;
                 }
-                
+
                 // Sort by date descending (newest first)
                 mergedData.sort((a, b) => new Date(b.date) - new Date(a.date));
-                
+
                 tbody.innerHTML = mergedData.map(a => {
-                    const statusClass = a.status?.toLowerCase() || 'na';
-                    const statusDisplay = a.status === 'HALF_DAY' ? 'HALF DAY' : (a.status === 'PENDING' ? 'PENDING' : (a.status || 'N/A'));
-                    
+                    const cleanStatus = getCleanStatus(a.status);
+                    const statusClass = cleanStatus.cssClass;
+                    const statusDisplay = cleanStatus.display;
+
                     // For leave days, show the leave type and reason
                     let checkInDisplay = a.checkInTime || '-';
                     let checkOutDisplay = a.checkOutTime || '-';
                     let hoursDisplay = a.workingHours ? a.workingHours.toFixed(2) + ' hrs' : '-';
-                    
-                    if (a.status === 'LEAVE' && a.leaveType) {
-                        // Show UNPAID in red text
-                        const unpaidStyle = a.isUnpaid ? 'color: #dc2626; font-weight: 600;' : 'color: #6b7280;';
-                        const unpaidLabel = a.isUnpaid ? ' (UNPAID)' : '';
+
+                    if (a.leaveType) {
+                        // ✅ FIXED: Use engine data for correct paid/unpaid display
+                        const paidPortion = a.isPaid || 0;
+                        const unpaidPortion = a.isUnpaid || 0;
+
+                        // Determine display based on paid/unpaid portions
+                        let checkInLabel = a.leaveType;
+                        let hoursLabel = 'Paid Leave';
+                        let checkInStyle = 'color: #6b7280; font-weight: 600;';
+                        let hoursStyle = 'color: #6b7280; font-weight: 600;';
+
+                        if (a.isHalfDay) {
+                            // Half-day split case
+                            checkInLabel = `${a.leaveType} (Half Day)`;
+                            hoursLabel = 'Half Day: Paid + Unpaid';
+                            hoursStyle = 'color: #f59e0b; font-weight: 600;';
+                        } else if (unpaidPortion > 0 && paidPortion === 0) {
+                            // Fully unpaid
+                            checkInLabel = `${a.leaveType} (UNPAID)`;
+                            hoursLabel = 'Unpaid Leave';
+                            checkInStyle = 'color: #dc2626; font-weight: 600;';
+                            hoursStyle = 'color: #dc2626; font-weight: 600;';
+                        } else if (paidPortion > 0 && unpaidPortion === 0) {
+                            // Fully paid
+                            hoursLabel = 'Paid Leave';
+                            checkInStyle = 'color: #6b7280; font-weight: 600;';
+                            hoursStyle = 'color: #6b7280; font-weight: 600;';
+                        } else if (paidPortion > 0 && unpaidPortion > 0) {
+                            // Mixed paid/unpaid (proportional)
+                            checkInLabel = `${a.leaveType} (Mixed)`;
+                            hoursLabel = `Paid: ${(paidPortion * 100).toFixed(0)}% + Unpaid: ${(unpaidPortion * 100).toFixed(0)}%`;
+                            hoursStyle = 'color: #f59e0b; font-weight: 600;';
+                        }
+
                         const continuesLabel = a.continuesNextMonth ? ' (→May)' : '';
-                        checkInDisplay = `<span style="${unpaidStyle} font-size: 0.85rem;">${a.leaveType}${unpaidLabel}${continuesLabel}</span>`;
+                        checkInDisplay = `<span style="${checkInStyle} font-size: 0.85rem;">${checkInLabel}${continuesLabel}</span>`;
                         checkOutDisplay = a.leaveReason ? `<span style="color: #6b7280; font-size: 0.85rem;">${a.leaveReason.substring(0, 20)}${a.leaveReason.length > 20 ? '...' : ''}</span>` : '-';
-                        hoursDisplay = a.isUnpaid ? '<span style="color: #dc2626; font-weight: 600;">Unpaid Leave</span>' : '<span style="color: #6b7280;">Paid Leave</span>';
+                        hoursDisplay = `<span style="${hoursStyle}">${hoursLabel}</span>`;
                     }
-                    
+
                     return `
                     <tr>
                         <td>${auth.formatDate(a.date)}</td>
@@ -338,15 +436,15 @@
                         <td>${hoursDisplay}</td>
                     </tr>
                 `}).join('');
-            } catch (e) { 
+            } catch (e) {
                 console.error(e);
                 auth.showNotification('Failed to load attendance', 'error');
             }
         }
-        
+
         document.getElementById('month-filter').addEventListener('change', loadMyAttendance);
         document.getElementById('year-filter').addEventListener('change', loadMyAttendance);
-        
+
         // Add refresh button handler
         const refreshBtn = document.getElementById('refresh-btn');
         if (refreshBtn) {
@@ -355,9 +453,10 @@
                 auth.showNotification('Attendance data refreshed', 'success');
             });
         }
-        
+
         // Initial load
         loadMyAttendance();
     </script>
 </body>
+
 </html>

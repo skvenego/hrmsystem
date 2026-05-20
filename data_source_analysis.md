@@ -35,10 +35,10 @@ public ResponseEntity<LeaveBalanceDTO> getLeaveBalance(@PathVariable Long employ
 ### Data Flow:
 1. **leave_balances** table → cached balance
 2. **leaves** table → approved leaves calculation
-3. Java calculates: `usedLeaves = sum of approved leaves (excluding Sundays)`
+3. Java calculates: `Used LeavesLeaves = sum of approved leaves (excluding Sundays)`
 
 ### Why Wrong:
-The `usedLeaves` is calculated from `leave.getPaidDays()` (stored value) instead of fresh calculation with Sunday exclusion.
+The `Used LeavesLeaves` is calculated from `leave.getPaidDays()` (stored value) instead of fresh calculation with Sunday exclusion.
 
 **Already Fixed!** - Now uses `countDaysExcludingSundays()`
 
@@ -51,8 +51,8 @@ The `usedLeaves` is calculated from `leave.getPaidDays()` (stored value) instead
 |-------|---------|----------|
 | Present Days | 4.0 | ✓ |
 | Absent Days | 0.0 | ✓ |
-| Paid Leave Days | 1.0 | ✓ |
-| Unpaid Leave Days | 0.0 | ✓ |
+| paidUsedLeaves | 1.0 | ✓ |
+| unpaidUsedLeaves | 0.0 | ✓ |
 
 ### API Endpoint:
 ```
@@ -103,7 +103,7 @@ curl http://localhost:8080/api/leaves/balance/16 \
 ```json
 {
   "totalEarnedLeaves": 6.0,
-  "usedLeaves": 1.0,        // <-- Should be 1.0, not 0.0
+  "Used LeavesLeaves": 1.0,        // <-- Should be 1.0, not 0.0
   "remainingLeaves": 5.0,   // <-- Should be 5.0, not 6.0
   "unpaidLeaves": 0.0,
   "currentCycle": 1,

@@ -8,7 +8,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
@@ -21,8 +22,40 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
-            .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+        User user = userRepository.findByUsername(username).orElse(null);
+        if (user == null) {
+            user = userRepository.findByEmailIgnoreCase(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+        }
+
+        String roleName = user.getRole().name();
+        if (user.getRole() == User.Role.ROLE_HR) {
+            roleName = "ROLE_ADMIN";
+        }
+        
+        if (user.getRole() != User.Role.ROLE_ADMIN && user.getRole() != User.Role.ROLE_HR) {
+            if (user.getEmployee() != null && user.getEmployee().getDepartment() != null) {
+                String deptName = user.getEmployee().getDepartment().getName().toLowerCase();
+                
+                if (deptName.contains("accountant")) {
+                    roleName = "ROLE_ACCOUNTANT";
+                } else if (deptName.contains("director")) {
+                    roleName = "ROLE_DIRECTOR";
+                } else if (deptName.contains("leave") || deptName.equals("leaves")) {
+                    roleName = "ROLE_LEAVES";
+                } else if (deptName.contains("hr") || deptName.equals("human resources")) {
+                    roleName = "ROLE_ADMIN";
+                } else {
+                    roleName = "ROLE_EMPLOYEE";
+                }
+            }
+        }
+
+        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority(roleName));
+        if (roleName.equals("ROLE_ADMIN")) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_HR"));
+        }
 
         return new org.springframework.security.core.userdetails.User(
             user.getUsername(),
@@ -31,7 +64,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             true,
             true,
             true,
-            Collections.singletonList(new SimpleGrantedAuthority(user.getRole().name()))
+            authorities
         );
     }
 }

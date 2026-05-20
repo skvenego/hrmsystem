@@ -29,7 +29,7 @@ public class Employee {
 
     private String phone;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "department_id")
     private Department department;
 
@@ -48,16 +48,43 @@ public class Employee {
     // Deductions
     private BigDecimal pf;
     private BigDecimal tax;
-    @Column(name = "insurance_name")
-    @JsonProperty("insuranceName")
-    private String insuranceName;
-    @Column(name = "insurance_percentage")
-    @JsonProperty("insurancePercentage")
-    private Double insurancePercentage; // Store as percentage (e.g., 0.4 for 0.4%)
     
     // Gender
     @Enumerated(EnumType.STRING)
     private Gender gender;
+
+    // Probation tracking
+    @Enumerated(EnumType.STRING)
+    @Column(name = "probation_status")
+    private ProbationStatus probationStatus = ProbationStatus.PROBATION;
+    
+    @Column(name = "probation_notes", length = 500)
+    private String probationNotes;
+    
+    @Column(name = "probation_confirmed_by")
+    private String probationConfirmedBy;
+    
+    @Column(name = "probation_confirmed_date")
+    private LocalDate probationConfirmedDate;
+
+    // Migrated from ProbationPeriod for payroll logic
+    @Column(name = "pf_percentage")
+    private Double pfPercentage = 12.0;
+
+    @Column(name = "annual_tax")
+    private Double annualTax = 0.0;
+    
+    @Column(name = "insurance_percentage")
+    private Double insurancePercentage;
+
+    @Column(name = "insurance_name")
+    private String insuranceName;
+
+    public enum ProbationStatus {
+        PROBATION,
+        CONFIRMED,
+        EXTENDED
+    }
     
     // Probation period
     private Integer probationPeriodMonths;
@@ -100,9 +127,7 @@ public class Employee {
     @JsonIgnore
     private List<Payroll> payrolls = new ArrayList<>();
 
-    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private List<LeaveBalance> leaveBalances = new ArrayList<>();
+
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
@@ -125,7 +150,7 @@ public class Employee {
                     BigDecimal basicSalary, BigDecimal da, BigDecimal hra, BigDecimal otherAllowance,
                     BigDecimal pf, BigDecimal tax, Gender gender, Integer probationPeriodMonths, Shift shift, EmployeeStatus status, 
                     String address, List<Leave> leaves, List<Attendance> attendances,
-                    List<Payroll> payrolls, List<LeaveBalance> leaveBalances, List<Payslip> payslips) {
+                    List<Payroll> payrolls, List<Payslip> payslips) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -149,7 +174,6 @@ public class Employee {
         this.leaves = leaves;
         this.attendances = attendances;
         this.payrolls = payrolls;
-        this.leaveBalances = leaveBalances;
         this.payslips = payslips;
     }
 
@@ -177,12 +201,39 @@ public class Employee {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public EmployeeStatus getStatus() { return status; }
+    public Double getPfPercentage() { return pfPercentage; }
+    public Double getAnnualTax() { return annualTax; }
     public String getAddress() { return address; }
     public List<Leave> getLeaves() { return leaves; }
     public List<Attendance> getAttendances() { return attendances; }
     public List<Payroll> getPayrolls() { return payrolls; }
-    public List<LeaveBalance> getLeaveBalances() { return leaveBalances; }
+    public ProbationStatus getProbationStatus() { return probationStatus; }
+    public String getProbationNotes() { return probationNotes; }
+    public String getProbationConfirmedBy() { return probationConfirmedBy; }
+    public LocalDate getProbationConfirmedDate() { return probationConfirmedDate; }
+
     public List<Payslip> getPayslips() { return payslips; }
+
+    /**
+     * ✅ NEW: Unified Gross Salary calculation
+     * Returns the sum of all salary components.
+     * Fallback to 'salary' field if components are zero.
+     */
+    public BigDecimal getTotalGrossSalary() {
+        // ALWAYS use the main 'salary' field if it's set, as it represents the Gross Salary.
+        // This ensures deductions (absent/unpaid) are always calculated from the full Gross.
+        if (salary != null && salary.compareTo(BigDecimal.ZERO) > 0) {
+            return salary;
+        }
+
+        BigDecimal sum = BigDecimal.ZERO;
+        if (basicSalary != null) sum = sum.add(basicSalary);
+        if (hra != null) sum = sum.add(hra);
+        if (da != null) sum = sum.add(da);
+        if (otherAllowance != null) sum = sum.add(otherAllowance);
+        
+        return sum;
+    }
 
     // Setters
     public void setId(Long id) { this.id = id; }
@@ -209,10 +260,16 @@ public class Employee {
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     public void setStatus(EmployeeStatus status) { this.status = status; }
     public void setAddress(String address) { this.address = address; }
+    public void setPfPercentage(Double pfPercentage) { this.pfPercentage = pfPercentage; }
+    public void setAnnualTax(Double annualTax) { this.annualTax = annualTax; }
     public void setLeaves(List<Leave> leaves) { this.leaves = leaves; }
     public void setAttendances(List<Attendance> attendances) { this.attendances = attendances; }
     public void setPayrolls(List<Payroll> payrolls) { this.payrolls = payrolls; }
-    public void setLeaveBalances(List<LeaveBalance> leaveBalances) { this.leaveBalances = leaveBalances; }
+    public void setProbationStatus(ProbationStatus probationStatus) { this.probationStatus = probationStatus; }
+    public void setProbationNotes(String probationNotes) { this.probationNotes = probationNotes; }
+    public void setProbationConfirmedBy(String probationConfirmedBy) { this.probationConfirmedBy = probationConfirmedBy; }
+    public void setProbationConfirmedDate(LocalDate probationConfirmedDate) { this.probationConfirmedDate = probationConfirmedDate; }
+
     public void setPayslips(List<Payslip> payslips) { this.payslips = payslips; }
 
     // Builder pattern
@@ -248,7 +305,7 @@ public class Employee {
         private List<Leave> leaves = new ArrayList<>();
         private List<Attendance> attendances = new ArrayList<>();
         private List<Payroll> payrolls = new ArrayList<>();
-        private List<LeaveBalance> leaveBalances = new ArrayList<>();
+
         private List<Payslip> payslips = new ArrayList<>();
 
         public Builder id(Long id) { this.id = id; return this; }
@@ -276,13 +333,13 @@ public class Employee {
         public Builder leaves(List<Leave> leaves) { this.leaves = leaves; return this; }
         public Builder attendances(List<Attendance> attendances) { this.attendances = attendances; return this; }
         public Builder payrolls(List<Payroll> payrolls) { this.payrolls = payrolls; return this; }
-        public Builder leaveBalances(List<LeaveBalance> leaveBalances) { this.leaveBalances = leaveBalances; return this; }
+
         public Builder payslips(List<Payslip> payslips) { this.payslips = payslips; return this; }
 
         public Employee build() {
             Employee employee = new Employee(id, firstName, lastName, email, phone, department, designation,
                     joiningDate, salary, basicSalary, da, hra, otherAllowance, pf, tax, gender, probationPeriodMonths, shift, status, address,
-                    leaves, attendances, payrolls, leaveBalances, payslips);
+                    leaves, attendances, payrolls, payslips);
             employee.setInsuranceName(insuranceName);
             employee.setInsurancePercentage(insurancePercentage);
             return employee;

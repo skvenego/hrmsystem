@@ -8,7 +8,7 @@ USE hrm_db;
 SELECT 
     employee_id,
     total_earned_leaves,
-    used_leaves,
+    Used Leaves_leaves,
     available_leaves
 FROM leave_balances 
 WHERE employee_id = 16;

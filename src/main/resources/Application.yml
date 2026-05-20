@@ -1,22 +1,26 @@
 server:
-  port: ${SERVER_PORT:8080}
+  port: 8081
   error:
     include-message: always
     include-binding-errors: always
 
 spring:
+  devtools:
+    restart:
+      enabled: false
+    livereload:
+      enabled: true
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
   datasource:
-    # Database URL - supports MySQL (dev) and PostgreSQL (prod)
-    # MySQL: jdbc:mysql://localhost:3306/hrm_db?useSSL=true&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    # PostgreSQL: jdbc:postgresql://localhost:5432/hrm_db?sslmode=require
-    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/hrm_db?useSSL=true&serverTimezone=UTC&allowPublicKeyRetrieval=true}
-    username: ${DATABASE_USERNAME:root}
-    password: ${DATABASE_PASSWORD:Sachin@123}
-    # Driver class auto-detected from URL, but can be explicit:
-    # MySQL: com.mysql.cj.jdbc.Driver
-    # PostgreSQL: org.postgresql.Driver
-    driver-class-name: ${DATABASE_DRIVER:com.mysql.cj.jdbc.Driver}
+    url: "jdbc:mysql://${MYSQL_HOST:enego.ct2au2680qip.ap-south-1.rds.amazonaws.com}:3306/hrmsystem?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+    username: ${MYSQL_USER:admin}
+    password: ${MYSQL_PASSWORD:Rishu952818}
+    driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
+      transaction-isolation: TRANSACTION_READ_COMMITTED
       minimum-idle: 5
       maximum-pool-size: 20
       idle-timeout: 300000
@@ -31,26 +35,21 @@ spring:
     properties:
       hibernate:
         format_sql: false
-        # Dialect auto-detected, but can be explicit:
-        # MySQL: org.hibernate.dialect.MySQLDialect
-        # PostgreSQL: org.hibernate.dialect.PostgreSQLDialect
-        dialect: ${HIBERNATE_DIALECT:org.hibernate.dialect.MySQLDialect}
     open-in-view: false
   
   flyway:
-    enabled: true
-    baseline-on-migrate: true
-    locations: classpath:db/migration
+    enabled: false
   
-  # Email Configuration (Gmail SMTP)
   mail:
-    host: ${SMTP_HOST:smtp.gmail.com}
-    port: ${SMTP_PORT:587}
-    username: ${SMTP_USERNAME:}
-    password: ${SMTP_PASSWORD:}
+    host: ${SMTP_HOST:smtp-relay.brevo.com}
+    port: ${SMTP_PORT:2525}
+    username: ${SMTP_USERNAME:abaed9001@smtp-brevo.com}
+    password: ${SMTP_PASSWORD:YOUR_SMTP_KEY}
+    from: ${SMTP_FROM:skvenego@gmail.com}
     default-encoding: UTF-8
     properties:
       mail:
+        debug: true
         smtp:
           auth: true
           starttls:
@@ -60,21 +59,29 @@ spring:
           timeout: 5000
           writetimeout: 5000
 
+  web:
+    resources:
+      cache:
+        period: 0
+      static-locations: file:src/main/resources/static/
+  mvc:
+    static-path-pattern: /**
+
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:ThisIsAVerySecureSecretKeyForJWTTokenGenerationThatMustBeAtLeast32CharactersLong!123456}
-  expiration: ${JWT_EXPIRATION:86400000}
+  secret: ThisIsAVerySecureSecretKeyForJWTTokenGenerationThatMustBeAtLeast32CharactersLong!123456
+  expiration: 86400000
 
 # Payslip Configuration
 payslip:
   pdf:
     output:
-      path: ${PAYSLIP_PATH:payslips/}
+      path: payslips/
 
 # Company Details
 company:
-  name: ${COMPANY_NAME:HRM System}
-  address: ${COMPANY_ADDRESS:Your Company Address}
+  name: HRM System
+  address: Your Company Address
 
 # Logging Configuration
 logging:

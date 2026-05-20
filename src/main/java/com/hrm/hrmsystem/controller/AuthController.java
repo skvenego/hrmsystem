@@ -124,9 +124,13 @@ public class AuthController {
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
         try {
-            authService.requestPasswordResetOTP(request);
+            String otp = authService.requestPasswordResetOTP(request);
             Map<String, String> success = new HashMap<>();
             success.put("message", "OTP sent to your email successfully");
+            // Always include OTP in response so UI can show it if email delivery fails
+            if (otp != null) {
+                success.put("devOtp", otp);
+            }
             return ResponseEntity.ok(success);
         } catch (RuntimeException e) {
             Map<String, String> error = new HashMap<>();

@@ -3,24 +3,25 @@ package com.hrm.hrmsystem.service;
 import com.hrm.hrmsystem.dto.PayrollDTO;
 import com.hrm.hrmsystem.dto.PayslipDTO;
 import com.hrm.hrmsystem.engine.AttendanceSummary;
+import com.hrm.hrmsystem.engine.AttendanceEngine;
 import com.hrm.hrmsystem.model.Employee;
 import com.hrm.hrmsystem.model.Payroll;
 import com.hrm.hrmsystem.repository.EmployeeRepository;
 import com.hrm.hrmsystem.repository.LeaveRepository;
 import com.hrm.hrmsystem.repository.PayrollRepository;
-import com.hrm.hrmsystem.repository.LeaveRepositoryCustom;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.YearMonth;
+// ✅ REMOVED: YearMonth - Use AttendanceEngine for all calculations
+// import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import com.hrm.hrmsystem.util.EmailUtil;
 
 @Service
 public class PayrollService {
@@ -31,30 +32,27 @@ public class PayrollService {
     private final EmployeeRepository employeeRepository;
     private final LeaveRepository leaveRepository;
     private final PayslipService payslipService;
-    private final LeaveCalculationService leaveCalculationService;
     private final LeaveService leaveService;
-    private final LeaveBalanceService leaveBalanceService;
     private final UnifiedCalculationService unifiedCalculationService;
-    private final LeaveRepositoryCustom leaveRepositoryCustom;
+    private final AttendanceEngine attendanceEngine;
+    private final EmailUtil emailUtil;
 
     public PayrollService(PayrollRepository payrollRepository,
                           EmployeeRepository employeeRepository,
                           LeaveRepository leaveRepository,
                           PayslipService payslipService,
-                          LeaveCalculationService leaveCalculationService,
                           LeaveService leaveService,
-                          LeaveBalanceService leaveBalanceService,
                           UnifiedCalculationService unifiedCalculationService,
-                          LeaveRepositoryCustom leaveRepositoryCustom) {
+                          AttendanceEngine attendanceEngine,
+                          EmailUtil emailUtil) {
         this.payrollRepository = payrollRepository;
         this.employeeRepository = employeeRepository;
         this.leaveRepository = leaveRepository;
         this.payslipService = payslipService;
-        this.leaveCalculationService = leaveCalculationService;
         this.leaveService = leaveService;
-        this.leaveBalanceService = leaveBalanceService;
         this.unifiedCalculationService = unifiedCalculationService;
-        this.leaveRepositoryCustom = leaveRepositoryCustom;
+        this.attendanceEngine = attendanceEngine;
+        this.emailUtil = emailUtil;
     }
 
     @Transactional
@@ -62,24 +60,27 @@ public class PayrollService {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
+        if (isSystemUser(employee)) {
+            throw new RuntimeException("Cannot generate payroll for System Users");
+        }
+
         Optional<Payroll> existing = payrollRepository
                 .findFirstByEmployeeIdAndMonthAndYearOrderByIdDesc(employeeId, month, year);
         Payroll payroll = existing.orElseGet(Payroll::new);
         Payroll.PayrollStatus statusToUse = existing.map(Payroll::getStatus).orElse(Payroll.PayrollStatus.PENDING);
         java.time.LocalDate paymentDateToUse = existing.map(Payroll::getPaymentDate).orElse(null);
 
-        // 🔥 DATABASE-FIRST: Use direct database SUM for leave (single source of truth)
-        // Present/Absent from AttendanceEngine, Leave from Database
+        // 🔥 SINGLE SOURCE OF TRUTH: Use engine for all calculations
         AttendanceSummary summary = unifiedCalculationService.calculateForPayroll(employeeId, year, month);
         
-        double presentDays = summary.present;
+        double workedDays = summary.workedDays; // ✅ FIXED: Use workedDays instead of present
         double absentDays = summary.absent;
         
-        // ✅ DATABASE TRUTH: Direct SUM from leaves table - CORRECT MONTH FILTERING
-        LocalDate monthStart = LocalDate.of(year, month, 1);
-        LocalDate monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth());
-        double paidLeaveDays = leaveRepositoryCustom.getMonthlyPaidLeaveDays(employeeId, monthStart, monthEnd);
-        double unpaidLeaveDays = leaveRepositoryCustom.getMonthlyUnpaidLeaveDays(employeeId, monthStart, monthEnd);
+        // ✅ Use calculateLeaveBalance for leave data (same source as dashboard and other services)
+        // ✅ FIXED: Use summary from AttendanceEngine for THIS MONTH'S values
+        // leaveBalance.usedLeaves is the CUMULATIVE total for the 6-month cycle
+        double paidLeaveDays = summary.paidLeave;
+        double unpaidLeaveDays = summary.unpaidLeave;
         
         log.info("🔥 AttendanceEngine Result for Employee {}: {}", employeeId, summary);
 
@@ -96,42 +97,32 @@ public class PayrollService {
                 ? employee.getOtherAllowance()
                 : BigDecimal.ZERO;
         
-        BigDecimal totalSalary = employee.getSalary() != null
-                ? employee.getSalary()
-                : basicSalary.add(hra).add(da).add(otherAllowance);
+        // ✅ GROSS SALARY FORMULA: Deductions always from full Gross Salary (salary field takes priority)
+        // getTotalGrossSalary() returns employee.salary if set, otherwise sums components.
+        // The AttendanceEngine uses this same method internally for daily-rate calculation.
+        BigDecimal grossSalaryBase = employee.getTotalGrossSalary();
 
-        BigDecimal perDayBasic = basicSalary.compareTo(BigDecimal.ZERO) > 0
-                ? basicSalary.divide(new BigDecimal("26"), 2, java.math.RoundingMode.HALF_UP)
-                : BigDecimal.ZERO;
+        // Use AttendanceEngine for ALL salary calculations (single source of truth)
+        // Daily Rate = grossSalaryBase / 26 working days
+        // Unpaid deduction = Daily Rate × unpaid days × 1
+        // Absent deduction = Daily Rate × absent days × 2 (penalty)
+        AttendanceEngine.SalarySummary salarySummary = attendanceEngine.calculateSalary(
+                employee, summary, !attendanceEngine.isProbationCompleted(employee));
 
-        // 🔥 CRITICAL FIX: absentDays already includes unpaidLeaveDays from AttendanceEngine
-        // So we only deduct once for total absent days (which includes unpaid leave)
-        BigDecimal totalAttendanceDeduction = perDayBasic.multiply(BigDecimal.valueOf(absentDays))
-                .setScale(2, java.math.RoundingMode.HALF_UP);
-
-        log.info("Salary Calculation - Basic: {}, HRA: {}, DA: {}, Other: {}, Total: {}",
-                 basicSalary, hra, da, otherAllowance, totalSalary);
-        log.info("Attendance Deduction - Total Absent Days (includes unpaid leave): {}, Amount: {}",
-                 absentDays, totalAttendanceDeduction);
+        log.info("💰 PayrollService - GrossBase: {}, UnpaidDeduction: {}, AbsentDeduction: {}",
+                 grossSalaryBase,
+                 salarySummary.getUnpaidLeaveDeduction(),
+                 salarySummary.getAbsentLeaveDeduction());
 
         BigDecimal ta = BigDecimal.ZERO;
-
-        BigDecimal providentFund = employee.getPf() != null
-                ? employee.getPf()
-                : totalSalary.multiply(new BigDecimal("0.12")).setScale(2, java.math.RoundingMode.HALF_UP);
-        BigDecimal tax = employee.getTax() != null
-                ? employee.getTax()
-                : calculateTax(totalSalary);
-        BigDecimal insurance = BigDecimal.ZERO;
-        if (employee.getInsurancePercentage() != null && employee.getInsurancePercentage() > 0) {
-            insurance = basicSalary.multiply(BigDecimal.valueOf(employee.getInsurancePercentage()))
-                    .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
-        }
+        BigDecimal totalAttendanceDeduction = salarySummary.getAbsentLeaveDeduction().add(salarySummary.getUnpaidLeaveDeduction());
+        BigDecimal providentFund = salarySummary.getPf();
+        BigDecimal tax = salarySummary.getTax();
+        BigDecimal insurance = salarySummary.getInsurance();
+        BigDecimal grossSalary = salarySummary.getGrossSalary();
+        BigDecimal totalDeductions = salarySummary.getTotalDeductions();
+        BigDecimal netSalary = salarySummary.getNetSalary();
         BigDecimal otherDeductions = totalAttendanceDeduction;
-
-        BigDecimal grossSalary = basicSalary.add(hra).add(da).add(ta).add(otherAllowance);
-        BigDecimal totalDeductions = providentFund.add(tax).add(insurance).add(otherDeductions);
-        BigDecimal netSalary = grossSalary.subtract(totalDeductions);
 
         payroll.setEmployee(employee);
         payroll.setMonth(month);
@@ -148,8 +139,10 @@ public class PayrollService {
         payroll.setGrossSalary(grossSalary.setScale(2, java.math.RoundingMode.HALF_UP));
         payroll.setTotalDeductions(totalDeductions.setScale(2, java.math.RoundingMode.HALF_UP));
         payroll.setNetSalary(netSalary.setScale(2, java.math.RoundingMode.HALF_UP));
+        payroll.setUnpaidLeaveDeduction(salarySummary.getUnpaidLeaveDeduction());
+        payroll.setAbsentDeduction(salarySummary.getAbsentLeaveDeduction());
         // STORE attendance values from AttendanceEngine (single source of truth)
-        payroll.setPresentDays(presentDays);
+        payroll.setPresentDays(workedDays); // ✅ FIXED: Use workedDays instead of presentDays
         payroll.setAbsentDays(absentDays);
         payroll.setPaidLeaveDays(paidLeaveDays);
         payroll.setUnpaidLeaveDays(unpaidLeaveDays);
@@ -162,7 +155,10 @@ public class PayrollService {
 
     @Transactional
     public List<PayrollDTO> generatePayrollForAll(Integer month, Integer year) {
-        List<Employee> employees = employeeRepository.findByStatus(Employee.EmployeeStatus.ACTIVE);
+        List<Employee> employees = employeeRepository.findByStatus(Employee.EmployeeStatus.ACTIVE)
+            .stream()
+            .filter(emp -> !isSystemUser(emp))
+            .collect(Collectors.toList());
 
         List<PayrollDTO> generatedPayrolls = employees.stream()
                 .map(emp -> generatePayroll(emp.getId(), month, year))
@@ -222,7 +218,78 @@ public class PayrollService {
             log.warn("Could not update payslip status, but payroll was approved: {}", e.getMessage());
         }
 
+        // Send approval notification email to employee
+        if (payroll.getEmployee().getEmail() != null && !payroll.getEmployee().getEmail().isEmpty()) {
+            try {
+                String subject = "Your Salary Slip has been Approved - " + String.format("%02d", payroll.getMonth()) + "/" + payroll.getYear();
+                String htmlBody = String.format(
+                        "<html><body style='font-family: Arial, sans-serif;'>" +
+                        "<h2 style='color: #4CAF50;'>Payroll Approved</h2>" +
+                        "<p>Dear <strong>%s %s</strong>,</p>" +
+                        "<p>Your payroll for the month of <strong>%02d/%d</strong> has been successfully approved by the accountant.</p>" +
+                        "<p>Your net salary of <strong>₹%,.2f</strong> will be processed shortly.</p>" +
+                        "<br>" +
+                        "<p>You can view and download your detailed payslip by logging into the HRM Portal.</p>" +
+                        "<br>" +
+                        "<p>Best Regards,</p>" +
+                        "<p><strong>HR Department</strong></p>" +
+                        "<p style='color: #888; font-size: 12px;'>This is an automated email. Please do not reply.</p>" +
+                        "</body></html>",
+                        payroll.getEmployee().getFirstName(), payroll.getEmployee().getLastName(),
+                        payroll.getMonth(), payroll.getYear(), payroll.getNetSalary()
+                );
+                emailUtil.sendHtmlEmail(payroll.getEmployee().getEmail(), subject, htmlBody);
+                log.info("Approval email sent to employee: {}", payroll.getEmployee().getEmail());
+            } catch (Exception e) {
+                log.warn("Failed to send approval email to employee {}: {}", payroll.getEmployee().getEmail(), e.getMessage());
+            }
+        }
+
         log.info("Payroll {} approved successfully", payrollId);
+        return convertToDTO(payroll);
+    }
+
+    @Transactional
+    public PayrollDTO approveByDirector(Long payrollId, String approvedBy) {
+        Payroll payroll = payrollRepository.findById(payrollId)
+                .orElseThrow(() -> new RuntimeException("Payroll not found with id: " + payrollId));
+
+        if (payroll.getStatus() == Payroll.PayrollStatus.PENDING) {
+            throw new RuntimeException("Payroll must be sent for approval first");
+        }
+
+        payroll.setDirectorApproved(true);
+        payroll.setFinalApprovalDate(LocalDate.now());
+
+        if (Boolean.TRUE.equals(payroll.getAccountantApproved())) {
+            payroll.setStatus(Payroll.PayrollStatus.PAID);
+            payroll.setPaymentDate(LocalDate.now());
+            log.info("Payroll {} fully approved by both accountant and admin — marked PAID", payrollId);
+        } else {
+            log.info("Payroll {} admin-approved. Awaiting accountant approval.", payrollId);
+        }
+
+        payroll = payrollRepository.save(payroll);
+
+        try {
+            generatePayslipWithStatus(payroll, payroll.getStatus() == Payroll.PayrollStatus.PAID ? "SENT" : "APPROVED", approvedBy);
+        } catch (Exception e) {
+            log.warn("Could not update payslip status after director approval: {}", e.getMessage());
+        }
+
+        return convertToDTO(payroll);
+    }
+
+    @Transactional
+    public PayrollDTO rejectByDirector(Long payrollId, String reason) {
+        Payroll payroll = payrollRepository.findById(payrollId)
+                .orElseThrow(() -> new RuntimeException("Payroll not found with id: " + payrollId));
+
+        payroll.setDirectorApproved(false);
+        payroll.setStatus(Payroll.PayrollStatus.PENDING_APPROVAL);
+        payroll = payrollRepository.save(payroll);
+
+        log.info("Payroll {} rejected by admin/director. Reason: {}", payrollId, reason);
         return convertToDTO(payroll);
     }
 
@@ -252,6 +319,8 @@ public class PayrollService {
         }
 
         payroll.setStatus(Payroll.PayrollStatus.PAID);
+        payroll.setDirectorApproved(true);
+        payroll.setFinalApprovalDate(LocalDate.now());
         payroll.setPaymentDate(LocalDate.now());
         payroll = payrollRepository.save(payroll);
 
@@ -316,6 +385,10 @@ public class PayrollService {
     }
 
     public List<PayrollDTO> getPayrollByEmployee(Long employeeId) {
+        Employee employee = employeeRepository.findById(employeeId).orElse(null);
+        if (employee != null && isSystemUser(employee)) {
+            return new java.util.ArrayList<>();
+        }
         return payrollRepository.findByEmployeeId(employeeId)
                 .stream()
                 .map(this::convertToDTO)
@@ -324,7 +397,10 @@ public class PayrollService {
 
     @Transactional
     public List<PayrollDTO> getPayrollByMonth(Integer month, Integer year) {
-        List<Employee> allActive = employeeRepository.findByStatus(Employee.EmployeeStatus.ACTIVE);
+        List<Employee> allActive = employeeRepository.findByStatus(Employee.EmployeeStatus.ACTIVE)
+            .stream()
+            .filter(emp -> !isSystemUser(emp))
+            .collect(Collectors.toList());
 
         for (Employee emp : allActive) {
             try {
@@ -337,6 +413,7 @@ public class PayrollService {
 
         return payrollRepository.findByMonthAndYear(month, year)
                 .stream()
+                .filter(p -> p.getEmployee() != null && !isSystemUser(p.getEmployee()))
                 .sorted((a, b) -> a.getEmployee().getFirstName().compareToIgnoreCase(b.getEmployee().getFirstName()))
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -346,7 +423,8 @@ public class PayrollService {
         return payrollRepository.findAll()
                 .stream()
                 .filter(p -> p.getEmployee() != null &&
-                        p.getEmployee().getStatus() == Employee.EmployeeStatus.ACTIVE)
+                        p.getEmployee().getStatus() == Employee.EmployeeStatus.ACTIVE &&
+                        !isSystemUser(p.getEmployee()))
                 .sorted((p1, p2) -> {
                     int yearCompare = p2.getYear().compareTo(p1.getYear());
                     if (yearCompare != 0) return yearCompare;
@@ -369,6 +447,9 @@ public class PayrollService {
     public PayrollDTO getPayrollById(Long payrollId) {
         Payroll payroll = payrollRepository.findById(payrollId)
                 .orElseThrow(() -> new RuntimeException("Payroll not found with id: " + payrollId));
+        if (payroll.getEmployee() != null && isSystemUser(payroll.getEmployee())) {
+            throw new RuntimeException("Access denied: Cannot retrieve payroll for System Users");
+        }
         return convertToDTO(payroll);
     }
 
@@ -420,48 +501,25 @@ public class PayrollService {
         log.info("All payroll records deleted successfully");
     }
 
-    private boolean checkProbationStatus(Employee employee, int year, int month) {
-        if (employee.getJoiningDate() == null || employee.getProbationPeriodMonths() == null) {
-            return false;
-        }
-
-        LocalDate probationEndDate = employee.getJoiningDate()
-                .plusMonths(employee.getProbationPeriodMonths());
-        
-        LocalDate payslipDate = LocalDate.of(year, month, 1);
-        
-        return payslipDate.isBefore(probationEndDate) || payslipDate.isEqual(probationEndDate);
-    }
-
-    private BigDecimal calculateTax(BigDecimal basicSalary) {
-        BigDecimal annualSalary = basicSalary.multiply(new BigDecimal("12"));
-        BigDecimal tax = BigDecimal.ZERO;
-
-        if (annualSalary.compareTo(new BigDecimal("1000000")) > 0) {
-            tax = basicSalary.multiply(new BigDecimal("0.30"));
-        } else if (annualSalary.compareTo(new BigDecimal("500000")) > 0) {
-            tax = basicSalary.multiply(new BigDecimal("0.20"));
-        } else if (annualSalary.compareTo(new BigDecimal("250000")) > 0) {
-            tax = basicSalary.multiply(new BigDecimal("0.10"));
-        }
-
-        return tax;
-    }
-
-    private BigDecimal round(BigDecimal value) {
-        return value.setScale(2, java.math.RoundingMode.HALF_UP);
+    private boolean isSystemUser(Employee emp) {
+        if (emp.getDepartment() == null || emp.getDepartment().getName() == null) return false;
+        String dept = emp.getDepartment().getName().toLowerCase();
+        return dept.contains("hr") || dept.contains("director") || 
+               dept.contains("leave") || dept.contains("accountant");
     }
 
     private PayrollDTO convertToDTO(Payroll payroll) {
         Employee employee = payroll.getEmployee();
 
-        // USE STORED attendance values from Payroll entity (set during generation)
-        // These come from AttendanceEngine - single source of truth
-        double presentDays = payroll.getPresentDays() != null ? payroll.getPresentDays() : 0.0;
-        double absentDays = payroll.getAbsentDays() != null ? payroll.getAbsentDays() : 0.0;
-        double paidLeaveDays = payroll.getPaidLeaveDays() != null ? payroll.getPaidLeaveDays() : 0.0;
-        double unpaidLeaveDays = payroll.getUnpaidLeaveDays() != null ? payroll.getUnpaidLeaveDays() : 0.0;
-        int leaveDays = (int) (paidLeaveDays + unpaidLeaveDays);
+        // Dynamically compute attendance to handle stale or legacy DB records where days were saved as 0
+        AttendanceSummary attSummary = unifiedCalculationService.calculateForPayroll(employee.getId(), payroll.getYear(), payroll.getMonth());
+        double presentDays = attSummary.workedDays;
+        double absentDays = attSummary.absent;
+        double paidLeaveDays = attSummary.paidLeave;
+        double unpaidLeaveDays = attSummary.unpaidLeave;
+        double leaveDays = paidLeaveDays + unpaidLeaveDays; // Total leave days
+        // ✅ FIXED: Remove duplicate calculation - use engine values directly
+        // leaveDays should come from AttendanceEngine if needed
         int halfDays = 0; // Half days are already accounted for in present/absent counts
         
         double absentLeaveDeduction = payroll.getOtherDeductions() != null 
@@ -470,7 +528,8 @@ public class PayrollService {
 
         // Get leave balance
         PayrollDTO.LeaveBalanceInfo leaveBalanceInfo;
-        Boolean inProbation = checkProbationStatus(employee, payroll.getYear(), payroll.getMonth());
+        // ✅ FIXED: Use centralized probation method from AttendanceEngine
+        Boolean inProbation = !attendanceEngine.isProbationCompleted(employee);
         String probationStatus = inProbation ? "In Progress" : "Completed";
         Integer probationMonths = employee.getProbationPeriodMonths() != null ? employee.getProbationPeriodMonths() : 3;
         
@@ -480,14 +539,17 @@ public class PayrollService {
         }
         
         try {
-            var leaveStats = leaveCalculationService.calculateLeaveStatistics(employee.getId(), payroll.getMonth(), payroll.getYear());
+            // ✅ Use AttendanceEngine ONLY - no duplicate services
+            AttendanceEngine.LeaveBalanceSummary summary = attendanceEngine.calculateLeaveBalance(
+                employee.getId(), payroll.getYear(), payroll.getMonth()
+            );
             int currentCycle = payroll.getMonth() <= 6 ? 1 : 2;
             leaveBalanceInfo = PayrollDTO.LeaveBalanceInfo.builder()
-                    .totalEarnedLeaves(leaveStats.getTotalEarnedLeaves())
-                    .usedLeaves(leaveStats.getTotalUsedPaidLeaves())
-                    .availableLeaves(leaveStats.getAvailableLeaveBalance())
+                    .totalEarnedLeaves(summary.earnedLeaves)
+                    .usedLeaves(summary.totalUsedLeaves) // ✅ FIXED: Total = Paid + Unpaid
+                    .availableLeaves(summary.getAvailableLeaves())
                     .carriedForwardLeaves(0.0)
-                    .unpaidLeaves(0.0)
+                    .unpaidLeaves(summary.unpaidLeaves) // ✅ FIXED: was 0.0
                     .cycle(currentCycle)
                     .build();
         } catch (Exception e) {
@@ -520,13 +582,17 @@ public class PayrollService {
                 .netSalary(payroll.getNetSalary())
                 .paymentDate(payroll.getPaymentDate())
                 .status(payroll.getStatus().name())
+                .accountantApproved(payroll.getAccountantApproved())
+                .directorApproved(payroll.getDirectorApproved())
                 .presentDays(presentDays)
                 .absentDays(absentDays)
-                .leaveDays(leaveDays)
+                .leaveDays((int) leaveDays)
                 .paidLeaveDays(paidLeaveDays)
                 .unpaidLeaveDays(unpaidLeaveDays)
                 .halfDays(halfDays)
                 .absentLeaveDeduction(absentLeaveDeduction)
+                .unpaidLeaveDeduction(payroll.getUnpaidLeaveDeduction())
+                .absentPenaltyDeduction(payroll.getAbsentDeduction())
                 .leaveBalance(leaveBalanceInfo)
                 .inProbation(inProbation)
                 .probationStatus(probationStatus)

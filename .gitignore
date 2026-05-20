@@ -38,3 +38,9 @@ logs/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Custom Additions
+scratch/
+uploads/
+payslips/
+.env

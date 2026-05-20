@@ -1,10 +1,12 @@
 package com.hrm.hrmsystem.controller;
 
-import com.hrm.hrmsystem.model.ProbationPeriod;
-import com.hrm.hrmsystem.repository.ProbationPeriodRepository;
+import com.hrm.hrmsystem.engine.AttendanceEngine;
+import com.hrm.hrmsystem.model.Employee;
+import com.hrm.hrmsystem.repository.EmployeeRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 @RestController
@@ -12,10 +14,12 @@ import java.util.Optional;
 @CrossOrigin(origins = "*")
 public class ProbationPeriodController {
 
-    private final ProbationPeriodRepository probationPeriodRepository;
+    private final EmployeeRepository employeeRepository;
+    private final AttendanceEngine attendanceEngine;
 
-    public ProbationPeriodController(ProbationPeriodRepository probationPeriodRepository) {
-        this.probationPeriodRepository = probationPeriodRepository;
+    public ProbationPeriodController(EmployeeRepository employeeRepository, AttendanceEngine attendanceEngine) {
+        this.employeeRepository = employeeRepository;
+        this.attendanceEngine = attendanceEngine;
     }
 
     /**
@@ -23,13 +27,9 @@ public class ProbationPeriodController {
      */
     @GetMapping("/employee/{employeeId}")
     public ResponseEntity<?> getProbationByEmployee(@PathVariable Long employeeId) {
-        Optional<ProbationPeriod> probation = probationPeriodRepository.findByEmployeeId(employeeId);
-        
-        if (probation.isPresent()) {
-            return ResponseEntity.ok(probation.get());
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return employeeRepository.findById(employeeId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     /**
@@ -37,22 +37,29 @@ public class ProbationPeriodController {
      */
     @GetMapping("/employee/{employeeId}/status")
     public ResponseEntity<?> checkProbationStatus(@PathVariable Long employeeId) {
-        Optional<ProbationPeriod> probation = probationPeriodRepository.findByEmployeeId(employeeId);
+        Optional<Employee> employeeOpt = employeeRepository.findById(employeeId);
         
-        if (probation.isPresent()) {
-            ProbationPeriod period = probation.get();
-            boolean isOnProbation = period.getStatus() == ProbationPeriod.ProbationStatus.PROBATION || 
-                                   period.getStatus() == ProbationPeriod.ProbationStatus.EXTENDED;
+        if (employeeOpt.isPresent()) {
+            Employee employee = employeeOpt.get();
+            boolean isCompleted = attendanceEngine.isProbationCompleted(employee);
             
+            int probationMonths = employee.getProbationPeriodMonths() != null ? employee.getProbationPeriodMonths() : 3;
+            LocalDate probationEnd = employee.getJoiningDate() != null ? employee.getJoiningDate().plusMonths(probationMonths) : null;
+            
+            long remainingDays = 0;
+            if (!isCompleted && probationEnd != null) {
+                remainingDays = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), probationEnd);
+                remainingDays = Math.max(0, remainingDays);
+            }
+
             return ResponseEntity.ok(new ProbationStatusResponse(
-                isOnProbation,
-                period.getEndDate(),
-                period.getPaidLeaveEligible(),
-                isOnProbation ? period.getRemainingProbationDays() : 0
+                !isCompleted,
+                probationEnd,
+                isCompleted, // Paid leave eligible if probation completed
+                remainingDays
             ));
         } else {
-            // No probation record - assume confirmed
-            return ResponseEntity.ok(new ProbationStatusResponse(false, null, true, 0));
+            return ResponseEntity.notFound().build();
         }
     }
 

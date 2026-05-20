@@ -54,4 +54,6 @@ public interface PayslipRepository extends JpaRepository<Payslip, Long> {
     
     // Check if payslip exists for employee entity in month
     boolean existsByEmployeeAndMonthYear(Employee employee, String monthYear);
+
+    void deleteByEmployeeId(Long employeeId);
 }

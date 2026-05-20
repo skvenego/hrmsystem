@@ -74,10 +74,10 @@ Net Salary = Gross Salary - (PF + ESI + Income Tax + Insurance + Absent/Leave De
 - Leave balance is tracked in two cycles per year:
   - **Cycle 1**: January - June
   - **Cycle 2**: July - December
-- At the end of each cycle, unused leaves are handled as follows:
+- At the end of each cycle, unUsed Leaves leaves are handled as follows:
   - **Carry Forward Limit**: Maximum 10 leaves can be carried forward to next cycle
   - **Expired Leaves**: Any leaves beyond the carry-forward limit expire
-- When Cycle 2 is created, unused leaves from Cycle 1 are carried forward (up to 10)
+- When Cycle 2 is created, unUsed Leaves leaves from Cycle 1 are carried forward (up to 10)
 - Expired leaves are recorded for audit purposes
 - This ensures leave balance doesn't accumulate indefinitely
 
@@ -243,7 +243,7 @@ Net Salary = Gross Salary - (PF + ESI + Income Tax + Insurance + Absent/Leave De
 5. **Audit Trail**: All critical changes are logged for accountability.
 6. **Probation Rules**: All leaves are unpaid during probation period.
 7. **Half-Day Handling**: Half-day leaves always mark the entire day as PENDING for admin resolution.
-8. **Leave Cycle Expiry**: Unused leaves expire at cycle end (max 10 carried forward).
+8. **Leave Cycle Expiry**: UnUsed Leaves leaves expire at cycle end (max 10 carried forward).
 9. **Salary Adjustments**: Post-lock corrections must use adjustment system, not direct attendance changes.
 10. **Holiday Handling**: Holidays skip attendance automatically, no present/absent marking.
 11. **Both Halves Validation**: Cannot apply half-day leave for both halves of same day (use full-day leave).

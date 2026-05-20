@@ -12,106 +12,93 @@ import java.util.List;
 @Service
 public class ProbationService {
     
-    private final ProbationPeriodRepository probationRepo;
     private final EmployeeRepository employeeRepo;
     
-    public ProbationService(ProbationPeriodRepository probationRepo, EmployeeRepository employeeRepo) {
-        this.probationRepo = probationRepo;
+    public ProbationService(EmployeeRepository employeeRepo) {
         this.employeeRepo = employeeRepo;
     }
     
     /**
-     * Create probation period for employee
+     * Create/Initialize probation for employee
      */
     @Transactional
-    public ProbationPeriod createProbation(Long employeeId, LocalDate startDate, Integer durationMonths) {
+    public Employee initializeProbation(Long employeeId, Integer durationMonths) {
         Employee employee = employeeRepo.findById(employeeId)
             .orElseThrow(() -> new RuntimeException("Employee not found"));
         
-        // Check if already exists
-        if (probationRepo.existsByEmployeeId(employeeId)) {
-            throw new RuntimeException("Probation period already exists for this employee");
-        }
+        employee.setProbationPeriodMonths(durationMonths);
+        employee.setProbationStatus(Employee.ProbationStatus.PROBATION);
+        employee.setPfPercentage(12.0);
+        employee.setAnnualTax(0.0);
         
-        ProbationPeriod probation = new ProbationPeriod();
-        probation.setEmployee(employee);
-        probation.setStartDate(startDate);
-        probation.setDurationMonths(durationMonths);
-        probation.setStatus(ProbationPeriod.ProbationStatus.PROBATION);
-        probation.setPaidLeaveEligible(false);
-        probation.setPfPercentage(12.0);
-        probation.setAnnualTax(0.0);
-        probation.setMonthlyTds(0.0);
-        
-        return probationRepo.save(probation);
+        return employeeRepo.save(employee);
     }
     
     /**
      * Confirm employee (complete probation)
      */
     @Transactional
-    public ProbationPeriod confirmProbation(Long employeeId) {
-        ProbationPeriod probation = probationRepo.findByEmployeeId(employeeId)
-            .orElseThrow(() -> new RuntimeException("Probation period not found"));
+    public Employee confirmProbation(Long employeeId, String confirmedBy) {
+        Employee employee = employeeRepo.findById(employeeId)
+            .orElseThrow(() -> new RuntimeException("Employee not found"));
         
-        probation.setStatus(ProbationPeriod.ProbationStatus.CONFIRMED);
-        probation.setPaidLeaveEligible(true);
-        probation.setEndDate(LocalDate.now());
+        employee.setProbationStatus(Employee.ProbationStatus.CONFIRMED);
+        employee.setProbationConfirmedBy(confirmedBy);
+        employee.setProbationConfirmedDate(LocalDate.now());
         
-        return probationRepo.save(probation);
+        return employeeRepo.save(employee);
     }
     
     /**
      * Extend probation period
      */
     @Transactional
-    public ProbationPeriod extendProbation(Long employeeId, Integer additionalMonths) {
-        ProbationPeriod probation = probationRepo.findByEmployeeId(employeeId)
-            .orElseThrow(() -> new RuntimeException("Probation period not found"));
+    public Employee extendProbation(Long employeeId, Integer additionalMonths, String notes) {
+        Employee employee = employeeRepo.findById(employeeId)
+            .orElseThrow(() -> new RuntimeException("Employee not found"));
         
-        probation.setDurationMonths(probation.getDurationMonths() + additionalMonths);
-        probation.setStatus(ProbationPeriod.ProbationStatus.EXTENDED);
+        int currentMonths = employee.getProbationPeriodMonths() != null ? employee.getProbationPeriodMonths() : 3;
+        employee.setProbationPeriodMonths(currentMonths + additionalMonths);
+        employee.setProbationStatus(Employee.ProbationStatus.EXTENDED);
+        employee.setProbationNotes(notes);
         
-        return probationRepo.save(probation);
+        return employeeRepo.save(employee);
     }
     
     /**
-     * Check if employee is in probation
+     * Get probation details for employee (returns employee with probation fields)
      */
-    public boolean isInProbation(Long employeeId) {
-        return probationRepo.findByEmployeeId(employeeId)
-            .map(p -> p.getStatus() == ProbationPeriod.ProbationStatus.PROBATION)
-            .orElse(false);
-    }
-    
-    /**
-     * Get probation details for employee
-     */
-    public ProbationPeriod getProbationDetails(Long employeeId) {
-        return probationRepo.findByEmployeeId(employeeId)
-            .orElse(null);
+    public Employee getProbationDetails(Long employeeId) {
+        return employeeRepo.findById(employeeId).orElse(null);
     }
     
     /**
      * Auto-check and update probation status
+     * ✅ USES AttendanceEngine logic for consistency
      */
     @Scheduled(cron = "0 0 0 * * ?") // Run daily at midnight
     @Transactional
     public void autoCheckProbationStatus() {
-        List<ProbationPeriod> allProbations = probationRepo.findAll();
+        List<Employee> allActive = employeeRepo.findByStatus(Employee.EmployeeStatus.ACTIVE);
         LocalDate today = LocalDate.now();
         
-        for (ProbationPeriod probation : allProbations) {
-            if (probation.getStatus() == ProbationPeriod.ProbationStatus.PROBATION) {
-                if (today.isAfter(probation.getEndDate()) || today.isEqual(probation.getEndDate())) {
+        for (Employee employee : allActive) {
+            if (employee.getProbationStatus() == Employee.ProbationStatus.PROBATION || 
+                employee.getProbationStatus() == Employee.ProbationStatus.EXTENDED) {
+                
+                int probationMonths = employee.getProbationPeriodMonths() != null ? employee.getProbationPeriodMonths() : 3;
+                LocalDate probationEnd = employee.getJoiningDate().plusMonths(probationMonths);
+                
+                if (!today.isBefore(probationEnd)) {
                     // Auto-confirm
-                    probation.setStatus(ProbationPeriod.ProbationStatus.CONFIRMED);
-                    probation.setPaidLeaveEligible(true);
-                    System.out.println("✅ Auto-confirmed probation for employee: " + probation.getEmployee().getId());
+                    employee.setProbationStatus(Employee.ProbationStatus.CONFIRMED);
+                    employee.setProbationConfirmedBy("SYSTEM");
+                    employee.setProbationConfirmedDate(today);
+                    System.out.println("✅ Auto-confirmed probation for employee: " + employee.getId());
                 }
             }
         }
         
-        probationRepo.saveAll(allProbations);
+        employeeRepo.saveAll(allActive);
     }
 }

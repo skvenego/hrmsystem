@@ -31,7 +31,7 @@ DESCRIBE payslips;
 DESCRIBE leave_balances;
 
 -- 7. Update leave balance if columns exist
--- Common column names might be: available_leaves, used_leaves, earned_leaves
+-- Common column names might be: available_leaves, Used Leaves_leaves, earned_leaves
 -- Or: total_leaves, consumed_leaves, remaining_leaves
 -- Run DESCRIBE first to see actual columns
 
