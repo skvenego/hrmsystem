@@ -44,3 +44,4 @@ scratch/
 uploads/
 payslips/
 .env
+/*.sql
